@@ -1,0 +1,76 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { prisma } from '@/lib/prisma'
+import { getToken } from 'next-auth/jwt'
+import bcrypt from 'bcryptjs'
+
+export async function GET(req: NextRequest) {
+  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET })
+  if (!token || token.role !== 'ADMIN') {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+  }
+
+  try {
+    const users = await prisma.user.findMany({
+      select: {
+        id: true,
+        username: true,
+        role: true,
+        isActive: true,
+        branchId: true,
+        branch: { select: { id: true, name: true, code: true } },
+        managedBranches: { select: { id: true, name: true } },
+        createdAt: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    })
+    return NextResponse.json(users)
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+}
+
+export async function POST(req: NextRequest) {
+  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET })
+  if (!token || token.role !== 'ADMIN') {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+  }
+
+  const { username, password, role, branchId, isActive, managedBranchIds } = await req.json()
+
+  if (!username || !password || !role) {
+    return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
+  }
+
+  try {
+    const existing = await prisma.user.findUnique({ where: { username } })
+    if (existing) {
+      return NextResponse.json({ error: 'Username already exists' }, { status: 409 })
+    }
+
+    const salt = await bcrypt.genSalt(10)
+    const passwordHash = await bcrypt.hash(password, salt)
+
+    const user = await prisma.user.create({
+      data: {
+        username,
+        passwordHash,
+        role,
+        ...(branchId && role === 'BRANCH' ? { branch: { connect: { id: parseInt(branchId) } } } : {}),
+        ...(managedBranchIds && role === 'AREA_MANAGER' ? { managedBranches: { connect: managedBranchIds.map((id: number) => ({ id })) } } : {}),
+        isActive: isActive !== undefined ? isActive : true,
+      },
+      select: {
+        id: true,
+        username: true,
+        role: true,
+        isActive: true,
+        branchId: true,
+        createdAt: true,
+      }
+    })
+
+    return NextResponse.json(user, { status: 201 })
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+}

@@ -2,17 +2,18 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getToken } from 'next-auth/jwt'
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET })
   if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const entryId = parseInt(params.id)
+  const resolvedParams = await params
+  const entryId = parseInt(resolvedParams.id)
   
   try {
     const comments = await prisma.comment.findMany({
       where: { entryId },
       include: {
-        user: { select: { name: true, role: true } }
+        user: { select: { username: true, role: true } }
       },
       orderBy: { createdAt: 'asc' }
     })
@@ -22,11 +23,12 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   }
 }
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET })
   if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const entryId = parseInt(params.id)
+  const resolvedParams = await params
+  const entryId = parseInt(resolvedParams.id)
   const { message } = await req.json()
 
   try {
@@ -37,7 +39,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         message,
       },
       include: {
-        user: { select: { name: true, role: true } }
+        user: { select: { username: true, role: true } }
       }
     })
     return NextResponse.json(comment)

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { dailyEntrySchema } from '@/lib/schemas'
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
@@ -52,7 +53,10 @@ export async function GET(req: NextRequest) {
   const [entries, total] = await Promise.all([
     prisma.dailyEntry.findMany({
       where,
-      include: { branch: true },
+      include: { 
+        branch: true,
+        items: { include: { category: true } }
+      },
       orderBy: [{ date: 'asc' }, { branchId: 'asc' }],
       skip: (page - 1) * limit,
       take: limit,
@@ -64,8 +68,13 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const body = await req.json()
-  const { date, branchId, notes, expenseDetails, actualPhysicalCash, cashDifferenceNote, eodChecklist, ...financials } = body
+  const rawBody = await req.json()
+  const parsed = dailyEntrySchema.safeParse(rawBody)
+  if (!parsed.success) {
+    return NextResponse.json({ error: 'Invalid input', details: parsed.error.format() }, { status: 400 })
+  }
+  const body = parsed.data
+  const { date, branchId, notes, actualPhysicalCash, cashDifferenceNote, eodChecklist, items } = body
 
   const userRole = req.headers.get('x-user-role')
   const userBranchId = req.headers.get('x-user-branch-id')
@@ -74,7 +83,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Forbidden: Read-Only Role' }, { status: 403 })
   }
 
-  let finalBranchId = parseInt(branchId)
+  let finalBranchId = typeof branchId === 'string' ? parseInt(branchId) : branchId
 
   if (userRole === 'BRANCH') {
     if (!userBranchId) {
@@ -89,13 +98,18 @@ export async function POST(req: NextRequest) {
         date: new Date(date),
         branchId: finalBranchId,
         notes,
-        expenseDetails,
-        actualPhysicalCash: actualPhysicalCash !== undefined && actualPhysicalCash !== null && actualPhysicalCash !== '' ? parseFloat(actualPhysicalCash) : null,
+        actualPhysicalCash,
         cashDifferenceNote,
         eodChecklist,
-        ...financials,
+        items: items ? {
+          create: items.map(item => ({
+            categoryId: item.categoryId,
+            amount: item.amount || 0,
+            receiptUrls: item.receiptUrls || []
+          }))
+        } : undefined
       },
-      include: { branch: true },
+      include: { branch: true, items: { include: { category: true } } },
     })
     return NextResponse.json(entry, { status: 201 })
   } catch (error: unknown) {

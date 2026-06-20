@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getToken } from 'next-auth/jwt'
 import bcrypt from 'bcryptjs'
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET })
-  if (!token || token.role !== 'ADMIN') {
+  const userRole = req.headers.get('x-user-role')
+  if (userRole !== 'ADMIN') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
   }
 
@@ -53,8 +52,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET })
-  if (!token || token.role !== 'ADMIN') {
+  const userRole = req.headers.get('x-user-role')
+  if (userRole !== 'ADMIN') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
   }
 

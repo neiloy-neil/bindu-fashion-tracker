@@ -2,11 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
 export async function GET(req: NextRequest) {
-  // Check for auth header if needed (e.g., matching a CRON_SECRET)
-  // const authHeader = req.headers.get('authorization')
-  // if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-  //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  // }
+  const authHeader = req.headers.get('authorization')
+  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
 
   const today = new Date()
   today.setHours(0, 0, 0, 0)

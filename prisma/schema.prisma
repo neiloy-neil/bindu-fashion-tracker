@@ -11,147 +11,125 @@ datasource db {
 }
 
 model Branch {
-  id          Int          @id @default(autoincrement())
-  name        String       @unique
-  code        String       @unique
-  isActive    Boolean      @default(true)
-  createdAt   DateTime     @default(now())
-  entries     DailyEntry[]
-  users       User[]         @relation("UserPrimaryBranch")
-  requests    BranchRequest[]
-  managedBy   User[]         @relation("UserManagedBranches")
+  id        Int             @id @default(autoincrement())
+  name      String          @unique
+  code      String          @unique
+  isActive  Boolean         @default(true)
+  createdAt DateTime        @default(now())
+  entries   DailyEntry[]
+  users     User[]          @relation("UserPrimaryBranch")
+  requests  BranchRequest[]
+  managedBy User[]          @relation("UserManagedBranches")
 }
 
 model User {
-  id           Int      @id @default(autoincrement())
-  username     String   @unique
-  passwordHash String
-  role         String   @default("BRANCH") // ADMIN or BRANCH
-  isActive     Boolean  @default(true)
-  branchId     Int?
-  branch       Branch?       @relation("UserPrimaryBranch", fields: [branchId], references: [id])
-  editRequests EditRequest[]
-  comments     Comment[]
-  accounts     Account[]
-  sessions     Session[]
-  branchRequests BranchRequest[]
-  managedBranches Branch[]   @relation("UserManagedBranches")
-  createdAt    DateTime      @default(now())
+  id              Int             @id @default(autoincrement())
+  username        String          @unique
+  passwordHash    String
+  role            String          @default("BRANCH") // ADMIN or BRANCH
+  isActive        Boolean         @default(true)
+  branchId        Int?
+  branch          Branch?         @relation("UserPrimaryBranch", fields: [branchId], references: [id])
+  editRequests    EditRequest[]
+  comments        Comment[]
+  accounts        Account[]
+  sessions        Session[]
+  branchRequests  BranchRequest[]
+  managedBranches Branch[]        @relation("UserManagedBranches")
+  approvedCheques Cheque[]        @relation("ChequeApprover")
+  createdAt       DateTime        @default(now())
 }
 
 model DailyEntry {
-  id        Int      @id @default(autoincrement())
-  date      DateTime
-  branchId  Int
-  branch    Branch   @relation(fields: [branchId], references: [id])
+  id       Int      @id @default(autoincrement())
+  date     DateTime
+  branchId Int
+  branch   Branch   @relation(fields: [branchId], references: [id])
 
-  // ── INCOME ──────────────────────────────────────────────
-  openingBalance   Float @default(0)
-  cashSale         Float @default(0)
-  dueReceived      Float @default(0)
-  conditionRec     Float @default(0)
-  bkashIncome      Float @default(0)
-  nagadIncome      Float @default(0)
-  rocketIncome     Float @default(0)
-  posPubali        Float @default(0)
-  posCity          Float @default(0)
-  posBrac          Float @default(0)
-  posDbbl          Float @default(0)
-  acBindu          Float @default(0)
-  bindu2Transfer   Float @default(0)
-  receivedAziz1    Float @default(0)
+  items EntryItem[]
 
-  // ── EXPENSES ─────────────────────────────────────────────
-  advanceTk        Float @default(0)
-  conditionChange  Float @default(0)
-  partyPayment     Float @default(0)
-  aziz2Transfer    Float @default(0)
-  bankDeposit      Float @default(0)
-  dmcb             Float @default(0)
-  saleBonus        Float @default(0)
-  courierLbrBill   Float @default(0)
-  snacksTea        Float @default(0)
-  lunch            Float @default(0)
-  conveyance       Float @default(0)
-  otherExpense     Float @default(0)
-  donation         Float @default(0)
-  stationary       Float @default(0)
-  netWife          Float @default(0)
-  utilities        Float @default(0)
-  waterBill        Float @default(0)
-  dailySomity      Float @default(0)
-  electricRecharge Float @default(0)
-  petrolMobil      Float @default(0)
-  phoneBill        Float @default(0)
-  shopRent         Float @default(0)
-  salary           Float @default(0)
-  returnExp        Float @default(0)
-  bkashExpense     Float @default(0)
-  nagadExpense     Float @default(0)
-  posExpense       Float @default(0)
-  rocketDbbl       Float @default(0)
-  bossPersonalAll  Float @default(0)
-  acBinduExpense   Float @default(0)
-  vat              Float @default(0)
-  vatExp           Float @default(0)
-  emgFund          Float @default(0)
-  bossGift         Float @default(0)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  receiptUrl String?
-  notes      String?
-  expenseDetails Json?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  receiptUrl         String?
+  notes              String?
   actualPhysicalCash Float?
   cashDifferenceNote String?
   eodChecklist       Json?
+  openingTime        String?
+  closingTime        String?
 
-  editRequests EditRequest[]
-  comments     Comment[]
+  editRequests    EditRequest[]
+  comments        Comment[]
+  transfers       Transfer[]
+  payments        Payment[]
+  expenseEntries  ExpenseEntry[]
+  advanceSalaries AdvanceSalary[]
 
   @@unique([date, branchId])
   @@index([date])
   @@index([branchId])
 }
 
-model EditRequest {
-  id              Int        @id @default(autoincrement())
-  entryId         Int
-  requestedById   Int
-  changes         String     // Stored as JSON string
-  reason          String?
-  status          String     @default("PENDING") // PENDING, APPROVED, REJECTED
-  
-  entry           DailyEntry @relation(fields: [entryId], references: [id])
-  requestedBy     User       @relation(fields: [requestedById], references: [id])
+model Category {
+  id        Int         @id @default(autoincrement())
+  name      String      @unique
+  type      String // "INCOME" or "EXPENSE"
+  isActive  Boolean     @default(true)
+  isDefault Boolean     @default(false) // Whether it's a default system category
+  createdAt DateTime    @default(now())
+  items     EntryItem[]
+}
 
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
+model EntryItem {
+  id          Int        @id @default(autoincrement())
+  entryId     Int
+  entry       DailyEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  categoryId  Int
+  category    Category   @relation(fields: [categoryId], references: [id])
+  amount      Float      @default(0)
+  receiptUrls String[] // Can store multiple receipt URLs for an item
+
+  @@unique([entryId, categoryId])
+}
+
+model EditRequest {
+  id            Int     @id @default(autoincrement())
+  entryId       Int
+  requestedById Int
+  changes       String // Stored as JSON string
+  reason        String?
+  status        String  @default("PENDING") // PENDING, APPROVED, REJECTED
+
+  entry       DailyEntry @relation(fields: [entryId], references: [id])
+  requestedBy User       @relation(fields: [requestedById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Comment {
-  id        Int      @id @default(autoincrement())
+  id        Int        @id @default(autoincrement())
   entryId   Int
   entry     DailyEntry @relation(fields: [entryId], references: [id])
   userId    Int
-  user      User     @relation(fields: [userId], references: [id])
-  message   String   @db.Text
-  createdAt DateTime @default(now())
+  user      User       @relation(fields: [userId], references: [id])
+  message   String     @db.Text
+  createdAt DateTime   @default(now())
 }
 
 model Account {
-  id                 String  @id @default(cuid())
-  userId             Int
-  type               String
-  provider           String
-  providerAccountId  String
-  refresh_token      String?  @db.Text
-  access_token       String?  @db.Text
-  expires_at         Int?
-  token_type         String?
-  scope              String?
-  id_token           String?  @db.Text
-  session_state      String?
+  id                String  @id @default(cuid())
+  userId            Int
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -175,18 +153,119 @@ model VerificationToken {
 }
 
 model BranchRequest {
-  id              Int        @id @default(autoincrement())
-  branchId        Int
-  requestedById   Int
-  type            String     // e.g., MAINTENANCE, SUPPLIES, STAFF, OTHER
-  description     String     @db.Text
-  status          String     @default("PENDING") // PENDING, IN_PROGRESS, RESOLVED, REJECTED
-  priority        String     @default("MEDIUM")  // LOW, MEDIUM, HIGH, URGENT
-  adminComment    String?    @db.Text
-  
-  branch          Branch     @relation(fields: [branchId], references: [id])
-  requestedBy     User       @relation(fields: [requestedById], references: [id])
+  id            Int     @id @default(autoincrement())
+  branchId      Int
+  requestedById Int
+  type          String // e.g., MAINTENANCE, SUPPLIES, STAFF, OTHER
+  description   String  @db.Text
+  status        String  @default("PENDING") // PENDING, IN_PROGRESS, RESOLVED, REJECTED
+  priority      String  @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
+  adminComment  String? @db.Text
 
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
+  branch      Branch @relation(fields: [branchId], references: [id])
+  requestedBy User   @relation(fields: [requestedById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model LedgerAccount {
+  id        Int        @id @default(autoincrement())
+  name      String     @unique
+  type      String
+  isActive  Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  transfers Transfer[]
+}
+
+model Transfer {
+  id           Int      @id @default(autoincrement())
+  dailyEntryId Int
+  accountId    Int
+  amount       Float
+  note         String?
+  createdAt    DateTime @default(now())
+
+  dailyEntry DailyEntry    @relation(fields: [dailyEntryId], references: [id])
+  account    LedgerAccount @relation(fields: [accountId], references: [id])
+}
+
+model Party {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique
+  isActive  Boolean   @default(true)
+  balance   Float     @default(0)
+  createdAt DateTime  @default(now())
+  payments  Payment[]
+}
+
+model Payment {
+  id           Int      @id @default(autoincrement())
+  dailyEntryId Int
+  partyId      Int
+  method       String
+  amount       Float
+  note         String?
+  createdAt    DateTime @default(now())
+
+  dailyEntry DailyEntry @relation(fields: [dailyEntryId], references: [id])
+  party      Party      @relation(fields: [partyId], references: [id])
+  cheque     Cheque?
+}
+
+model Cheque {
+  id           Int       @id @default(autoincrement())
+  paymentId    Int       @unique
+  issueDate    DateTime
+  withdrawDate DateTime
+  status       String    @default("PENDING")
+  approvedById Int?
+  approvedAt   DateTime?
+  createdAt    DateTime  @default(now())
+
+  payment    Payment @relation(fields: [paymentId], references: [id])
+  approvedBy User?   @relation("ChequeApprover", fields: [approvedById], references: [id])
+}
+
+model ExpenseCategory {
+  id        Int            @id @default(autoincrement())
+  name      String         @unique
+  frequency String
+  isActive  Boolean        @default(true)
+  createdAt DateTime       @default(now())
+  entries   ExpenseEntry[]
+}
+
+model ExpenseEntry {
+  id           Int      @id @default(autoincrement())
+  dailyEntryId Int
+  categoryId   Int
+  amount       Float
+  note         String?
+  createdAt    DateTime @default(now())
+
+  dailyEntry DailyEntry      @relation(fields: [dailyEntryId], references: [id])
+  category   ExpenseCategory @relation(fields: [categoryId], references: [id])
+}
+
+model Employee {
+  id              Int             @id @default(autoincrement())
+  name            String
+  isActive        Boolean         @default(true)
+  createdAt       DateTime        @default(now())
+  advanceSalaries AdvanceSalary[]
+}
+
+model AdvanceSalary {
+  id                 Int      @id @default(autoincrement())
+  dailyEntryId       Int
+  employeeId         Int
+  type               String
+  amount             Float?
+  productDescription String?
+  note               String?
+  createdAt          DateTime @default(now())
+
+  dailyEntry DailyEntry @relation(fields: [dailyEntryId], references: [id])
+  employee   Employee   @relation(fields: [employeeId], references: [id])
 }

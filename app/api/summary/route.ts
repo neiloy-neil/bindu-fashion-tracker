@@ -1,35 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
-const incomeFields = [
-  'cashSale', 'dueReceived', 'conditionRec', 'bkashIncome', 'nagadIncome',
-  'rocketIncome', 'posPubali', 'posCity', 'posBrac', 'posDbbl',
-  'acBindu', 'bindu2Transfer', 'receivedAziz1',
-] as const
-
-const expenseFields = [
-  'advanceTk', 'conditionChange', 'partyPayment', 'aziz2Transfer', 'bankDeposit',
-  'dmcb', 'saleBonus', 'courierLbrBill', 'snacksTea', 'lunch', 'conveyance',
-  'otherExpense', 'donation', 'stationary', 'netWife', 'utilities', 'waterBill',
-  'dailySomity', 'electricRecharge', 'petrolMobil', 'phoneBill', 'shopRent',
-  'salary', 'returnExp', 'bkashExpense', 'nagadExpense', 'posExpense',
-  'rocketDbbl', 'bossPersonalAll', 'acBinduExpense', 'vat', 'vatExp',
-  'emgFund', 'bossGift',
-] as const
-
-const digitalExpenseKeys = ['bankDeposit', 'dmcb', 'bkashExpense', 'nagadExpense', 'posExpense', 'rocketDbbl', 'acBinduExpense', 'aziz2Transfer'] as const
-
-const bankTransferKeys = ['bankDeposit', 'dmcb', 'aziz2Transfer', 'returnExp', 'bkashExpense', 'nagadExpense', 'posExpense', 'rocketDbbl', 'acBinduExpense'] as const
-const salaryKeys = ['salary', 'saleBonus', 'advanceTk'] as const
-const personalKeys = ['bossPersonalAll', 'bossGift', 'netWife'] as const
-const taxKeys = ['vat', 'vatExp', 'emgFund'] as const
-const opKeys = ['shopRent', 'utilities', 'waterBill', 'electricRecharge', 'phoneBill', 'stationary', 'snacksTea', 'lunch', 'conveyance', 'courierLbrBill', 'petrolMobil'] as const
-
-// Build the _sum object for Prisma
-const sumFields: Record<string, boolean> = { openingBalance: true }
-incomeFields.forEach(f => sumFields[f] = true)
-expenseFields.forEach(f => sumFields[f] = true)
-
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const startDateParam = searchParams.get('startDate')
@@ -45,6 +16,7 @@ export async function GET(req: NextRequest) {
   if (startDateParam && endDateParam) {
     startDate = new Date(startDateParam)
     endDate = new Date(endDateParam)
+    // Add one day to include the entire end date in the query
     endDate.setDate(endDate.getDate() + 1)
   } else {
     startDate = new Date(year, month - 1, 1)
@@ -76,90 +48,105 @@ export async function GET(req: NextRequest) {
     where.branchId = parseInt(branchId)
   }
 
-  // Optimize: Run aggregations in Postgres instead of pulling all rows into Node.js memory
-  const [branchGroups, dailyGroups, branches] = await Promise.all([
-    prisma.dailyEntry.groupBy({
-      by: ['branchId'],
+  const [entries, branches] = await Promise.all([
+    prisma.dailyEntry.findMany({
       where,
-      _sum: sumFields as any,
-    }),
-    prisma.dailyEntry.groupBy({
-      by: ['date'],
-      where,
-      _sum: sumFields as any,
+      include: {
+        items: { include: { category: true } }
+      }
     }),
     prisma.branch.findMany({ select: { id: true, name: true } })
   ])
 
   const branchNameMap = new Map(branches.map(b => [b.id, b.name]))
 
-  // 1. Process Branch Stats & Overall Totals
   let totalSales = 0
   let totalExpenses = 0
-  
-  const expenseBreakdown: Record<string, number> = {
-    'Bank Transfers': 0,
-    'Operating Costs': 0,
-    'Salary & Bonus': 0,
-    'Personal & Gift': 0,
-    'Tax & Fund': 0,
-    'Other': 0,
-  }
+  const expenseBreakdown: Record<string, number> = {}
 
-  const branchStats = branchGroups.map(group => {
-    const sums: any = group._sum || {}
-    
-    const entrySale = incomeFields.reduce((s, f) => s + (sums[f] || 0), 0)
-    const entryExp = expenseFields.reduce((s, f) => s + (sums[f] || 0), 0)
+  // For branch stats
+  const branchStatsMap = new Map<number, any>()
+
+  // For daily trend
+  const dailyTrendMap = new Map<string, any>()
+  
+  const isDigital = (name: string) => /bank|bkash|nagad|pos|rocket|dbbl|transfer/i.test(name)
+
+  for (const entry of entries) {
+    let entrySale = 0
+    let entryExp = 0
+    let physicalIn = 0
+    let physicalOut = 0
+    let openingBalance = 0
+
+    const dateStr = entry.date.toISOString().split('T')[0]
+
+    for (const item of entry.items) {
+      if (item.category.name === 'Opening Balance') {
+        openingBalance += item.amount
+      } else if (item.category.type === 'INCOME') {
+        entrySale += item.amount
+        if (!isDigital(item.category.name)) physicalIn += item.amount
+      } else if (item.category.type === 'EXPENSE') {
+        entryExp += item.amount
+        if (!isDigital(item.category.name)) physicalOut += item.amount
+        
+        // Expense breakdown
+        const catName = item.category.name
+        expenseBreakdown[catName] = (expenseBreakdown[catName] || 0) + item.amount
+      }
+    }
 
     totalSales += entrySale
     totalExpenses += entryExp
 
-    // Physical cash logic
-    const physicalIn = (sums.cashSale || 0) + (sums.dueReceived || 0) + (sums.conditionRec || 0)
-    const physicalOut = expenseFields.reduce((s, f) => s + (digitalExpenseKeys.includes(f as any) ? 0 : (sums[f] || 0)), 0)
+    // Branch stats
+    if (!branchStatsMap.has(entry.branchId)) {
+      branchStatsMap.set(entry.branchId, {
+        branchName: branchNameMap.get(entry.branchId) || `Branch ${entry.branchId}`,
+        totalSale: 0,
+        totalExpense: 0,
+        openingBalance: 0,
+        physicalCashIn: 0,
+        physicalCashOut: 0,
+        netBalance: 0,
+        physicalCash: 0,
+      })
+    }
+
+    const bStat = branchStatsMap.get(entry.branchId)
+    bStat.totalSale += entrySale
+    bStat.totalExpense += entryExp
+    bStat.openingBalance += openingBalance
+    bStat.physicalCashIn += physicalIn
+    bStat.physicalCashOut += physicalOut
     
-    // Accumulate Expense Breakdown from all branches
-    for (const f of expenseFields) {
-      const val = sums[f] || 0
-      if (val > 0) {
-        if ((bankTransferKeys as readonly string[]).includes(f)) expenseBreakdown['Bank Transfers'] += val
-        else if ((salaryKeys as readonly string[]).includes(f)) expenseBreakdown['Salary & Bonus'] += val
-        else if ((personalKeys as readonly string[]).includes(f)) expenseBreakdown['Personal & Gift'] += val
-        else if ((taxKeys as readonly string[]).includes(f)) expenseBreakdown['Tax & Fund'] += val
-        else if ((opKeys as readonly string[]).includes(f)) expenseBreakdown['Operating Costs'] += val
-        else expenseBreakdown['Other'] += val
-      }
-    }
-
-    const openingBalance = sums.openingBalance || 0
-
-    return {
-      branchName: branchNameMap.get(group.branchId) || `Branch ${group.branchId}`,
-      totalSale: entrySale,
-      totalExpense: entryExp,
-      openingBalance: openingBalance,
-      physicalCashIn: physicalIn,
-      physicalCashOut: physicalOut,
-      netBalance: openingBalance + entrySale - entryExp,
-      physicalCash: openingBalance + physicalIn - physicalOut,
-    }
-  })
-
-  // 2. Process Daily Trend
-  const dailyTrend = dailyGroups.map(group => {
-    const sums: any = group._sum || {}
-    const entrySale = incomeFields.reduce((s, f) => s + (sums[f] || 0), 0)
-    const entryExp = expenseFields.reduce((s, f) => s + (sums[f] || 0), 0)
+    // Instead of using pure accumulation of opening balances for net balance, we just use the daily computed net.
+    // The previous implementation used openingBalance + entrySale - entryExp for a day, but across a month, 
+    // simply summing the opening balances of every day is wrong!
+    // It should be Net Balance = Total Income - Total Expense.
+    bStat.netBalance += (entrySale - entryExp)
     
-    return {
-      date: group.date.toISOString().split('T')[0],
-      totalSale: entrySale,
-      totalExpense: entryExp,
-    }
-  }).sort((a, b) => a.date.localeCompare(b.date))
+    // Physical cash sum across the month is also flawed if we sum daily opening balances.
+    // Instead, just report total physical in minus total physical out over the period.
+    bStat.physicalCash += (physicalIn - physicalOut)
 
-  // 3. Format Expense Breakdown
+    // Daily trend
+    if (!dailyTrendMap.has(dateStr)) {
+      dailyTrendMap.set(dateStr, {
+        date: dateStr,
+        totalSale: 0,
+        totalExpense: 0,
+      })
+    }
+    const dTrend = dailyTrendMap.get(dateStr)
+    dTrend.totalSale += entrySale
+    dTrend.totalExpense += entryExp
+  }
+
+  const branchStats = Array.from(branchStatsMap.values())
+  const dailyTrend = Array.from(dailyTrendMap.values()).sort((a, b) => a.date.localeCompare(b.date))
+
   const expenseBreakdownArr = Object.entries(expenseBreakdown)
     .filter(([, v]) => v > 0)
     .map(([category, amount]) => ({ category, amount }))

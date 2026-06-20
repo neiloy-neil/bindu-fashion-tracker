@@ -21,26 +21,27 @@ export function formatDate(date: Date | string): string {
   })
 }
 
-export function computeTotals(entry: Record<string, number>) {
-  const incomeFields = [
-    'cashSale', 'dueReceived', 'conditionRec', 'bkashIncome',
-    'nagadIncome', 'rocketIncome', 'posPubali', 'posCity', 'posBrac',
-    'posDbbl', 'acBindu', 'bindu2Transfer', 'receivedAziz1',
-  ]
-  const expenseFields = [
-    'advanceTk', 'conditionChange', 'partyPayment', 'aziz2Transfer',
-    'bankDeposit', 'dmcb', 'saleBonus', 'courierLbrBill', 'snacksTea',
-    'lunch', 'conveyance', 'otherExpense', 'donation', 'stationary',
-    'netWife', 'utilities', 'waterBill', 'dailySomity', 'electricRecharge',
-    'petrolMobil', 'phoneBill', 'shopRent', 'salary', 'returnExp',
-    'bkashExpense', 'nagadExpense', 'posExpense', 'rocketDbbl',
-    'bossPersonalAll', 'acBinduExpense', 'vat', 'vatExp', 'emgFund', 'bossGift',
-  ]
+export function computeTotals(entry: any) {
+  let totalSale = 0
+  let totalExpense = 0
+  let openingBalance = 0
 
-  const totalSale = incomeFields.reduce((sum, f) => sum + (entry[f] || 0), 0)
-  const totalAmount = (entry.openingBalance || 0) + totalSale
-  const totalExpense = expenseFields.reduce((sum, f) => sum + (entry[f] || 0), 0)
+  if (entry && entry.items && Array.isArray(entry.items)) {
+    for (const item of entry.items) {
+      if (item.category) {
+        if (item.category.name === 'Opening Balance') {
+          openingBalance += item.amount || 0
+        } else if (item.category.type === 'INCOME') {
+          totalSale += item.amount || 0
+        } else if (item.category.type === 'EXPENSE') {
+          totalExpense += item.amount || 0
+        }
+      }
+    }
+  }
+
+  const totalAmount = openingBalance + totalSale
   const netBalance = totalAmount - totalExpense
 
-  return { totalSale, totalAmount, totalExpense, netBalance }
+  return { totalSale, totalAmount, totalExpense, netBalance, openingBalance }
 }

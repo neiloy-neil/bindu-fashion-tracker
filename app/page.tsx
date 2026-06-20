@@ -5,6 +5,7 @@ import useSWR from 'swr'
 import { formatCurrency } from '@/lib/utils'
 import { SummaryStats, Branch } from '@/lib/types'
 import AdminEditRequests from '@/components/dashboard/AdminEditRequests'
+import RecentActivity from '@/components/dashboard/RecentActivity'
 import PdfGenerator from '@/components/dashboard/PdfGenerator'
 import ExcelExport from '@/components/dashboard/ExcelExport'
 import {
@@ -20,14 +21,14 @@ function formatDate(dateStr: string) {
 }
 
 function DateFilter({
-  month, year, startDate, endDate, isCustom, onChange, branches, branchId, onBranchChange, userRole
+  month, year, startDate, endDate, viewMode, onChange, branches, branchId, onBranchChange, userRole
 }: {
   month: number
   year: number
   startDate: string
   endDate: string
-  isCustom: boolean
-  onChange: (m: number, y: number, sd: string, ed: string, custom: boolean) => void
+  viewMode: 'daily' | 'month' | 'custom'
+  onChange: (m: number, y: number, sd: string, ed: string, mode: 'daily' | 'month' | 'custom') => void
   branches: Branch[]
   branchId: string
   onBranchChange: (b: string) => void
@@ -51,36 +52,44 @@ function DateFilter({
       <select
         className="form-input form-select"
         style={{ width: 140 }}
-        value={isCustom ? 'custom' : 'month'}
-        onChange={(e) => onChange(month, year, startDate, endDate, e.target.value === 'custom')}
+        value={viewMode}
+        onChange={(e) => onChange(month, year, startDate, endDate, e.target.value as any)}
       >
+        <option value="daily">Daily View</option>
         <option value="month">Monthly View</option>
         <option value="custom">Custom Range</option>
       </select>
 
-      {isCustom ? (
+      {viewMode === 'custom' ? (
         <>
           <input
             type="date"
             className="form-input"
             value={startDate}
-            onChange={(e) => onChange(month, year, e.target.value, endDate, isCustom)}
+            onChange={(e) => onChange(month, year, e.target.value, endDate, viewMode)}
           />
           <span style={{ color: 'var(--text-muted)' }}>to</span>
           <input
             type="date"
             className="form-input"
             value={endDate}
-            onChange={(e) => onChange(month, year, startDate, e.target.value, isCustom)}
+            onChange={(e) => onChange(month, year, startDate, e.target.value, viewMode)}
           />
         </>
+      ) : viewMode === 'daily' ? (
+        <input
+          type="date"
+          className="form-input"
+          value={startDate}
+          onChange={(e) => onChange(month, year, e.target.value, e.target.value, viewMode)}
+        />
       ) : (
         <>
           <select
             className="form-input form-select"
             style={{ width: 140 }}
             value={month}
-            onChange={(e) => onChange(parseInt(e.target.value), year, startDate, endDate, isCustom)}
+            onChange={(e) => onChange(parseInt(e.target.value), year, startDate, endDate, viewMode)}
           >
             {['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].map((m, i) => (
               <option key={i + 1} value={i + 1}>{m}</option>
@@ -90,7 +99,7 @@ function DateFilter({
             className="form-input form-select"
             style={{ width: 100 }}
             value={year}
-            onChange={(e) => onChange(month, parseInt(e.target.value), startDate, endDate, isCustom)}
+            onChange={(e) => onChange(month, parseInt(e.target.value), startDate, endDate, viewMode)}
           >
             {[2024, 2025, 2026, 2027].map((y) => (
               <option key={y} value={y}>{y}</option>
@@ -119,7 +128,7 @@ function Dashboard() {
   const todayStr = now.toISOString().split('T')[0]
   const [startDate, setStartDate] = useState(todayStr)
   const [endDate, setEndDate] = useState(todayStr)
-  const [isCustom, setIsCustom] = useState(false)
+  const [viewMode, setViewMode] = useState<'daily' | 'month' | 'custom'>('daily')
 
   const fetcher = (url: string) => fetch(url).then((res) => res.json())
 
@@ -129,8 +138,10 @@ function Dashboard() {
 
   // SWR for dashboard data
   let url = `/api/summary?`
-  if (isCustom) {
+  if (viewMode === 'custom') {
     url += `startDate=${startDate}&endDate=${endDate}`
+  } else if (viewMode === 'daily') {
+    url += `startDate=${startDate}&endDate=${startDate}`
   } else {
     url += `month=${month}&year=${year}`
   }
@@ -151,7 +162,11 @@ function Dashboard() {
         <div>
           <h2 className="page-title">Dashboard</h2>
           <p className="page-subtitle">
-            {isCustom ? `Overview for ${formatDate(startDate)} to ${formatDate(endDate)}` : `Overview for ${MONTHS[month - 1]} ${year}`}
+            {viewMode === 'daily' 
+              ? `Overview for ${formatDate(startDate)}`
+              : viewMode === 'custom' 
+              ? `Overview for ${formatDate(startDate)} to ${formatDate(endDate)}` 
+              : `Overview for ${MONTHS[month - 1]} ${year}`}
           </p>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 12 }}>
@@ -160,9 +175,9 @@ function Dashboard() {
             year={year}
             startDate={startDate}
             endDate={endDate}
-            isCustom={isCustom}
-            onChange={(m, y, sd, ed, custom) => { 
-              setMonth(m); setYear(y); setStartDate(sd); setEndDate(ed); setIsCustom(custom) 
+            viewMode={viewMode}
+            onChange={(m, y, sd, ed, mode) => { 
+              setMonth(m); setYear(y); setStartDate(sd); setEndDate(ed); setViewMode(mode) 
             }}
             branches={branches}
             branchId={branchId}
@@ -192,8 +207,9 @@ function Dashboard() {
           <>
             {/* Admin Widgets */}
             {data.userRole === 'ADMIN' && (
-              <div style={{ marginBottom: '24px' }}>
+              <div style={{ marginBottom: '24px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
                 <AdminEditRequests />
+                <RecentActivity />
               </div>
             )}
 
@@ -290,7 +306,7 @@ function Dashboard() {
                     </Pie>
                     <Tooltip
                       contentStyle={{ background: '#111827', border: '1px solid #1e2d45', borderRadius: 8, fontSize: 12 }}
-                      formatter={(v: number) => [`৳${formatCurrency(v)}`, undefined]}
+                      formatter={(v: any) => [`৳${formatCurrency(v || 0)}`, undefined]}
                     />
                     <Legend
                       layout="vertical"

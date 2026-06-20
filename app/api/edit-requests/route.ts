@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { editRequestSchema } from '@/lib/schemas'
 
 // GET: Admin fetches pending edit requests, OR Branch user fetches their own pending requests
 export async function GET(req: NextRequest) {
@@ -42,12 +43,17 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { entryId, requestedById, changes, reason } = await req.json()
+    const rawBody = await req.json()
+    const parsed = editRequestSchema.safeParse(rawBody)
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Invalid input', details: parsed.error.format() }, { status: 400 })
+    }
+    const { entryId, requestedById, changes, reason } = parsed.data
 
     const newRequest = await prisma.editRequest.create({
       data: {
-        entryId: parseInt(entryId),
-        requestedById: parseInt(requestedById),
+        entryId: parseInt(String(entryId)),
+        requestedById: parseInt(String(requestedById)),
         changes: JSON.stringify(changes),
         reason,
         status: 'PENDING'
@@ -78,10 +84,31 @@ export async function PATCH(req: NextRequest) {
       
       const changes = JSON.parse(editReq.changes)
       
+      let updateData: any = { ...changes }
+
+      if (changes.items) {
+        delete updateData.items
+        updateData.items = {
+          upsert: changes.items.map((item: any) => ({
+            where: {
+              entryId_categoryId: {
+                entryId: editReq.entryId,
+                categoryId: item.categoryId
+              }
+            },
+            update: { amount: item.amount },
+            create: {
+              categoryId: item.categoryId,
+              amount: item.amount
+            }
+          }))
+        }
+      }
+
       await prisma.$transaction([
         prisma.dailyEntry.update({
           where: { id: editReq.entryId },
-          data: changes
+          data: updateData
         }),
         prisma.editRequest.update({
           where: { id: requestId },

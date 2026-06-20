@@ -60,7 +60,9 @@ export default function AdminEditRequests() {
                 Reason: <span style={{ fontStyle: 'italic' }}>{req.reason || 'No reason provided'}</span>
               </div>
               <div style={{ color: '#f59e0b', fontSize: 12, marginTop: 4, fontWeight: 500 }}>
-                {Object.keys(JSON.parse(req.changes)).join(', ')} → changed
+                {Object.keys(JSON.parse(req.changes)).includes('items') 
+                  ? 'Items changed'
+                  : Object.keys(JSON.parse(req.changes)).join(', ') + ' changed'}
               </div>
             </div>
             <div className="flex gap-2 items-center">

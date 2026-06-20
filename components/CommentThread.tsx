@@ -9,7 +9,7 @@ type Comment = {
   message: string
   createdAt: string
   user: {
-    name: string
+    username: string
     role: string
   }
 }
@@ -71,7 +71,7 @@ export default function CommentThread({ entryId, branchName, date, onClose }: { 
           comments.map(c => (
             <div key={c.id} className={`flex flex-col ${c.user.role === 'ADMIN' ? 'items-end' : 'items-start'}`}>
               <div className="text-[10px] text-[#8899aa] mb-1 px-1">
-                {c.user.name} ({c.user.role}) • {new Date(c.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                {c.user.username} ({c.user.role}) • {new Date(c.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </div>
               <div className={`p-3 rounded-2xl max-w-[85%] text-sm ${c.user.role === 'ADMIN' ? 'bg-[#00d2ff] text-[#0a0f18] rounded-tr-sm' : 'bg-[#1e2d45] text-[#f0f4ff] rounded-tl-sm'}`}>
                 {c.message}

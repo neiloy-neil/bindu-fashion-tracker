@@ -26,15 +26,14 @@ export async function GET(req: NextRequest) {
     const lastEntry = await prisma.dailyEntry.findFirst({
       where: { branchId: finalBranchId },
       orderBy: { date: 'desc' },
+      include: { items: { include: { category: true } } }
     })
 
     if (!lastEntry) {
       return NextResponse.json({ lastNetBalance: 0, lastEntry: null })
     }
 
-    // Convert the Prisma model to Record<string, number> for computeTotals
-    const entryData = lastEntry as unknown as Record<string, number>
-    const { netBalance } = computeTotals(entryData)
+    const { netBalance } = computeTotals(lastEntry)
 
     return NextResponse.json({ lastNetBalance: netBalance, lastEntry })
   } catch (error: any) {

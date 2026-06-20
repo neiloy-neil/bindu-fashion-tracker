@@ -1,6 +1,5 @@
 import { NextResponse, NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getToken } from 'next-auth/jwt'
 
 export async function GET(req: NextRequest) {
   const userRole = req.headers.get('x-user-role')
@@ -16,8 +15,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET })
-  if (!token || token.role !== 'ADMIN') {
+  const role = req.headers.get('x-user-role')
+  if (role !== 'ADMIN') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
   }
 

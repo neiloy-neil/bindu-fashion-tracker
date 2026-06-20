@@ -2,13 +2,14 @@
 
 import { useEffect, useState, useCallback, useRef, Suspense } from 'react'
 import { formatCurrency, computeTotals } from '@/lib/utils'
-import { DailyEntry, Branch, INCOME_COLUMNS, EXPENSE_COLUMNS } from '@/lib/types'
+import { DailyEntry, Branch, Category } from '@/lib/types'
 import Link from 'next/link'
 import * as XLSX from 'xlsx'
 import toast from 'react-hot-toast'
-import { MessageCircle, CheckSquare, X } from 'lucide-react'
+import { MessageCircle, CheckSquare, X, Eye } from 'lucide-react'
 import CommentThread from '@/components/CommentThread'
 import EditRequestModal from '@/components/EditRequestModal'
+import EntryViewModal from '@/components/dashboard/EntryViewModal'
 
 import { useSearchParams } from 'next/navigation'
 
@@ -22,18 +23,22 @@ function Entries() {
   const [year, setYear] = useState(initialYear)
   const [branchFilter, setBranchFilter] = useState('')
   const [entries, setEntries] = useState<DailyEntry[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
   const [visibleCount, setVisibleCount] = useState(50)
   const [branches, setBranches] = useState<Branch[]>([])
   const [loading, setLoading] = useState(true)
 
   const [searchQuery, setSearchQuery] = useState('')
   const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc'|'desc' } | null>(null)
-  const [editCell, setEditCell] = useState<{ id: number; field: string } | null>(null)
+  
+  // Notice that editCell now uses categoryId since fields are dynamic
+  const [editCell, setEditCell] = useState<{ id: number; categoryId: number } | null>(null)
   const [editValue, setEditValue] = useState('')
   const [saving, setSaving] = useState(false)
   const [activeChat, setActiveChat] = useState<{ id: number, branchName: string, date: string } | null>(null)
   const [activeChecklist, setActiveChecklist] = useState<any>(null)
-  const [requestEditData, setRequestEditData] = useState<{ id: number, branchName: string, date: string, field: string, oldValue: number } | null>(null)
+  const [activeViewEntry, setActiveViewEntry] = useState<DailyEntry | null>(null)
+  const [requestEditData, setRequestEditData] = useState<{ id: number, branchName: string, date: string, categoryId: number, categoryName: string, oldValue: number } | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const fetchEntries = useCallback(async () => {
@@ -55,6 +60,7 @@ function Entries() {
 
   useEffect(() => {
     fetch('/api/branches').then((r) => r.json()).then(setBranches)
+    fetch('/api/categories').then((r) => r.json()).then(setCategories)
     fetch('/api/auth/session').then(r => r.json()).then(session => {
       if (session?.user) {
         setUserRole(session.user.role)
@@ -79,7 +85,7 @@ function Entries() {
     }
   }, [editCell])
 
-  const startEdit = (entry: DailyEntry, field: string, value: number) => {
+  const startEdit = (entry: DailyEntry, category: Category, value: number) => {
     const todayStr = new Date().toISOString().split('T')[0]
     const entryDateStr = new Date(entry.date).toISOString().split('T')[0]
     
@@ -88,11 +94,12 @@ function Entries() {
         id: entry.id,
         branchName: entry.branch?.name || 'Branch',
         date: entry.date,
-        field,
+        categoryId: category.id,
+        categoryName: category.name,
         oldValue: value
       })
     } else {
-      setEditCell({ id: entry.id, field })
+      setEditCell({ id: entry.id, categoryId: category.id })
       setEditValue(String(value || 0))
     }
   }
@@ -101,15 +108,18 @@ function Entries() {
     if (!editCell) return
     setSaving(true)
     try {
-      await fetch(`/api/entries/${editCell.id}`, {
+      const itemsUpdate = [{ categoryId: editCell.categoryId, amount: parseFloat(editValue) || 0 }]
+      const res = await fetch(`/api/entries/${editCell.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ [editCell.field]: parseFloat(editValue) || 0 }),
+        body: JSON.stringify({ items: itemsUpdate }),
       })
+      if (!res.ok) throw new Error()
+      
+      const updatedEntry = await res.json()
+      
       setEntries((prev) =>
-        prev.map((e) =>
-          e.id === editCell.id ? { ...e, [editCell.field]: parseFloat(editValue) || 0 } : e
-        )
+        prev.map((e) => e.id === editCell.id ? updatedEntry : e)
       )
       toast.success('Cell saved!')
     } catch {
@@ -125,20 +135,35 @@ function Entries() {
     if (e.key === 'Escape') setEditCell(null)
   }
 
+  const incomeCategories = categories.filter(c => c.type === 'INCOME')
+  const expenseCategories = categories.filter(c => c.type === 'EXPENSE')
+
   const exportToExcel = () => {
     const rows = entries.map((e) => {
-      const totals = computeTotals(e as unknown as Record<string, number>)
-      return {
+      const totals = computeTotals(e as any)
+      const row: any = {
         Date: new Date(e.date).toLocaleDateString(),
         Branch: e.branch?.name || '',
-        ...Object.fromEntries(INCOME_COLUMNS.map((c) => [c.label, (e as unknown as Record<string, number>)[c.key] || 0])),
-        'Total Sale': totals.totalSale,
-        'Total Amount': totals.totalAmount,
-        ...Object.fromEntries(EXPENSE_COLUMNS.map((c) => [c.label, (e as unknown as Record<string, number>)[c.key] || 0])),
-        'Total Expense': totals.totalExpense,
-        'Net Balance': totals.netBalance,
       }
+      
+      incomeCategories.forEach(c => {
+        const item = (e.items || []).find((i: any) => i.categoryId === c.id)
+        row[c.name] = item?.amount || 0
+      })
+      
+      row['Total Sale'] = totals.totalSale
+      row['Total Amount'] = totals.totalAmount
+      
+      expenseCategories.forEach(c => {
+        const item = (e.items || []).find((i: any) => i.categoryId === c.id)
+        row[c.name] = item?.amount || 0
+      })
+      
+      row['Total Expense'] = totals.totalExpense
+      row['Net Balance'] = totals.netBalance
+      return row
     })
+    
     const ws = XLSX.utils.json_to_sheet(rows)
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, 'Sheet1')
@@ -153,17 +178,24 @@ function Entries() {
     const q = searchQuery.toLowerCase()
     if (e.branch?.name.toLowerCase().includes(q)) return true
     if (e.date.includes(q)) return true
-    // check amounts
-    const vals = Object.values(e)
-    if (vals.some(v => String(v).includes(q))) return true
+    // check amounts in items
+    if (e.items?.some(i => String(i.amount).includes(q))) return true
     return false
   })
 
   // Sort entries
   const sortedEntries = [...filteredEntries].sort((a, b) => {
     if (!sortConfig) return 0
-    const aVal = (a as unknown as Record<string, number>)[sortConfig.key] || 0
-    const bVal = (b as unknown as Record<string, number>)[sortConfig.key] || 0
+    // Dynamic sort by category ID or a fixed key
+    let aVal = 0
+    let bVal = 0
+    
+    if (sortConfig.key.startsWith('cat_')) {
+      const catId = parseInt(sortConfig.key.replace('cat_', ''))
+      aVal = a.items?.find(i => i.categoryId === catId)?.amount || 0
+      bVal = b.items?.find(i => i.categoryId === catId)?.amount || 0
+    }
+    
     if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1
     if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1
     return 0
@@ -188,11 +220,10 @@ function Entries() {
     setSortConfig({ key, direction })
   }
 
-  const allColumns = [...INCOME_COLUMNS, ...EXPENSE_COLUMNS]
-
-  const renderCell = (entry: DailyEntry, field: string, group: 'income' | 'expense') => {
-    const value = (entry as unknown as Record<string, number>)[field] || 0
-    const isEditing = editCell?.id === entry.id && editCell?.field === field
+  const renderCell = (entry: DailyEntry, category: Category) => {
+    const item = entry.items?.find((i: any) => i.categoryId === category.id)
+    const value = item?.amount || 0
+    const isEditing = editCell?.id === entry.id && editCell?.categoryId === category.id
 
     if (isEditing) {
       return (
@@ -211,7 +242,7 @@ function Entries() {
     return (
       <span
         className="editable-cell"
-        onClick={() => startEdit(entry, field, value)}
+        onClick={() => startEdit(entry, category, value)}
         title="Click to edit"
         style={{ display: 'block', minWidth: 70, cursor: 'pointer' }}
       >
@@ -281,7 +312,7 @@ function Entries() {
       </div>
 
       <div className="page-body" style={{ padding: '16px 20px' }}>
-        {loading ? (
+        {loading || categories.length === 0 ? (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '300px', gap: 12 }}>
             <div className="spinner" />
             <span style={{ color: 'var(--text-secondary)' }}>Loading sheet…</span>
@@ -303,25 +334,26 @@ function Entries() {
                 <tr>
                   <th className="col-sticky-0" rowSpan={2} style={{ textAlign: 'left', minWidth: 90 }}>Date</th>
                   <th className="col-sticky-1" rowSpan={2} style={{ textAlign: 'left' }}>Branch</th>
-                  <th className="income-header" colSpan={INCOME_COLUMNS.length}>Income</th>
+                  <th className="income-header" colSpan={incomeCategories.length}>Income</th>
                   <th style={{ background: '#0a1628', color: '#f0f4ff', fontWeight: 700, padding: '8px 12px', fontSize: 10, textAlign: 'center' }} colSpan={2}>Summary</th>
-                  <th className="expense-header" colSpan={EXPENSE_COLUMNS.length}>Expenses</th>
+                  <th className="expense-header" colSpan={expenseCategories.length}>Expenses</th>
                   <th style={{ background: '#0a1628', color: '#f0f4ff', fontWeight: 700, padding: '8px 12px', fontSize: 10, textAlign: 'center' }} colSpan={2}>Totals</th>
+                  <th className="col-sticky-right-3" rowSpan={2} style={{ textAlign: 'center', width: 60 }}>View</th>
                   <th className="col-sticky-right-2" rowSpan={2} style={{ textAlign: 'center', width: 60 }}>EOD</th>
                   <th className="col-sticky-right-1" rowSpan={2} style={{ textAlign: 'center', width: 60 }}>Chat</th>
                 </tr>
                 {/* Column headers */}
                 <tr>
-                  {INCOME_COLUMNS.map((c) => (
-                    <th key={c.key} style={{ minWidth: 90, background: 'rgba(16,185,129,0.06)', cursor: 'pointer' }} onClick={() => handleSort(c.key as string)}>
-                      {c.label} {sortConfig?.key === c.key ? (sortConfig.direction === 'asc' ? '▲' : '▼') : ''}
+                  {incomeCategories.map((c) => (
+                    <th key={c.id} style={{ minWidth: 90, background: 'rgba(16,185,129,0.06)', cursor: 'pointer' }} onClick={() => handleSort(`cat_${c.id}`)}>
+                      {c.name} {sortConfig?.key === `cat_${c.id}` ? (sortConfig.direction === 'asc' ? '▲' : '▼') : ''}
                     </th>
                   ))}
                   <th style={{ minWidth: 90, color: 'var(--accent-light)' }}>Total Sale</th>
                   <th style={{ minWidth: 90, color: 'var(--accent-light)' }}>Total Amt</th>
-                  {EXPENSE_COLUMNS.map((c) => (
-                    <th key={c.key} style={{ minWidth: 90, background: 'rgba(239,68,68,0.06)', cursor: 'pointer' }} onClick={() => handleSort(c.key as string)}>
-                      {c.label} {sortConfig?.key === c.key ? (sortConfig.direction === 'asc' ? '▲' : '▼') : ''}
+                  {expenseCategories.map((c) => (
+                    <th key={c.id} style={{ minWidth: 90, background: 'rgba(239,68,68,0.06)', cursor: 'pointer' }} onClick={() => handleSort(`cat_${c.id}`)}>
+                      {c.name} {sortConfig?.key === `cat_${c.id}` ? (sortConfig.direction === 'asc' ? '▲' : '▼') : ''}
                     </th>
                   ))}
                   <th style={{ minWidth: 90, color: 'var(--danger-light)' }}>Total Exp</th>
@@ -332,7 +364,7 @@ function Entries() {
                 {Array.from(grouped.entries()).map(([dateKey, dayEntries]) => {
                   const dayLabel = sortConfig ? 'Sorted' : new Date(dateKey).toLocaleDateString('en-BD', { day: 'numeric', month: 'short' })
                   return dayEntries.map((entry, rowIdx) => {
-                    const totals = computeTotals(entry as unknown as Record<string, number>)
+                    const totals = computeTotals(entry as any)
                     return (
                       <tr
                         key={entry.id}
@@ -344,9 +376,9 @@ function Entries() {
                         <td className="col-sticky-1 col-meta" style={{ background: 'var(--bg-secondary)' }}>
                           {entry.branch?.name}
                         </td>
-                        {INCOME_COLUMNS.map((c) => (
-                          <td key={c.key} className="income-cell">
-                            {renderCell(entry, c.key as string, 'income')}
+                        {incomeCategories.map((c) => (
+                          <td key={c.id} className="income-cell">
+                            {renderCell(entry, c)}
                           </td>
                         ))}
                         <td className="total-cell" style={{ color: 'var(--accent-light)' }}>
@@ -355,9 +387,9 @@ function Entries() {
                         <td className="total-cell" style={{ color: 'var(--accent-light)' }}>
                           {formatCurrency(totals.totalAmount)}
                         </td>
-                        {EXPENSE_COLUMNS.map((c) => (
-                          <td key={c.key} className="expense-cell">
-                            {renderCell(entry, c.key as string, 'expense')}
+                        {expenseCategories.map((c) => (
+                          <td key={c.id} className="expense-cell">
+                            {renderCell(entry, c)}
                           </td>
                         ))}
                         <td className="total-cell" style={{ color: 'var(--danger-light)' }}>
@@ -365,6 +397,15 @@ function Entries() {
                         </td>
                         <td className={totals.netBalance >= 0 ? 'net-positive' : 'net-negative'}>
                           {formatCurrency(totals.netBalance)}
+                        </td>
+                        <td className="col-sticky-right-3" style={{ textAlign: 'center', background: 'var(--bg-secondary)' }}>
+                          <button 
+                            onClick={() => setActiveViewEntry(entry)}
+                            className="p-2 hover:bg-[#1e2d45] rounded-full text-[#8899aa] hover:text-white transition-colors"
+                            title="View Full Entry"
+                          >
+                            <Eye size={18} />
+                          </button>
                         </td>
                         <td className="col-sticky-right-2" style={{ textAlign: 'center', background: 'var(--bg-secondary)' }}>
                           {(entry as any).eodChecklist ? (
@@ -460,13 +501,25 @@ function Entries() {
         </div>
       )}
 
+      {/* Entry View Modal */}
+      {activeViewEntry && (
+        <EntryViewModal 
+          entry={activeViewEntry} 
+          onClose={() => setActiveViewEntry(null)} 
+          onDeleted={() => {
+            setActiveViewEntry(null)
+            fetchEntries()
+          }}
+        />
+      )}
+
       {/* Edit Request Modal */}
       {requestEditData && userId && (
         <EditRequestModal
           entryId={requestEditData.id}
           branchName={requestEditData.branchName}
           date={requestEditData.date}
-          field={requestEditData.field}
+          field={requestEditData.categoryName} // We pass category name to "field" string prop
           oldValue={requestEditData.oldValue}
           userId={userId}
           onClose={() => setRequestEditData(null)}

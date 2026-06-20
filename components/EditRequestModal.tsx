@@ -5,13 +5,15 @@ type EditRequestModalProps = {
   entryId: number
   branchName: string
   date: string
-  field: string
+  categoryId?: number
+  categoryName?: string
+  field?: string
   oldValue: number
   userId: number
   onClose: () => void
 }
 
-export default function EditRequestModal({ entryId, branchName, date, field, oldValue, userId, onClose }: EditRequestModalProps) {
+export default function EditRequestModal({ entryId, branchName, date, categoryId, categoryName, field, oldValue, userId, onClose }: EditRequestModalProps) {
   const [newValue, setNewValue] = useState(String(oldValue))
   const [reason, setReason] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -25,13 +27,20 @@ export default function EditRequestModal({ entryId, branchName, date, field, old
 
     setSubmitting(true)
     try {
+      let changes: any = {}
+      if (categoryId) {
+        changes = { items: [{ categoryId, amount: parseFloat(newValue) || 0 }] }
+      } else if (field) {
+        changes = { [field]: parseFloat(newValue) || 0 }
+      }
+
       const res = await fetch('/api/edit-requests', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           entryId,
           requestedById: userId,
-          changes: { [field]: parseFloat(newValue) || 0 },
+          changes,
           reason
         })
       })
@@ -48,6 +57,8 @@ export default function EditRequestModal({ entryId, branchName, date, field, old
     }
   }
 
+  const displayField = categoryName || field || 'Unknown Field'
+
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
       <div className="bg-[#111827] border border-[#1e2d45] rounded-xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col animate-in fade-in zoom-in-95 duration-200">
@@ -61,7 +72,7 @@ export default function EditRequestModal({ entryId, branchName, date, field, old
         <form onSubmit={handleSubmit} className="p-5 flex flex-col gap-4">
           <div className="text-sm text-[#8899aa]">
             Entry: <strong className="text-white">{branchName} - {new Date(date).toLocaleDateString()}</strong><br/>
-            Field: <strong className="text-white">{field}</strong>
+            Field: <strong className="text-white">{displayField}</strong>
           </div>
 
           <div>

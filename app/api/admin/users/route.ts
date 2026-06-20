@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getToken } from 'next-auth/jwt'
 import bcrypt from 'bcryptjs'
+import { userSchema } from '@/lib/schemas'
 
 export async function GET(req: NextRequest) {
-  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET })
-  if (!token || token.role !== 'ADMIN') {
+  const userRole = req.headers.get('x-user-role')
+  if (userRole !== 'ADMIN') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
   }
 
@@ -30,16 +30,17 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET })
-  if (!token || token.role !== 'ADMIN') {
+  const userRole = req.headers.get('x-user-role')
+  if (userRole !== 'ADMIN') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
   }
 
-  const { username, password, role, branchId, isActive, managedBranchIds } = await req.json()
-
-  if (!username || !password || !role) {
-    return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
+  const rawBody = await req.json()
+  const parsed = userSchema.safeParse(rawBody)
+  if (!parsed.success) {
+    return NextResponse.json({ error: 'Invalid input', details: parsed.error.format() }, { status: 400 })
   }
+  const { username, password, role, branchId, isActive, managedBranchIds } = parsed.data
 
   try {
     const existing = await prisma.user.findUnique({ where: { username } })
@@ -55,7 +56,7 @@ export async function POST(req: NextRequest) {
         username,
         passwordHash,
         role,
-        ...(branchId && role === 'BRANCH' ? { branch: { connect: { id: parseInt(branchId) } } } : {}),
+        ...(branchId && role === 'BRANCH' ? { branch: { connect: { id: parseInt(String(branchId)) } } } : {}),
         ...(managedBranchIds && role === 'AREA_MANAGER' ? { managedBranches: { connect: managedBranchIds.map((id: number) => ({ id })) } } : {}),
         isActive: isActive !== undefined ? isActive : true,
       },

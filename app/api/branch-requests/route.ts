@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { branchRequestSchema } from '@/lib/schemas'
 
 export async function GET(req: NextRequest) {
   const userRole = req.headers.get('x-user-role')
@@ -38,14 +39,19 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { requestedById, type, description, priority = 'MEDIUM' } = await req.json()
+    const rawBody = await req.json()
+    const parsed = branchRequestSchema.safeParse(rawBody)
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Invalid input', details: parsed.error.format() }, { status: 400 })
+    }
+    const { requestedById, type, description, priority = 'MEDIUM' } = parsed.data
 
     if (!userBranchId) throw new Error('Branch ID missing')
 
     const newRequest = await prisma.branchRequest.create({
       data: {
-        branchId: parseInt(userBranchId),
-        requestedById: parseInt(requestedById),
+        branchId: parseInt(userBranchId as string),
+        requestedById: parseInt(String(requestedById)),
         type,
         description,
         priority,

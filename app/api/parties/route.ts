@@ -29,24 +29,51 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { name, isActive, contactPerson, contactNumber, secondaryNumber, address } = await req.json()
-    if (!name) return NextResponse.json({ error: 'Name is required' }, { status: 400 })
+    const { name, isActive, contactPerson, contactNumber, secondaryNumber, address, openingDueAmount, openingDueDate } = await req.json()
+    
+    // The user requested that everything is strictly required
+    if (!name || !contactPerson || !contactNumber || !secondaryNumber || !address) {
+      return NextResponse.json({ error: 'All fields (Name, Contact Person, Contact Number, Secondary Number, Address) are required.' }, { status: 400 })
+    }
 
     const existing = await prisma.party.findUnique({ where: { name } })
     if (existing) {
       return NextResponse.json({ error: 'Party with this name already exists' }, { status: 409 })
     }
 
-    const party = await prisma.party.create({
-      data: {
-        name,
-        contactPerson: contactPerson || null,
-        contactNumber: contactNumber || null,
-        secondaryNumber: secondaryNumber || null,
-        address: address || null,
-        isActive: isActive !== undefined ? isActive : true,
+    const initialBalance = openingDueAmount ? parseFloat(openingDueAmount) : 0
+    
+    // Create the party and the initial due within a transaction
+    const party = await prisma.$transaction(async (tx) => {
+      const newParty = await tx.party.create({
+        data: {
+          name,
+          contactPerson,
+          contactNumber,
+          secondaryNumber,
+          address,
+          isActive: isActive !== undefined ? isActive : true,
+          balance: initialBalance,
+        }
+      })
+      
+      if (initialBalance > 0 && openingDueDate) {
+        // Create an opening due purchase record
+        const dateObj = new Date(openingDueDate)
+        await tx.purchase.create({
+          data: {
+            partyId: newParty.id,
+            date: new Date(Date.UTC(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate())),
+            amount: initialBalance,
+            isOpeningDue: true,
+            note: 'Opening Due',
+          }
+        })
       }
+      
+      return newParty
     })
+
     return NextResponse.json(party, { status: 201 })
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })

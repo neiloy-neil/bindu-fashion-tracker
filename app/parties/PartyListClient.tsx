@@ -4,11 +4,24 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { Search, Filter, Plus, Phone, MapPin, Building2, ChevronRight } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
+import { AddPartyModal } from '@/components/parties/AddPartyModal'
+import { useRouter } from 'next/navigation'
 
 export default function PartyListClient({ initialParties }: { initialParties: any[] }) {
-  const [parties] = useState(initialParties)
+  const [parties, setParties] = useState(initialParties)
   const [activeTab, setActiveTab] = useState<'ALL' | 'DUE'>('ALL')
   const [searchQuery, setSearchQuery] = useState('')
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const router = useRouter()
+
+  const handleSuccess = async () => {
+    router.refresh()
+    const res = await fetch('/api/parties')
+    if (res.ok) {
+      const data = await res.json()
+      setParties(data)
+    }
+  }
 
   const filteredParties = parties.filter(p => {
     const matchesTab = activeTab === 'ALL' || (activeTab === 'DUE' && p.balance > 0)
@@ -31,21 +44,27 @@ export default function PartyListClient({ initialParties }: { initialParties: an
             Manage suppliers, track purchases, and monitor due balances.
           </p>
         </div>
+        <button 
+          onClick={() => setIsAddModalOpen(true)}
+          className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors shadow-sm"
+        >
+          <Plus size={16} /> Add Party
+        </button>
       </div>
 
       <div className="bg-card border border-border rounded-xl shadow-lg overflow-hidden flex flex-col">
         {/* Header and Controls */}
         <div className="p-4 sm:p-6 border-b border-border bg-muted/20">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-            <div className="flex bg-muted p-1 rounded-lg">
+            <div className="flex bg-muted p-1 rounded-lg w-full sm:w-auto overflow-x-auto">
               <button
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'ALL' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap ${activeTab === 'ALL' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
                 onClick={() => setActiveTab('ALL')}
               >
                 All Parties
               </button>
               <button
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'DUE' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap ${activeTab === 'DUE' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
                 onClick={() => setActiveTab('DUE')}
               >
                 Due List
@@ -120,8 +139,8 @@ export default function PartyListClient({ initialParties }: { initialParties: an
                     </td>
                     <td className="p-4 text-right">
                       <Link href={`/parties/${party.id}`}>
-                        <button className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-full transition-colors">
-                          <ChevronRight size={18} />
+                        <button className="px-3 py-1.5 bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground font-medium text-xs rounded-md transition-colors flex items-center gap-1 ml-auto">
+                          View Details <ChevronRight size={14} />
                         </button>
                       </Link>
                     </td>
@@ -132,6 +151,11 @@ export default function PartyListClient({ initialParties }: { initialParties: an
           </table>
         </div>
       </div>
+      <AddPartyModal 
+        isOpen={isAddModalOpen} 
+        onClose={() => setIsAddModalOpen(false)} 
+        onSuccess={handleSuccess} 
+      />
     </div>
   )
 }

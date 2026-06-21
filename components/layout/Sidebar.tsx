@@ -241,8 +241,26 @@ export function Sidebar({ isOpen, setIsOpen }: { isOpen?: boolean, setIsOpen?: (
   }
 
   const visibleNav = navItems.filter(item => {
-    if (item.adminOnly && role !== 'ADMIN') return false
+    // If it's a branch-only item, only BRANCH can see it
     if ((item as any).branchOnly && role !== 'BRANCH') return false
+    
+    if (item.adminOnly) {
+      if (role === 'ADMIN') return true
+      if (role === 'AUDITOR' || role === 'AREA_MANAGER') {
+        // Auditors and Area Managers can see specific admin pages, but NOT Users, Settings, Branches, or Import
+        if (
+          item.href.startsWith('/admin/users') ||
+          item.href.startsWith('/admin/settings') ||
+          item.href.startsWith('/branches') ||
+          item.href.startsWith('/import')
+        ) {
+          return false
+        }
+        return true
+      }
+      return false
+    }
+    
     return true
   })
 

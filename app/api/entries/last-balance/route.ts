@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { computeTotals } from '@/lib/utils'
+import { dateOnlyToUtc } from '@/lib/new-entry'
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const branchIdParam = searchParams.get('branchId')
+  const dateParam = searchParams.get('date')
   const userRole = req.headers.get('x-user-role')
   const userBranchId = req.headers.get('x-user-branch-id')
 
@@ -23,20 +24,29 @@ export async function GET(req: NextRequest) {
   }
 
   try {
+    const whereClause = {
+      branchId: finalBranchId,
+      ...(dateParam ? { date: { lt: dateOnlyToUtc(dateParam) } } : {}),
+    }
+
     const lastEntry = await prisma.dailyEntry.findFirst({
-      where: { branchId: finalBranchId },
-      orderBy: { date: 'desc' },
-      include: { items: { include: { category: true } } }
+      where: whereClause,
+      orderBy: { date: 'desc' }
     })
 
     if (!lastEntry) {
-      return NextResponse.json({ lastNetBalance: 0, lastEntry: null })
+      return NextResponse.json({ lastNetBalance: 0, actualPhysicalCash: 0, lastEntry: null, userRole })
     }
 
-    const { netBalance } = computeTotals(lastEntry)
-
-    return NextResponse.json({ lastNetBalance: netBalance, lastEntry })
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    // We now rely on actualPhysicalCash from the previous day for Strict Cash Reconciliation
+    return NextResponse.json({ 
+      lastNetBalance: lastEntry.actualPhysicalCash || 0, // Fallback if old data
+      actualPhysicalCash: lastEntry.actualPhysicalCash || 0,
+      lastEntry,
+      userRole
+    })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to load carryover'
+    return NextResponse.json({ error: 'CARRYOVER_FAILED', message }, { status: 500 })
   }
 }

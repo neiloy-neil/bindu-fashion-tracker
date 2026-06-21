@@ -11,33 +11,36 @@ datasource db {
 }
 
 model Branch {
-  id        Int             @id @default(autoincrement())
-  name      String          @unique
-  code      String          @unique
-  isActive  Boolean         @default(true)
-  createdAt DateTime        @default(now())
-  entries   DailyEntry[]
-  users     User[]          @relation("UserPrimaryBranch")
-  requests  BranchRequest[]
-  managedBy User[]          @relation("UserManagedBranches")
+  id             Int             @id @default(autoincrement())
+  name           String          @unique
+  code           String          @unique
+  isActive       Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+  entries        DailyEntry[]
+  users          User[]          @relation("UserPrimaryBranch")
+  requests       BranchRequest[]
+  managedBy      User[]          @relation("UserManagedBranches")
+  ledgerAccounts LedgerAccount[]
 }
 
 model User {
-  id              Int             @id @default(autoincrement())
-  username        String          @unique
-  passwordHash    String
-  role            String          @default("BRANCH") // ADMIN or BRANCH
-  isActive        Boolean         @default(true)
-  branchId        Int?
-  branch          Branch?         @relation("UserPrimaryBranch", fields: [branchId], references: [id])
-  editRequests    EditRequest[]
-  comments        Comment[]
-  accounts        Account[]
-  sessions        Session[]
-  branchRequests  BranchRequest[]
-  managedBranches Branch[]        @relation("UserManagedBranches")
-  approvedCheques Cheque[]        @relation("ChequeApprover")
-  createdAt       DateTime        @default(now())
+  id                    Int             @id @default(autoincrement())
+  username              String          @unique
+  passwordHash          String
+  role                  String          @default("BRANCH") // ADMIN or BRANCH
+  isActive              Boolean         @default(true)
+  branchId              Int?
+  branch                Branch?         @relation("UserPrimaryBranch", fields: [branchId], references: [id])
+  editRequests          EditRequest[]
+  comments              Comment[]
+  accounts              Account[]
+  sessions              Session[]
+  branchRequests        BranchRequest[]
+  managedBranches       Branch[]        @relation("UserManagedBranches")
+  approvedCheques       Cheque[]        @relation("ChequeApprover")
+  auditLogs             AuditLog[]
+  createdAt             DateTime        @default(now())
+  acknowledgedTransfers Transfer[]      @relation("TransferAcknowledger")
 }
 
 model DailyEntry {
@@ -58,12 +61,13 @@ model DailyEntry {
   openingTime        String?
   closingTime        String?
 
-  editRequests    EditRequest[]
-  comments        Comment[]
-  transfers       Transfer[]
-  payments        Payment[]
-  expenseEntries  ExpenseEntry[]
-  advanceSalaries AdvanceSalary[]
+  editRequests      EditRequest[]
+  comments          Comment[]
+  transfers         Transfer[]
+  payments          Payment[]
+  expenseEntries    ExpenseEntry[]
+  advanceSalaries   AdvanceSalary[]
+  receivedTransfers Transfer[]      @relation("ReceivedTransfers")
 
   @@unique([date, branchId])
   @@index([date])
@@ -87,6 +91,8 @@ model EntryItem {
   categoryId  Int
   category    Category   @relation(fields: [categoryId], references: [id])
   amount      Float      @default(0)
+  note        String?
+  partyName   String?
   receiptUrls String[] // Can store multiple receipt URLs for an item
 
   @@unique([entryId, categoryId])
@@ -176,18 +182,30 @@ model LedgerAccount {
   isActive  Boolean    @default(true)
   createdAt DateTime   @default(now())
   transfers Transfer[]
+  branchId  Int?
+  branch    Branch?    @relation(fields: [branchId], references: [id])
 }
 
 model Transfer {
-  id           Int      @id @default(autoincrement())
-  dailyEntryId Int
-  accountId    Int
-  amount       Float
-  note         String?
-  createdAt    DateTime @default(now())
+  id            Int      @id @default(autoincrement())
+  dailyEntryId  Int
+  accountId     Int
+  amount        Float
+  note          String?
+  attachmentUrl String?
+  createdAt     DateTime @default(now())
 
   dailyEntry DailyEntry    @relation(fields: [dailyEntryId], references: [id])
   account    LedgerAccount @relation(fields: [accountId], references: [id])
+
+  status           String    @default("PENDING")
+  acknowledgedById Int?
+  acknowledgedBy   User?     @relation("TransferAcknowledger", fields: [acknowledgedById], references: [id])
+  acknowledgedAt   DateTime?
+  rejectionReason  String?
+
+  receivingEntryId Int?
+  receivingEntry   DailyEntry? @relation("ReceivedTransfers", fields: [receivingEntryId], references: [id])
 }
 
 model Party {
@@ -200,13 +218,14 @@ model Party {
 }
 
 model Payment {
-  id           Int      @id @default(autoincrement())
-  dailyEntryId Int
-  partyId      Int
-  method       String
-  amount       Float
-  note         String?
-  createdAt    DateTime @default(now())
+  id            Int      @id @default(autoincrement())
+  dailyEntryId  Int
+  partyId       Int
+  method        String
+  amount        Float
+  note          String?
+  attachmentUrl String?
+  createdAt     DateTime @default(now())
 
   dailyEntry DailyEntry @relation(fields: [dailyEntryId], references: [id])
   party      Party      @relation(fields: [partyId], references: [id])
@@ -237,12 +256,13 @@ model ExpenseCategory {
 }
 
 model ExpenseEntry {
-  id           Int      @id @default(autoincrement())
-  dailyEntryId Int
-  categoryId   Int
-  amount       Float
-  note         String?
-  createdAt    DateTime @default(now())
+  id            Int      @id @default(autoincrement())
+  dailyEntryId  Int
+  categoryId    Int
+  amount        Float
+  note          String?
+  attachmentUrl String?
+  createdAt     DateTime @default(now())
 
   dailyEntry DailyEntry      @relation(fields: [dailyEntryId], references: [id])
   category   ExpenseCategory @relation(fields: [categoryId], references: [id])
@@ -268,4 +288,18 @@ model AdvanceSalary {
 
   dailyEntry DailyEntry @relation(fields: [dailyEntryId], references: [id])
   employee   Employee   @relation(fields: [employeeId], references: [id])
+}
+
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  action     String // CREATE, UPDATE, DELETE
+  entityType String // e.g. DailyEntry, Payment, ExpenseEntry
+  entityId   Int
+  oldValues  String?  @db.Text
+  newValues  String?  @db.Text
+  reason     String?  @db.Text
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
 }

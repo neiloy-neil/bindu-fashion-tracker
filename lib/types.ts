@@ -19,6 +19,8 @@ export interface EntryItem {
   categoryId: number
   category: Category
   amount: number
+  note?: string | null
+  partyName?: string | null
   receiptUrls: string[]
 }
 

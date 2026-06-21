@@ -10,7 +10,11 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { dailyEntryId, partyId, method, amount, note, issueDate, withdrawDate } = await req.json()
+    const { dailyEntryId, partyId, method, amount, note, issueDate, withdrawDate, attachmentUrl } = await req.json()
+
+    if ((method === 'BANK' || method === 'CHEQUE') && !attachmentUrl) {
+      return NextResponse.json({ error: 'A payslip attachment is required for bank transfer and cheque payments.' }, { status: 400 })
+    }
 
     // Verify branch ownership
     const entry = await prisma.dailyEntry.findUnique({ where: { id: parseInt(dailyEntryId) } })
@@ -28,6 +32,7 @@ export async function POST(req: NextRequest) {
           method,
           amount: parseFloat(amount),
           note,
+          attachmentUrl,
         }
       })
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { signEntryAttachments } from '@/lib/storage'
 
 export async function GET(req: NextRequest) {
   const userRole = req.headers.get('x-user-role')
@@ -50,6 +51,9 @@ export async function GET(req: NextRequest) {
         transfers: {
           include: { account: true }
         },
+        receivedTransfers: {
+          include: { dailyEntry: { include: { branch: true } } }
+        },
         payments: {
           include: { party: true, cheque: true }
         },
@@ -66,7 +70,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(null) // Empty state
     }
 
-    return NextResponse.json(entry)
+    return NextResponse.json(await signEntryAttachments(entry))
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }

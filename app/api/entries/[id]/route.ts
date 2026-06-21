@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { dailyEntrySchema } from '@/lib/schemas'
+import { logAudit } from '@/lib/audit'
 
 export async function PUT(
   req: NextRequest,
@@ -13,7 +14,8 @@ export async function PUT(
     return NextResponse.json({ error: 'Invalid input', details: parsed.error.format() }, { status: 400 })
   }
   const body = parsed.data
-  const { date, branchId, items, ...fields } = body
+  // Add reason to body destructuring
+  const { date, branchId, items, reason, ...fields } = body as any
 
   const userRole = req.headers.get('x-user-role')
   if (userRole === 'AUDITOR' || userRole === 'AREA_MANAGER') {
@@ -39,6 +41,10 @@ export async function PUT(
     }
 
     const entryIdNum = parseInt(id)
+    const existingEntrySnapshot = await prisma.dailyEntry.findUnique({
+      where: { id: entryIdNum },
+      include: { items: true }
+    })
 
     // First update the entry itself
     const entry = await prisma.dailyEntry.update({
@@ -61,11 +67,13 @@ export async function PUT(
               categoryId: item.categoryId
             }
           },
-          update: { amount: item.amount, receiptUrls: item.receiptUrls || [] },
+          update: { amount: item.amount, note: item.note || null, partyName: item.partyName || null, receiptUrls: item.receiptUrls || [] },
           create: {
             entryId: entryIdNum,
             categoryId: item.categoryId,
             amount: item.amount || 0,
+            note: item.note || null,
+            partyName: item.partyName || null,
             receiptUrls: item.receiptUrls || []
           }
         })
@@ -77,6 +85,19 @@ export async function PUT(
       where: { id: entryIdNum },
       include: { branch: true, items: { include: { category: true } } }
     })
+
+    const userId = parseInt(req.headers.get('x-user-id') || '0')
+    if (userId) {
+      await logAudit({
+        userId,
+        action: 'UPDATE',
+        entityType: 'DailyEntry',
+        entityId: entryIdNum,
+        oldValues: existingEntrySnapshot,
+        newValues: finalEntry,
+        reason: reason || 'Direct Inline Edit'
+      })
+    }
 
     return NextResponse.json(finalEntry)
   } catch (error: unknown) {

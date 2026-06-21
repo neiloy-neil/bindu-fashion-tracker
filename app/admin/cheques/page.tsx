@@ -1,0 +1,1 @@
+export default function ChequesPage() { return <div>Cheques View (TODO)</div> }

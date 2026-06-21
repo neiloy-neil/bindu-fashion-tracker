@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { editRequestSchema } from '@/lib/schemas'
+import { logAudit } from '@/lib/audit'
 
 // GET: Admin fetches pending edit requests, OR Branch user fetches their own pending requests
 export async function GET(req: NextRequest) {
@@ -105,16 +106,30 @@ export async function PATCH(req: NextRequest) {
         }
       }
 
-      await prisma.$transaction([
+      const [updatedEntry] = await prisma.$transaction([
         prisma.dailyEntry.update({
           where: { id: editReq.entryId },
-          data: updateData
+          data: updateData,
+          include: { items: true } // Need to get updated values
         }),
         prisma.editRequest.update({
           where: { id: requestId },
           data: { status: 'APPROVED' }
         })
       ])
+      
+      const userId = parseInt(req.headers.get('x-user-id') || '0')
+      if (userId) {
+        await logAudit({
+          userId,
+          action: 'UPDATE',
+          entityType: 'DailyEntry',
+          entityId: editReq.entryId,
+          oldValues: { note: 'From EditRequest', oldChanges: changes },
+          newValues: updatedEntry,
+          reason: `EditRequest Approved: ${editReq.reason || 'No reason provided'}`
+        })
+      }
       
     } else if (status === 'REJECTED') {
       await prisma.editRequest.update({

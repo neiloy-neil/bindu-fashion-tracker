@@ -20,12 +20,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
+    const account = await prisma.ledgerAccount.findUnique({ where: { id: parseInt(accountId) } })
+    if (!account) return NextResponse.json({ error: 'Account not found' }, { status: 404 })
+
+    const status = account.type === 'BRANCH' ? 'PENDING' : 'NOT_APPLICABLE'
+
     const transfer = await prisma.transfer.create({
       data: {
         dailyEntryId: parseInt(dailyEntryId),
         accountId: parseInt(accountId),
         amount: parseFloat(amount),
         note,
+        status,
       }
     })
 

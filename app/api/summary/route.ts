@@ -52,7 +52,12 @@ export async function GET(req: NextRequest) {
     prisma.dailyEntry.findMany({
       where,
       include: {
-        items: { include: { category: true } }
+        items: { include: { category: true } },
+        transfers: { include: { account: true } },
+        receivedTransfers: { include: { dailyEntry: { include: { branch: true } } } },
+        payments: { include: { party: true, cheque: true } },
+        expenseEntries: { include: { category: true } },
+        advanceSalaries: { include: { employee: true } }
       }
     }),
     prisma.branch.findMany({ select: { id: true, name: true } })
@@ -91,9 +96,52 @@ export async function GET(req: NextRequest) {
         entryExp += item.amount
         if (!isDigital(item.category.name)) physicalOut += item.amount
         
-        // Expense breakdown
         const catName = item.category.name
         expenseBreakdown[catName] = (expenseBreakdown[catName] || 0) + item.amount
+      }
+    }
+
+    if (entry.transfers) {
+      for (const t of entry.transfers) {
+        entryExp += t.amount
+        physicalOut += t.amount
+        expenseBreakdown['Transfers'] = (expenseBreakdown['Transfers'] || 0) + t.amount
+      }
+    }
+    
+    if (entry.receivedTransfers) {
+      for (const t of entry.receivedTransfers) {
+        entrySale += t.amount
+        physicalIn += t.amount
+      }
+    }
+    
+    if (entry.payments) {
+      for (const p of entry.payments) {
+        if (p.method === 'CHEQUE' && p.cheque?.status !== 'APPROVED') continue
+        entryExp += p.amount
+        if (p.method === 'CASH') physicalOut += p.amount
+        expenseBreakdown['Party Payments'] = (expenseBreakdown['Party Payments'] || 0) + p.amount
+      }
+    }
+
+    if (entry.expenseEntries) {
+      for (const e of entry.expenseEntries) {
+        entryExp += e.amount
+        physicalOut += e.amount
+        const catName = e.category?.name || 'Other Expense'
+        expenseBreakdown[catName] = (expenseBreakdown[catName] || 0) + e.amount
+      }
+    }
+
+    if (entry.advanceSalaries) {
+      for (const a of entry.advanceSalaries) {
+        if (a.type === 'CASH') {
+          const amt = a.amount || 0
+          entryExp += amt
+          physicalOut += amt
+          expenseBreakdown['Advance Salary'] = (expenseBreakdown['Advance Salary'] || 0) + amt
+        }
       }
     }
 

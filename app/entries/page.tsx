@@ -1,3 +1,4 @@
+// TODO (Phase 5): When building the entries-list detail panel, add a "View Payslip" link next to any Bank/Cheque payment row that has an attachmentUrl.
 'use client'
 
 import { useEffect, useState, useCallback, useRef, Suspense } from 'react'

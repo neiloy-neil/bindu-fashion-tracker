@@ -1,0 +1,3 @@
+ALTER TABLE "EntryItem"
+ADD COLUMN "note" TEXT,
+ADD COLUMN "partyName" TEXT;

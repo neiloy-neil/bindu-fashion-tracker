@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { dailyEntrySchema } from '@/lib/schemas'
+import { Prisma } from '@prisma/client'
+import { dateOnlyToUtc, newEntryPayloadSchema } from '@/lib/new-entry'
+import { logAudit } from '@/lib/audit'
+import { signEntryAttachments } from '@/lib/storage'
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
@@ -55,7 +58,12 @@ export async function GET(req: NextRequest) {
       where,
       include: { 
         branch: true,
-        items: { include: { category: true } }
+        items: { include: { category: true } },
+        transfers: { include: { account: true } },
+        receivedTransfers: { include: { dailyEntry: { include: { branch: true } } } },
+        payments: { include: { party: true, cheque: true } },
+        expenseEntries: { include: { category: true } },
+        advanceSalaries: { include: { employee: true } }
       },
       orderBy: [{ date: 'asc' }, { branchId: 'asc' }],
       skip: (page - 1) * limit,
@@ -64,62 +72,110 @@ export async function GET(req: NextRequest) {
     prisma.dailyEntry.count({ where }),
   ])
 
-  return NextResponse.json({ entries, total, page, limit })
+  return NextResponse.json({ entries: await Promise.all(entries.map(signEntryAttachments)), total, page, limit })
 }
 
 export async function POST(req: NextRequest) {
-  const rawBody = await req.json()
-  const parsed = dailyEntrySchema.safeParse(rawBody)
+  const parsed = newEntryPayloadSchema.safeParse(await req.json())
   if (!parsed.success) {
-    return NextResponse.json({ error: 'Invalid input', details: parsed.error.format() }, { status: 400 })
+    return NextResponse.json({ error: 'VALIDATION_ERROR', message: 'Please correct the highlighted fields', details: parsed.error.flatten() }, { status: 400 })
   }
   const body = parsed.data
-  const { date, branchId, notes, actualPhysicalCash, cashDifferenceNote, eodChecklist, items } = body
-
   const userRole = req.headers.get('x-user-role')
   const userBranchId = req.headers.get('x-user-branch-id')
 
-  if (userRole === 'AUDITOR' || userRole === 'AREA_MANAGER') {
-    return NextResponse.json({ error: 'Forbidden: Read-Only Role' }, { status: 403 })
+  if (!userRole) return NextResponse.json({ error: 'UNAUTHORIZED', message: 'Authentication is required' }, { status: 401 })
+  if (userRole !== 'ADMIN' && userRole !== 'BRANCH') {
+    return NextResponse.json({ error: 'FORBIDDEN', message: 'This role cannot create entries' }, { status: 403 })
   }
 
-  let finalBranchId = typeof branchId === 'string' ? parseInt(branchId) : branchId
-
-  if (userRole === 'BRANCH') {
-    if (!userBranchId) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-    finalBranchId = parseInt(userBranchId)
-  }
+  if (userRole === 'BRANCH' && !userBranchId) return NextResponse.json({ error: 'FORBIDDEN', message: 'No branch is assigned' }, { status: 403 })
+  const finalBranchId = userRole === 'BRANCH' ? Number(userBranchId) : body.branchId
 
   try {
-    const entry = await prisma.dailyEntry.create({
-      data: {
-        date: new Date(date),
-        branchId: finalBranchId,
-        notes,
-        actualPhysicalCash,
-        cashDifferenceNote,
-        eodChecklist,
-        items: items ? {
-          create: items.map(item => ({
-            categoryId: item.categoryId,
-            amount: item.amount || 0,
-            receiptUrls: item.receiptUrls || []
-          }))
-        } : undefined
-      },
-      include: { branch: true, items: { include: { category: true } } },
+    const entry = await prisma.$transaction(async tx => {
+      const [categories, accounts] = await Promise.all([
+        tx.category.findMany({ where: { id: { in: body.items.map(item => item.categoryId) }, isActive: true } }),
+        tx.ledgerAccount.findMany({ where: { id: { in: body.transfers.map(transfer => transfer.accountId) } } }),
+      ])
+      if (categories.length !== body.items.length) throw new Error('One or more income categories are invalid')
+      if (new Set(accounts.map(account => account.id)).size !== new Set(body.transfers.map(transfer => transfer.accountId)).size) {
+        throw new Error('One or more transfer accounts are invalid')
+      }
+
+      const income = body.items.reduce((sum, item) => sum + item.amount, 0)
+      const expenses = body.expenseEntries.reduce((sum, item) => sum + item.amount, 0)
+      const transfers = body.transfers.reduce((sum, item) => sum + item.amount, 0)
+      const payments = body.payments.filter(payment => payment.method !== 'CHEQUE').reduce((sum, item) => sum + item.amount, 0)
+      const advances = body.advanceSalaries.filter(advance => advance.type === 'CASH').reduce((sum, item) => sum + item.amount, 0)
+      const expectedNetBalance = income - expenses - transfers - payments - advances
+      if (body.actualPhysicalCash !== expectedNetBalance && !body.cashDifferenceNote) {
+        throw new Error('A cash discrepancy reason is required')
+      }
+
+      const created = await tx.dailyEntry.create({
+        data: {
+          date: dateOnlyToUtc(body.date), branchId: finalBranchId,
+          openingTime: body.openingTime, closingTime: body.closingTime,
+          notes: body.notes || null, actualPhysicalCash: body.actualPhysicalCash,
+          cashDifferenceNote: body.cashDifferenceNote || null, eodChecklist: body.eodChecklist,
+          items: { create: body.items.map(item => ({
+            categoryId: item.categoryId, amount: item.amount, note: item.note || null,
+            partyName: item.partyName || null, receiptUrls: item.receiptKeys,
+          })) },
+          transfers: { create: body.transfers.map(transfer => ({
+            ...transfer,
+            status: accounts.find(account => account.id === transfer.accountId)?.type === 'BRANCH' ? 'PENDING' : 'NOT_APPLICABLE',
+          })) },
+          expenseEntries: { create: body.expenseEntries.map(expense => ({
+            categoryId: expense.categoryId, amount: expense.amount, note: expense.note || null,
+            attachmentUrl: expense.attachmentKey || null,
+          })) },
+          advanceSalaries: { create: body.advanceSalaries.map(advance => ({
+            employeeId: advance.employeeId, type: advance.type, amount: advance.amount,
+            productDescription: advance.productDescription || null, note: advance.note || null,
+          })) },
+        },
+      })
+
+      for (const payment of body.payments) {
+        await tx.payment.create({
+          data: {
+            dailyEntryId: created.id, partyId: payment.partyId, method: payment.method,
+            amount: payment.amount, note: payment.note || null, attachmentUrl: payment.attachmentKey || null,
+            cheque: payment.method === 'CHEQUE' ? { create: {
+              issueDate: dateOnlyToUtc(payment.issueDate!), withdrawDate: dateOnlyToUtc(payment.withdrawDate!), status: 'PENDING',
+            } } : undefined,
+          },
+        })
+        if (payment.method !== 'CHEQUE') {
+          await tx.party.update({ where: { id: payment.partyId }, data: { balance: { increment: payment.amount } } })
+        }
+      }
+
+      return tx.dailyEntry.findUniqueOrThrow({
+        where: { id: created.id }, include: { branch: true, items: { include: { category: true } } },
+      })
     })
-    return NextResponse.json(entry, { status: 201 })
-  } catch (error: unknown) {
-    const e = error as { code?: string; message?: string }
-    if (e.code === 'P2002') {
-      return NextResponse.json(
-        { error: 'Entry already exists for this date and branch' },
-        { status: 409 }
-      )
+
+    const userId = parseInt(req.headers.get('x-user-id') || '0')
+    if (userId) {
+      await logAudit({
+        userId,
+        action: 'CREATE',
+        entityType: 'DailyEntry',
+        entityId: entry.id,
+        newValues: entry,
+        reason: 'Daily Entry Creation'
+      })
     }
-    return NextResponse.json({ error: e.message }, { status: 500 })
+
+    return NextResponse.json(entry, { status: 201 })
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      return NextResponse.json({ error: 'DUPLICATE_ENTRY', message: 'An entry already exists for this branch and date' }, { status: 409 })
+    }
+    const message = error instanceof Error ? error.message : 'Entry creation failed'
+    return NextResponse.json({ error: 'ENTRY_CREATE_FAILED', message }, { status: 500 })
   }
 }

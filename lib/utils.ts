@@ -39,6 +39,40 @@ export function computeTotals(entry: any) {
       }
     }
   }
+  
+  if (entry && entry.transfers && Array.isArray(entry.transfers)) {
+    for (const t of entry.transfers) {
+      totalExpense += t.amount || 0
+    }
+  }
+  if (entry && entry.receivedTransfers && Array.isArray(entry.receivedTransfers)) {
+    for (const t of entry.receivedTransfers) {
+      totalSale += t.amount || 0
+    }
+  }
+  if (entry && entry.payments && Array.isArray(entry.payments)) {
+    for (const p of entry.payments) {
+      // Pending cheques do not deduct from net balance yet? Wait, according to Phase 3, 
+      // CHEQUE status PENDING does not deduct. It only deducts when APPROVED.
+      // But in DailyEntry math, normally it's an expense immediately? No, the transaction logic says PENDING doesn't affect balance.
+      if (p.method === 'CHEQUE' && p.cheque?.status !== 'APPROVED') {
+        continue
+      }
+      totalExpense += p.amount || 0
+    }
+  }
+  if (entry && entry.expenseEntries && Array.isArray(entry.expenseEntries)) {
+    for (const e of entry.expenseEntries) {
+      totalExpense += e.amount || 0
+    }
+  }
+  if (entry && entry.advanceSalaries && Array.isArray(entry.advanceSalaries)) {
+    for (const a of entry.advanceSalaries) {
+      if (a.type === 'CASH') {
+        totalExpense += a.amount || 0
+      }
+    }
+  }
 
   const totalAmount = openingBalance + totalSale
   const netBalance = totalAmount - totalExpense

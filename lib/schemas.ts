@@ -1,11 +1,12 @@
 import { z } from 'zod'
 
-const nonNegativeNumber = z.number().min(0).optional()
 const numericStringOrNumber = z.union([z.string(), z.number()]).transform(val => typeof val === 'string' ? parseFloat(val) : val).refine(val => !isNaN(val) && val >= 0, { message: "Must be a non-negative number" }).optional()
 
 export const entryItemSchema = z.object({
   categoryId: z.union([z.string(), z.number()]).transform(val => typeof val === 'string' ? parseInt(val) : val),
   amount: numericStringOrNumber,
+  note: z.string().optional().nullable(),
+  partyName: z.string().optional().nullable(),
   receiptUrls: z.array(z.string()).optional()
 })
 
@@ -52,3 +53,67 @@ export const editRequestSchema = z.object({
   changes: z.record(z.string(), z.any()),
   reason: z.string().optional().nullable()
 })
+
+
+export const newEntryFormSchema = z.object({
+  formMeta: z.object({
+    date: z.string().min(1, 'Date is required'),
+    branchId: z.string().min(1, 'Branch is required'),
+    openingTime: z.string().optional(),
+    closingTime: z.string().optional(),
+  }),
+  incomeItems: z.array(z.object({
+    id: z.string(),
+    categoryId: z.union([z.string(), z.number()]).refine(v => v !== '', { message: 'Required' }),
+    amount: z.union([z.string(), z.number()]).refine(v => Number(v) > 0, 'Amount must be greater than zero'),
+    detail: z.object({
+      note: z.string().default(''),
+      partyName: z.string().default(''),
+      files: z.array(z.string())
+    })
+  })),
+  transfers: z.array(z.object({
+    id: z.string(),
+    accountId: z.string().min(1, 'Required'),
+    amount: z.union([z.string(), z.number()]).refine(v => Number(v) > 0, 'Amount must be greater than zero'),
+    note: z.string()
+  })),
+  payments: z.array(z.object({
+    id: z.string(),
+    partyId: z.string().min(1, 'Required'),
+    method: z.string().min(1, 'Required'),
+    amount: z.union([z.string(), z.number()]).refine(v => Number(v) > 0, 'Amount must be greater than zero'),
+    note: z.string(),
+    issueDate: z.string().optional(),
+    withdrawDate: z.string().optional(),
+    attachmentKey: z.string().optional()
+  })),
+  expenseEntries: z.array(z.object({
+    id: z.string(),
+    categoryId: z.string().min(1, 'Required'),
+    amount: z.union([z.string(), z.number()]).refine(v => Number(v) > 0, 'Amount must be greater than zero'),
+    note: z.string(),
+    attachmentKey: z.string().optional()
+  })),
+  advanceSalaries: z.array(z.object({
+    id: z.string(),
+    employeeId: z.string().min(1, 'Required'),
+    type: z.string().min(1, 'Required'),
+    amount: z.union([z.string(), z.number()]).refine(v => Number(v) >= 0, 'Amount cannot be negative'),
+    productDescription: z.string().optional(),
+    note: z.string().optional()
+  })),
+  globalNotes: z.string().optional(),
+  actualPhysicalCash: z.union([z.string(), z.number()]).refine(v => v !== '' && Number(v) >= 0, 'Physical cash is required'),
+  cashDifferenceNote: z.string().optional(),
+  eodChecklist: z.object({
+    safeLocked: z.boolean(),
+    acOff: z.boolean(),
+    shopClean: z.boolean(),
+    shuttersDown: z.boolean(),
+    cashVerified: z.boolean(),
+    signature: z.string().optional()
+  })
+})
+
+export type NewEntryFormValues = z.input<typeof newEntryFormSchema>

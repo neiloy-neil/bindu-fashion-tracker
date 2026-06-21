@@ -15,7 +15,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>
+      <body className="transition-colors duration-300">
         <Toaster position="top-right" toastOptions={{ className: 'dark-toast' }} />
         <LayoutWrapper>
           {children}

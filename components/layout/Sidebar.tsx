@@ -77,6 +77,37 @@ const navItems = [
     ),
   },
   {
+    href: '/admin/discrepancies',
+    label: 'Discrepancy Inbox',
+    adminOnly: true,
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+        <line x1="12" y1="9" x2="12" y2="13" />
+        <line x1="12" y1="17" x2="12.01" y2="17" />
+      </svg>
+    ),
+  },
+  {
+    href: '/parties',
+    label: 'Parties & Vendors',
+    adminOnly: true,
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+        <rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect>
+        <rect x="9" y="9" width="6" height="6"></rect>
+        <line x1="9" y1="1" x2="9" y2="4"></line>
+        <line x1="15" y1="1" x2="15" y2="4"></line>
+        <line x1="9" y1="20" x2="9" y2="23"></line>
+        <line x1="15" y1="20" x2="15" y2="23"></line>
+        <line x1="20" y1="9" x2="23" y2="9"></line>
+        <line x1="20" y1="14" x2="23" y2="14"></line>
+        <line x1="1" y1="9" x2="4" y2="9"></line>
+        <line x1="1" y1="14" x2="4" y2="14"></line>
+      </svg>
+    ),
+  },
+  {
     href: '/categories',
     label: 'Categories',
     icon: (
@@ -216,7 +247,15 @@ export function Sidebar({ isOpen, setIsOpen }: { isOpen?: boolean, setIsOpen?: (
   })
 
   return (
-    <aside className={`sidebar z-50 ${isOpen ? 'mobile-open' : ''}`}>
+    <>
+      {/* Mobile Backdrop Overlay */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden"
+          onClick={() => setIsOpen?.(false)}
+        />
+      )}
+      <aside className={`sidebar z-50 ${isOpen ? 'mobile-open' : ''}`}>
       <div className="sidebar-logo">
         <h1>Bindu Fashion</h1>
         <p>Sales & Expense Tracker</p>
@@ -323,5 +362,6 @@ export function Sidebar({ isOpen, setIsOpen }: { isOpen?: boolean, setIsOpen?: (
         </button>
       </div>
     </aside>
+    </>
   )
 }

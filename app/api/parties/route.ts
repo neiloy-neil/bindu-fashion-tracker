@@ -14,6 +14,7 @@ export async function GET(req: NextRequest) {
     const parties = await prisma.party.findMany({
       where: includeInactive ? undefined : { isActive: true },
       orderBy: { createdAt: 'desc' },
+      include: { bankInfo: true }
     })
     return NextResponse.json(parties)
   } catch (error: any) {
@@ -28,7 +29,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { name, isActive } = await req.json()
+    const { name, isActive, contactPerson, contactNumber, secondaryNumber, address } = await req.json()
     if (!name) return NextResponse.json({ error: 'Name is required' }, { status: 400 })
 
     const existing = await prisma.party.findUnique({ where: { name } })
@@ -39,6 +40,10 @@ export async function POST(req: NextRequest) {
     const party = await prisma.party.create({
       data: {
         name,
+        contactPerson: contactPerson || null,
+        contactNumber: contactNumber || null,
+        secondaryNumber: secondaryNumber || null,
+        address: address || null,
         isActive: isActive !== undefined ? isActive : true,
       }
     })

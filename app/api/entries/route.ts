@@ -118,6 +118,7 @@ export async function POST(req: NextRequest) {
           date: dateOnlyToUtc(body.date), branchId: finalBranchId,
           openingTime: body.openingTime, closingTime: body.closingTime,
           notes: body.notes || null, actualPhysicalCash: body.actualPhysicalCash,
+          expectedNetBalance: expectedNetBalance,
           cashDifferenceNote: body.cashDifferenceNote || null, eodChecklist: body.eodChecklist,
           items: { create: body.items.map(item => ({
             categoryId: item.categoryId, amount: item.amount, note: item.note || null,
@@ -149,7 +150,7 @@ export async function POST(req: NextRequest) {
           },
         })
         if (payment.method !== 'CHEQUE') {
-          await tx.party.update({ where: { id: payment.partyId }, data: { balance: { increment: payment.amount } } })
+          await tx.party.update({ where: { id: payment.partyId }, data: { balance: { decrement: payment.amount } } })
         }
       }
 

@@ -73,34 +73,22 @@ export function PaymentSection({ control, register, setValue, parties, inputClas
                     type="file" 
                     accept="image/*,.pdf"
                     disabled={uploadingAttachment[idx]}
-                    onChange={async (e) => {
+                    onChange={(e) => {
                       const file = e.target.files?.[0]
                       if (!file) return
-                      setUploadingAttachment(prev => ({ ...prev, [idx]: true }))
-                      try {
-                        const formData = new FormData()
-                        formData.append('file', file)
-                        const response = await fetch('/api/upload', { method: 'POST', body: formData })
-                        const result = await response.json()
-                        if (!response.ok) throw new Error(result.message || result.error || 'Upload failed')
-                        setValue(`payments.${idx}.attachmentKey`, result.key)
-                      } catch (error: unknown) {
-                        toast.error('Failed to upload attachment: ' + (error instanceof Error ? error.message : 'Unknown error'))
-                      } finally {
-                        setUploadingAttachment(prev => ({ ...prev, [idx]: false }))
-                      }
+                      setValue(`payments.${idx}.attachmentKey`, file, { shouldDirty: true })
                     }}
                     className="block w-full text-xs text-muted-foreground file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-primary file:text-primary-foreground hover:file:opacity-90 cursor-pointer"
                   />
                 ) : (
                   <div className="flex items-center gap-3">
-                    <span className="text-primary text-xs flex items-center gap-1"><Paperclip size={14} /> Payslip attached</span>
+                    <span className="text-primary text-xs flex items-center gap-1"><Paperclip size={14} /> {paymentsWatch[idx].attachmentKey instanceof File ? paymentsWatch[idx].attachmentKey.name : 'Payslip attached'}</span>
                     <button 
                       type="button"
                       onClick={() => {
                         const key = paymentsWatch[idx].attachmentKey
-                        setValue(`payments.${idx}.attachmentKey`, undefined)
-                        if (key) void fetch(`/api/upload?key=${encodeURIComponent(key)}`, { method: 'DELETE' })
+                        setValue(`payments.${idx}.attachmentKey`, undefined, { shouldDirty: true })
+                        if (key && typeof key === 'string') void fetch(`/api/upload?key=${encodeURIComponent(key)}`, { method: 'DELETE' })
                       }}
                       className="text-xs text-destructive hover:underline"
                     >

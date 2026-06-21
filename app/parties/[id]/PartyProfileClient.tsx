@@ -1,0 +1,318 @@
+'use client'
+
+import { useState } from 'react'
+import useSWR from 'swr'
+import { ArrowLeft, Plus, Building2, Phone, MapPin, Building, FileText, CreditCard, Receipt } from 'lucide-react'
+import Link from 'next/link'
+import { formatCurrency } from '@/lib/utils'
+import { format } from 'date-fns'
+
+// Import extracted Modals
+import { BankModal } from '@/components/parties/BankModal'
+import { PurchaseModal } from '@/components/parties/PurchaseModal'
+import { PaymentModal } from '@/components/parties/PaymentModal'
+
+const fetcher = (url: string) => fetch(url).then((res) => res.json())
+
+export default function PartyProfileClient({ party: initialParty }: { party: any }) {
+  // SWR Hooks for data fetching
+  const { data: party, mutate: mutateParty } = useSWR(`/api/parties/${initialParty.id}`, fetcher, { 
+    fallbackData: initialParty 
+  })
+  
+  const { data: ledger, mutate: mutateLedger, isLoading: isLoadingLedger } = useSWR(
+    `/api/parties/${initialParty.id}/ledger`, 
+    fetcher
+  )
+
+  // Modals state
+  const [isBankModalOpen, setIsBankModalOpen] = useState(false)
+  const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false)
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
+
+  // Handler for when a modal action succeeds
+  const handleSuccess = () => {
+    mutateParty()
+    mutateLedger()
+  }
+
+  return (
+    <div className="p-4 sm:p-8 max-w-7xl mx-auto pb-20">
+      <Link href="/parties" className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 transition-colors w-fit">
+        <ArrowLeft size={16} />
+        <span className="text-sm font-medium">Back to Parties</span>
+      </Link>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        {/* Profile Card */}
+        <div className="col-span-1 lg:col-span-2 bg-card border border-border rounded-xl p-6 shadow-sm">
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="text-2xl font-bold flex items-center gap-2">
+                <Building2 className="text-primary" />
+                {party.name}
+              </h1>
+              <div className="mt-4 space-y-2 text-sm text-muted-foreground">
+                {party.contactPerson && (
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold w-24">Contact:</span> {party.contactPerson}
+                  </div>
+                )}
+                {party.contactNumber && (
+                  <div className="flex items-center gap-2">
+                    <Phone size={14} className="text-muted-foreground/70" />
+                    <span className="font-semibold w-[76px]">Phone:</span> {party.contactNumber}
+                  </div>
+                )}
+                {party.secondaryNumber && (
+                  <div className="flex items-center gap-2">
+                    <Phone size={14} className="text-muted-foreground/70" />
+                    <span className="font-semibold w-[76px]">Alt Phone:</span> {party.secondaryNumber}
+                  </div>
+                )}
+                {party.address && (
+                  <div className="flex items-start gap-2 pt-1">
+                    <MapPin size={14} className="text-muted-foreground/70 mt-0.5" />
+                    <span className="font-semibold w-[76px] shrink-0">Address:</span> 
+                    <span>{party.address}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div className="text-right">
+              <p className="text-sm font-medium text-muted-foreground mb-1">Total Due</p>
+              <p className={`text-3xl font-bold font-mono ${party.balance > 0 ? 'text-destructive' : 'text-emerald-500'}`}>
+                ৳{formatCurrency(party.balance)}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Bank Info Card */}
+        <div className="col-span-1 bg-card border border-border rounded-xl p-6 shadow-sm flex flex-col">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-semibold flex items-center gap-2">
+              <Building size={18} className="text-primary" />
+              Bank Information
+            </h2>
+            <button 
+              onClick={() => setIsBankModalOpen(true)}
+              className="text-xs flex items-center gap-1 text-primary hover:text-primary/80 transition-colors bg-primary/10 px-2 py-1 rounded-md font-medium"
+            >
+              <Plus size={12} /> Add
+            </button>
+          </div>
+          
+          <div className="flex-1 overflow-y-auto pr-2 space-y-4">
+            {party.bankInfo && party.bankInfo.length > 0 ? (
+              party.bankInfo.map((bank: any) => (
+                <div key={bank.id} className="bg-muted/30 p-3 rounded-lg border border-border/50 text-sm">
+                  <p className="font-bold text-foreground">{bank.bankName}</p>
+                  <p className="text-muted-foreground mt-0.5">{bank.branchName} Branch</p>
+                  <div className="mt-2 space-y-1 text-xs font-mono text-muted-foreground">
+                    <p><span className="text-foreground/70 font-sans">A/C:</span> {bank.accountNo}</p>
+                    {bank.routingNo && <p><span className="text-foreground/70 font-sans">Routing:</span> {bank.routingNo}</p>}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-8">No bank information added yet.</p>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Ledger Section */}
+      <div className="bg-card border border-border rounded-xl shadow-lg overflow-hidden">
+        <div className="p-4 sm:p-6 border-b border-border bg-muted/20 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <h2 className="text-lg font-bold flex items-center gap-2">
+            <FileText className="text-primary" />
+            Party Ledger
+          </h2>
+          <div className="flex flex-wrap gap-2">
+            <button 
+              onClick={() => setIsPurchaseModalOpen(true)}
+              className="px-4 py-2 bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded-lg text-sm font-medium transition-all shadow-sm flex items-center gap-2"
+            >
+              <Receipt size={16} />
+              Add Purchase / Due
+            </button>
+            <button 
+              onClick={() => setIsPaymentModalOpen(true)}
+              className="px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg text-sm font-medium transition-all shadow-sm flex items-center gap-2"
+            >
+              <CreditCard size={16} />
+              Make Payment
+            </button>
+          </div>
+        </div>
+
+        {/* Desktop Table */}
+        <div className="hidden sm:block overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-muted/50 border-b border-border text-muted-foreground">
+              <tr>
+                <th className="p-4 font-semibold whitespace-nowrap">Date</th>
+                <th className="p-4 font-semibold">Type</th>
+                <th className="p-4 font-semibold">Details</th>
+                <th className="p-4 font-semibold text-right">Debit (Owed)</th>
+                <th className="p-4 font-semibold text-right">Credit (Paid)</th>
+                <th className="p-4 font-semibold text-right">Balance</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {isLoadingLedger ? (
+                <tr>
+                  <td colSpan={6} className="p-8 text-center text-muted-foreground">Loading ledger...</td>
+                </tr>
+              ) : !ledger || ledger.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="p-8 text-center text-muted-foreground">No ledger entries found.</td>
+                </tr>
+              ) : (
+                ledger.map((entry: any) => (
+                  <tr key={`${entry.type}-${entry.id}`} className="hover:bg-muted/20 transition-colors">
+                    <td className="p-4 whitespace-nowrap font-medium">{format(new Date(entry.date), 'dd MMM yyyy')}</td>
+                    <td className="p-4">
+                      {entry.type === 'PURCHASE' ? (
+                        <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-destructive/10 text-destructive">
+                          {entry.isOpeningDue ? 'Opening Due' : 'Purchase'}
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-emerald-500/10 text-emerald-600">
+                          Payment
+                        </span>
+                      )}
+                    </td>
+                    <td className="p-4 max-w-xs">
+                      {entry.type === 'PURCHASE' ? (
+                        <div className="space-y-1">
+                          {entry.invoiceNumber && <p className="font-mono text-xs">Inv: {entry.invoiceNumber}</p>}
+                          {entry.note && <p className="text-muted-foreground truncate" title={entry.note}>{entry.note}</p>}
+                          {entry.attachmentUrl && (
+                            <a href={entry.attachmentUrl} target="_blank" rel="noreferrer" className="text-primary text-xs hover:underline inline-flex items-center gap-1">
+                              <FileText size={12} /> View Invoice
+                            </a>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="space-y-1">
+                          <p className="font-semibold text-xs">{entry.method}</p>
+                          {entry.branch && <p className="text-muted-foreground text-xs">Branch: {entry.branch.name}</p>}
+                          {entry.note && <p className="text-muted-foreground truncate" title={entry.note}>{entry.note}</p>}
+                          {entry.attachmentUrl && (
+                            <a href={entry.attachmentUrl} target="_blank" rel="noreferrer" className="text-primary text-xs hover:underline inline-flex items-center gap-1">
+                              <FileText size={12} /> View Receipt/Cheque
+                            </a>
+                          )}
+                        </div>
+                      )}
+                    </td>
+                    <td className="p-4 text-right font-mono">
+                      {entry.type === 'PURCHASE' ? <span className="text-destructive font-semibold">৳{formatCurrency(entry.amount)}</span> : '-'}
+                    </td>
+                    <td className="p-4 text-right font-mono">
+                      {entry.type === 'PAYMENT' ? <span className="text-emerald-500 font-semibold">৳{formatCurrency(entry.amount)}</span> : '-'}
+                    </td>
+                    <td className="p-4 text-right font-mono font-bold">
+                      ৳{formatCurrency(entry.runningBalance)}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Mobile Cards */}
+        <div className="sm:hidden flex flex-col divide-y divide-border">
+          {isLoadingLedger ? (
+            <div className="p-8 text-center text-muted-foreground">Loading ledger...</div>
+          ) : !ledger || ledger.length === 0 ? (
+            <div className="p-8 text-center text-muted-foreground">No ledger entries found.</div>
+          ) : (
+            ledger.map((entry: any) => (
+              <div key={`mobile-${entry.type}-${entry.id}`} className="p-4 space-y-3">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="font-medium">{format(new Date(entry.date), 'dd MMM yyyy')}</div>
+                    <div className="mt-1">
+                      {entry.type === 'PURCHASE' ? (
+                        <span className="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-medium bg-destructive/10 text-destructive uppercase tracking-wider">
+                          {entry.isOpeningDue ? 'Opening Due' : 'Purchase'}
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-medium bg-emerald-500/10 text-emerald-600 uppercase tracking-wider">
+                          Payment
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Balance</p>
+                    <p className="font-mono font-bold">৳{formatCurrency(entry.runningBalance)}</p>
+                  </div>
+                </div>
+
+                <div className="bg-muted/30 p-3 rounded-lg border border-border/50">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-xs font-semibold text-muted-foreground">
+                      {entry.type === 'PURCHASE' ? 'Debit (Owed)' : 'Credit (Paid)'}
+                    </span>
+                    <span className={`font-mono font-bold ${entry.type === 'PURCHASE' ? 'text-destructive' : 'text-emerald-500'}`}>
+                      ৳{formatCurrency(entry.amount)}
+                    </span>
+                  </div>
+                  
+                  {/* Details */}
+                  {entry.type === 'PURCHASE' ? (
+                    <div className="space-y-1 text-sm">
+                      {entry.invoiceNumber && <p className="font-mono text-xs">Inv: {entry.invoiceNumber}</p>}
+                      {entry.note && <p className="text-muted-foreground text-xs">{entry.note}</p>}
+                      {entry.attachmentUrl && (
+                        <a href={entry.attachmentUrl} target="_blank" rel="noreferrer" className="text-primary text-xs hover:underline inline-flex items-center gap-1 mt-1">
+                          <FileText size={12} /> View Invoice
+                        </a>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="space-y-1 text-sm">
+                      <p className="font-semibold text-xs">{entry.method}</p>
+                      {entry.branch && <p className="text-muted-foreground text-xs">Branch: {entry.branch.name}</p>}
+                      {entry.note && <p className="text-muted-foreground text-xs">{entry.note}</p>}
+                      {entry.attachmentUrl && (
+                        <a href={entry.attachmentUrl} target="_blank" rel="noreferrer" className="text-primary text-xs hover:underline inline-flex items-center gap-1 mt-1">
+                          <FileText size={12} /> View Receipt/Cheque
+                        </a>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      <BankModal 
+        isOpen={isBankModalOpen} 
+        onClose={() => setIsBankModalOpen(false)} 
+        partyId={party.id} 
+        onSuccess={handleSuccess} 
+      />
+      <PurchaseModal 
+        isOpen={isPurchaseModalOpen} 
+        onClose={() => setIsPurchaseModalOpen(false)} 
+        partyId={party.id} 
+        onSuccess={handleSuccess} 
+      />
+      <PaymentModal 
+        isOpen={isPaymentModalOpen} 
+        onClose={() => setIsPaymentModalOpen(false)} 
+        partyId={party.id} 
+        onSuccess={handleSuccess} 
+      />
+    </div>
+  )
+}

@@ -133,6 +133,15 @@ export async function DELETE(
       }
     }
 
+    const existingEntry = await prisma.dailyEntry.findUnique({
+      where: { id: parseInt(id) },
+      include: { transfers: true }
+    })
+    
+    if (existingEntry && existingEntry.transfers.some(t => t.status === 'ACKNOWLEDGED')) {
+      return NextResponse.json({ error: 'Cannot delete entry: It contains transfers that have already been acknowledged by the receiving branch.' }, { status: 403 })
+    }
+
     await prisma.dailyEntry.delete({ where: { id: parseInt(id) } })
     return NextResponse.json({ success: true })
   } catch (error: unknown) {

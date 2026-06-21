@@ -69,7 +69,7 @@ export const newEntryFormSchema = z.object({
     detail: z.object({
       note: z.string().default(''),
       partyName: z.string().default(''),
-      files: z.array(z.string())
+      files: z.array(z.any())
     })
   })),
   transfers: z.array(z.object({
@@ -86,14 +86,14 @@ export const newEntryFormSchema = z.object({
     note: z.string(),
     issueDate: z.string().optional(),
     withdrawDate: z.string().optional(),
-    attachmentKey: z.string().optional()
+    attachmentKey: z.any().optional()
   })),
   expenseEntries: z.array(z.object({
     id: z.string(),
     categoryId: z.string().min(1, 'Required'),
     amount: z.union([z.string(), z.number()]).refine(v => Number(v) > 0, 'Amount must be greater than zero'),
     note: z.string(),
-    attachmentKey: z.string().optional()
+    attachmentKey: z.any().optional()
   })),
   advanceSalaries: z.array(z.object({
     id: z.string(),
@@ -117,3 +117,38 @@ export const newEntryFormSchema = z.object({
 })
 
 export type NewEntryFormValues = z.input<typeof newEntryFormSchema>
+
+export const partyBankInfoSchema = z.object({
+  bankName: z.string().min(1, 'Bank name is required'),
+  branchName: z.string().min(1, 'Branch name is required'),
+  accountNo: z.string().min(1, 'Account number is required'),
+  routingNo: z.string().optional()
+})
+
+export const purchaseSchema = z.object({
+  partyId: z.union([z.string(), z.number()]).transform(v => Number(v)),
+  date: z.string().or(z.date()),
+  amount: z.union([z.string(), z.number()]).transform(v => Number(v)),
+  invoiceNumber: z.string().optional().nullable(),
+  note: z.string().optional().nullable(),
+  attachmentUrl: z.string().optional().nullable(),
+  isOpeningDue: z.boolean().optional()
+})
+
+export const partyUpdateSchema = z.object({
+  name: z.string().min(1, 'Company Name is required'),
+  contactPerson: z.string().optional().nullable(),
+  contactNumber: z.string().optional().nullable(),
+  secondaryNumber: z.string().optional().nullable(),
+  address: z.string().optional().nullable()
+})
+
+export const directPaymentSchema = z.object({
+  partyId: z.union([z.string(), z.number()]).transform(v => Number(v)),
+  method: z.string().min(1, 'Payment method is required'),
+  amount: z.union([z.string(), z.number()]).transform(v => Number(v)),
+  note: z.string().optional().nullable(),
+  attachmentUrl: z.string().optional().nullable(),
+  issueDate: z.string().optional().nullable(),
+  withdrawDate: z.string().optional().nullable(),
+})

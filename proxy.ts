@@ -36,8 +36,19 @@ export async function proxy(req: NextRequest) {
       if (
         pathname.startsWith('/branches') ||
         pathname.startsWith('/import') ||
-        pathname.startsWith('/admin')
+        pathname.startsWith('/admin') ||
+        pathname.startsWith('/parties') ||
+        pathname.startsWith('/categories') ||
+        pathname.startsWith('/api/admin') ||
+        pathname.startsWith('/api/parties') ||
+        pathname.startsWith('/api/categories')
       ) {
+        if (pathname.startsWith('/api/')) {
+          return new NextResponse(
+            JSON.stringify({ error: "Unauthorized - Admin access required" }), 
+            { status: 401, headers: { 'content-type': 'application/json' } }
+          );
+        }
         return NextResponse.redirect(new URL('/entries/new', req.url))
       }
     }

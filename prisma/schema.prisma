@@ -56,6 +56,7 @@ model DailyEntry {
   receiptUrl         String?
   notes              String?
   actualPhysicalCash Float?
+  expectedNetBalance Float? @default(0)
   cashDifferenceNote String?
   eodChecklist       Json?
   openingTime        String?
@@ -209,17 +210,50 @@ model Transfer {
 }
 
 model Party {
-  id        Int       @id @default(autoincrement())
-  name      String    @unique
-  isActive  Boolean   @default(true)
-  balance   Float     @default(0)
-  createdAt DateTime  @default(now())
-  payments  Payment[]
+  id              Int             @id @default(autoincrement())
+  name            String          @unique
+  contactPerson   String?
+  contactNumber   String?
+  secondaryNumber String?
+  address         String?         @db.Text
+  isActive        Boolean         @default(true)
+  balance         Float           @default(0)
+  createdAt       DateTime        @default(now())
+  
+  payments        Payment[]
+  bankInfo        PartyBankInfo[]
+  purchases       Purchase[]
+}
+
+model PartyBankInfo {
+  id         Int      @id @default(autoincrement())
+  partyId    Int
+  bankName   String
+  branchName String
+  accountNo  String
+  routingNo  String?
+  createdAt  DateTime @default(now())
+
+  party      Party    @relation(fields: [partyId], references: [id], onDelete: Cascade)
+}
+
+model Purchase {
+  id            Int      @id @default(autoincrement())
+  partyId       Int
+  date          DateTime
+  amount        Float
+  invoiceNumber String?
+  note          String?
+  attachmentUrl String?
+  isOpeningDue  Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  party         Party    @relation(fields: [partyId], references: [id], onDelete: Cascade)
 }
 
 model Payment {
   id            Int      @id @default(autoincrement())
-  dailyEntryId  Int
+  dailyEntryId  Int?
   partyId       Int
   method        String
   amount        Float
@@ -227,8 +261,8 @@ model Payment {
   attachmentUrl String?
   createdAt     DateTime @default(now())
 
-  dailyEntry DailyEntry @relation(fields: [dailyEntryId], references: [id])
-  party      Party      @relation(fields: [partyId], references: [id])
+  dailyEntry DailyEntry? @relation(fields: [dailyEntryId], references: [id])
+  party      Party       @relation(fields: [partyId], references: [id], onDelete: Cascade)
   cheque     Cheque?
 }
 

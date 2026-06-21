@@ -127,19 +127,19 @@ export function NewEntryForm({ initialData, userId }: Props) {
 
   useEffect(() => {
     if (branchId && date && categories.length > 0) {
-      fetch(`/api/entries/last-balance?branchId=${branchId}&date=${date}`)
+      fetch(`/api/branches/${branchId}/last-balance?date=${date}`)
         .then(r => r.json())
         .then(data => {
           if (!data.error) {
             const openingCat = categories.find(c => c.name === 'Opening Balance')
-            if (openingCat && branches.length === 1) {
+            if (openingCat) {
               const currentIncome = form.getValues('incomeItems')
               const idx = currentIncome.findIndex(i => String(i.categoryId) === String(openingCat.id))
               if (idx !== -1) {
-                setValue(`incomeItems.${idx}.amount`, data.actualPhysicalCash)
+                setValue(`incomeItems.${idx}.amount`, data.openingBalance)
               } else {
                 setValue('incomeItems', [
-                  { id: generateId(), categoryId: String(openingCat.id), amount: data.actualPhysicalCash || 0, detail: { note: 'Auto-filled by system', partyName: '', files: [] } },
+                  { id: generateId(), categoryId: String(openingCat.id), amount: data.openingBalance || 0, detail: { note: 'Auto-filled from previous closing balance', partyName: '', files: [] } },
                   ...currentIncome
                 ])
               }
@@ -153,29 +153,59 @@ export function NewEntryForm({ initialData, userId }: Props) {
     const data = form.getValues()
     
     setLoading(true)
-    const uploadToast = toast.loading('Submitting entry...')
+    const uploadToast = toast.loading('Uploading attachments and submitting entry...')
     
     try {
+      // Helper to upload a File and return its remote key, or return the existing string key
+      const uploadFile = async (file: File | string | undefined): Promise<string | undefined> => {
+        if (!file) return undefined
+        if (typeof file === 'string') return file
+        
+        const formData = new FormData()
+        formData.append('file', file)
+        const response = await fetch('/api/upload', { method: 'POST', body: formData })
+        const result = await response.json()
+        if (!response.ok) throw new Error(result.message || result.error || 'Upload failed')
+        return result.key
+      }
+
       const itemsToSubmit = []
       for (const item of data.incomeItems) {
         if (!item.categoryId) continue
         const note = item.detail.note?.trim()
-        const files = item.detail.files || []
+        const rawFiles = item.detail.files || []
         
-        if (note && files.length === 0) {
+        if (note && rawFiles.length === 0) {
           toast.error("Receipt image is required when a note is provided for Income/Expense.")
           toast.dismiss(uploadToast)
           setLoading(false)
           return
         }
+        
+        // Upload any pending File objects
+        const uploadedKeys = await Promise.all(rawFiles.map(f => uploadFile(f)))
+        const validKeys = uploadedKeys.filter(Boolean) as string[]
+
         itemsToSubmit.push({
           categoryId: Number(item.categoryId),
           amount: Number(item.amount),
-          receiptKeys: files,
+          receiptKeys: validKeys,
           note: note || '',
           partyName: item.detail.partyName?.trim() || ''
         })
       }
+      
+      // Upload pending attachment files for Payments
+      const processedPayments = await Promise.all(data.payments.map(async p => {
+        const key = await uploadFile(p.attachmentKey as any)
+        return { ...p, method: p.method as 'CASH' | 'BANK' | 'CHEQUE', partyId: Number(p.partyId), amount: Number(p.amount), attachmentKey: key }
+      }))
+
+      // Upload pending attachment files for Expenses
+      const processedExpenses = await Promise.all(data.expenseEntries.map(async e => {
+        const key = await uploadFile(e.attachmentKey as any)
+        return { ...e, categoryId: Number(e.categoryId), amount: Number(e.amount), attachmentKey: key }
+      }))
       
       const payload: NewEntryPayload = {
         date: data.formMeta.date,
@@ -189,8 +219,8 @@ export function NewEntryForm({ initialData, userId }: Props) {
         eodChecklist: data.eodChecklist,
         items: itemsToSubmit,
         transfers: data.transfers.map(t => ({ ...t, accountId: Number(t.accountId), amount: Number(t.amount) })),
-        payments: data.payments.map(p => ({ ...p, method: p.method as 'CASH' | 'BANK' | 'CHEQUE', partyId: Number(p.partyId), amount: Number(p.amount) })),
-        expenseEntries: data.expenseEntries.map(e => ({ ...e, categoryId: Number(e.categoryId), amount: Number(e.amount) })),
+        payments: processedPayments,
+        expenseEntries: processedExpenses,
         advanceSalaries: data.advanceSalaries.map(a => ({
           type: a.type as 'CASH' | 'PRODUCT', employeeId: Number(a.employeeId), amount: Number(a.amount),
           productDescription: a.productDescription || '', note: a.note || '',

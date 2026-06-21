@@ -48,22 +48,14 @@ export function ExpenseSection({ control, register, setValue, expenseCategories,
               <input type="text" className={inputClass} placeholder="Note" {...register(`expenseEntries.${idx}.note` as const)} />
             </div>
             <div className="sm:col-span-4">
-              {!expenses[idx]?.attachmentKey ? <input type="file" accept="image/*,.pdf" disabled={uploading[idx]} onChange={async event => {
+              {!expenses[idx]?.attachmentKey ? <input type="file" accept="image/*,.pdf" onChange={event => {
                 const file = event.target.files?.[0]
                 if (!file) return
-                setUploading(value => ({ ...value, [idx]: true }))
-                try {
-                  const formData = new FormData(); formData.append('file', file)
-                  const response = await fetch('/api/upload', { method: 'POST', body: formData })
-                  const result = await response.json()
-                  if (!response.ok) throw new Error(result.message || result.error || 'Upload failed')
-                  setValue(`expenseEntries.${idx}.attachmentKey`, result.key)
-                } catch (error) { toast.error(error instanceof Error ? error.message : 'Upload failed') }
-                finally { setUploading(value => ({ ...value, [idx]: false })) }
-              }} /> : <div className="flex items-center gap-2 text-xs text-primary"><Paperclip size={14}/> Receipt attached <button type="button" className="text-destructive" onClick={() => {
+                setValue(`expenseEntries.${idx}.attachmentKey`, file, { shouldDirty: true })
+              }} /> : <div className="flex items-center gap-2 text-xs text-primary"><Paperclip size={14}/> {expenses[idx].attachmentKey instanceof File ? expenses[idx].attachmentKey.name : 'Receipt attached'} <button type="button" className="text-destructive" onClick={() => {
                 const key = expenses[idx].attachmentKey
-                setValue(`expenseEntries.${idx}.attachmentKey`, undefined)
-                if (key) void fetch(`/api/upload?key=${encodeURIComponent(key)}`, { method: 'DELETE' })
+                setValue(`expenseEntries.${idx}.attachmentKey`, undefined, { shouldDirty: true })
+                if (key && typeof key === 'string') void fetch(`/api/upload?key=${encodeURIComponent(key)}`, { method: 'DELETE' })
               }}>Remove</button></div>}
             </div>
           </div>

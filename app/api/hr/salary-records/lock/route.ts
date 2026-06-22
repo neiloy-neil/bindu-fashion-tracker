@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
     const y = parseInt(year)
 
     // Verify user exists and is admin
-    const user = await prisma.systemUser.findUnique({
+    const user = await prisma.user.findUnique({
       where: { username }
     })
 

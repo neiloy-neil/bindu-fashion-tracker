@@ -14,6 +14,7 @@ import {
 } from 'recharts'
 
 const COLORS = ['#F4881F', '#2A356E', '#2F9E6B', '#FA9A3E', '#4A537A', '#11162B', '#E8E2D5']
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 
 function formatDate(dateStr: string) {
   if (!dateStr) return ''
@@ -264,7 +265,6 @@ function Dashboard() {
   const { data: transfersCountData } = useSWR(userRole === 'ADMIN' ? '/api/transfers/pending-count' : null, fetcher)
   const { data: chequesCountData } = useSWR(userRole === 'ADMIN' ? '/api/admin/cheques?status=PENDING' : null, fetcher)
 
-  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 
   if (!session) return <BrandSpinner />
 

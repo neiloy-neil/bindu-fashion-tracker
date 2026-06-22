@@ -1,8 +1,15 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { startOfMonth, endOfMonth } from 'date-fns'
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+  const role = (req as any).headers?.get
+    ? (req as any).headers.get('x-user-role')
+    : null
+  if (!role || (role !== 'ADMIN' && role !== 'HR_ADMIN')) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
   try {
     const body = await req.json()
     const { month, year, employeeId } = body
@@ -84,6 +91,39 @@ export async function POST(req: Request) {
               trackerAdvanceTotal: total,
               hrAdvanceDeducted: 0,
             }
+          })
+        }
+
+        // Sync EidRecord
+        const eidRecord = await tx.eidRecord.findFirst({
+          where: {
+            employeeId: empId,
+            year
+          }
+        })
+
+        if (eidRecord) {
+          const yearStartDate = new Date(year, 0, 1)
+          const yearEndDate = endOfMonth(new Date(year, 11, 1))
+
+          const yearAdvances = await tx.advanceSalary.findMany({
+            where: {
+              employeeId: empId,
+              type: 'CASH',
+              dailyEntry: {
+                date: {
+                  gte: yearStartDate,
+                  lte: yearEndDate
+                }
+              }
+            }
+          })
+
+          const eidTotal = yearAdvances.reduce((sum, a) => sum + (a.amount || 0), 0)
+
+          await tx.eidRecord.update({
+            where: { id: eidRecord.id },
+            data: { trackerAdvanceTotal: eidTotal }
           })
         }
       }

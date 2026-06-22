@@ -1,4 +1,4 @@
-INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+/* INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 VALUES (
   'receipts',
   'receipts',
@@ -10,4 +10,4 @@ ON CONFLICT (id) DO UPDATE SET
   public = false,
   file_size_limit = EXCLUDED.file_size_limit,
   allowed_mime_types = EXCLUDED.allowed_mime_types,
-  updated_at = now();
+  updated_at = now(); */

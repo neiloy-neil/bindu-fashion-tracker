@@ -20,7 +20,6 @@ export async function GET(req: NextRequest) {
         branchId: true,
         employeeId: true,
         branch: { select: { id: true, name: true, code: true } },
-        employeeId: true,
         employee: { select: { id: true, name: true } },
         managedBranches: { select: { id: true, name: true } },
         createdAt: true,

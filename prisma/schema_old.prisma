@@ -20,14 +20,11 @@ model Branch {
   users          User[]          @relation("UserPrimaryBranch")
   requests       BranchRequest[]
   managedBy      User[]          @relation("UserManagedBranches")
-  ledgerAccounts LedgerAccount[]
-  employees      Employee[]
 }
 
 model User {
   id                    Int             @id @default(autoincrement())
   username              String          @unique
-  email                 String?         @unique
   passwordHash          String
   role                  String          @default("BRANCH") // ADMIN or BRANCH
   isActive              Boolean         @default(true)
@@ -40,13 +37,7 @@ model User {
   branchRequests        BranchRequest[]
   managedBranches       Branch[]        @relation("UserManagedBranches")
   approvedCheques       Cheque[]        @relation("ChequeApprover")
-  auditLogs             AuditLog[]
   createdAt             DateTime        @default(now())
-  acknowledgedTransfers Transfer[]      @relation("TransferAcknowledger")
-  salaryRecords         SalaryRecord[]
-
-  employeeId            Int?            @unique
-  employee              Employee?       @relation(fields: [employeeId], references: [id], onDelete: SetNull)
 }
 
 model DailyEntry {
@@ -62,7 +53,6 @@ model DailyEntry {
   receiptUrl         String?
   notes              String?
   actualPhysicalCash Float?
-  expectedNetBalance Float?   @default(0)
   cashDifferenceNote String?
   eodChecklist       Json?
   openingTime        String?
@@ -74,8 +64,6 @@ model DailyEntry {
   payments          Payment[]
   expenseEntries    ExpenseEntry[]
   advanceSalaries   AdvanceSalary[]
-  receivedTransfers Transfer[]      @relation("ReceivedTransfers")
-
   @@unique([date, branchId])
   @@index([date])
   @@index([branchId])
@@ -189,8 +177,6 @@ model LedgerAccount {
   isActive  Boolean    @default(true)
   createdAt DateTime   @default(now())
   transfers Transfer[]
-  branchId  Int?
-  branch    Branch?    @relation(fields: [branchId], references: [id])
 }
 
 model Transfer {
@@ -199,75 +185,35 @@ model Transfer {
   accountId     Int
   amount        Float
   note          String?
-  attachmentUrl String?
   createdAt     DateTime @default(now())
 
   dailyEntry DailyEntry    @relation(fields: [dailyEntryId], references: [id])
   account    LedgerAccount @relation(fields: [accountId], references: [id])
 
-  status           String    @default("PENDING")
-  acknowledgedById Int?
-  acknowledgedBy   User?     @relation("TransferAcknowledger", fields: [acknowledgedById], references: [id])
-  acknowledgedAt   DateTime?
-  rejectionReason  String?
-
-  receivingEntryId Int?
-  receivingEntry   DailyEntry? @relation("ReceivedTransfers", fields: [receivingEntryId], references: [id])
 }
 
 model Party {
   id              Int      @id @default(autoincrement())
   name            String   @unique
-  contactPerson   String?
-  contactNumber   String?
-  secondaryNumber String?
-  address         String?  @db.Text
   isActive        Boolean  @default(true)
   balance         Float    @default(0)
   createdAt       DateTime @default(now())
 
   payments  Payment[]
-  bankInfo  PartyBankInfo[]
-  purchases Purchase[]
 }
 
-model PartyBankInfo {
-  id         Int      @id @default(autoincrement())
-  partyId    Int
-  bankName   String
-  branchName String
-  accountNo  String
-  routingNo  String?
-  createdAt  DateTime @default(now())
 
-  party Party @relation(fields: [partyId], references: [id], onDelete: Cascade)
-}
-
-model Purchase {
-  id            Int      @id @default(autoincrement())
-  partyId       Int
-  date          DateTime
-  amount        Float
-  invoiceNumber String?
-  note          String?
-  attachmentUrl String?
-  isOpeningDue  Boolean  @default(false)
-  createdAt     DateTime @default(now())
-
-  party Party @relation(fields: [partyId], references: [id], onDelete: Cascade)
-}
 
 model Payment {
   id            Int      @id @default(autoincrement())
-  dailyEntryId  Int?
+  dailyEntryId  Int
   partyId       Int
   method        String
   amount        Float
   note          String?
-  attachmentUrl String?
   createdAt     DateTime @default(now())
 
-  dailyEntry DailyEntry? @relation(fields: [dailyEntryId], references: [id])
+  dailyEntry DailyEntry @relation(fields: [dailyEntryId], references: [id])
   party      Party       @relation(fields: [partyId], references: [id], onDelete: Cascade)
   cheque     Cheque?
 }
@@ -301,7 +247,6 @@ model ExpenseEntry {
   categoryId    Int
   amount        Float
   note          String?
-  attachmentUrl String?
   createdAt     DateTime @default(now())
 
   dailyEntry DailyEntry      @relation(fields: [dailyEntryId], references: [id])
@@ -310,32 +255,11 @@ model ExpenseEntry {
 
 model Employee {
   id                   Int      @id @default(autoincrement())
-  employeeId           String?  @unique
   name                 String
-  designation          String?
-  basicSalary          Float    @default(0)
-  conveyance           Float    @default(1500)
-  yearlyLeaveAllowance Int      @default(12)
-  mobileNumber         String?
-  dateOfBirth          String?
-  joiningDate          String?
-  address              String?  @db.Text
-  emergencyContact     String?
-  bloodGroup           String?
-  nidNumber            String?
-  oldIdCard            String?
-  photoUrl             String?
   isActive             Boolean  @default(true)
   createdAt            DateTime @default(now())
 
-  branchId Int?
-  branch   Branch? @relation(fields: [branchId], references: [id])
-
   advanceSalaries AdvanceSalary[]
-  salaryRecords   SalaryRecord[]
-  eidRecords      EidRecord[]
-
-  user            User?
 }
 
 model AdvanceSalary {
@@ -346,85 +270,13 @@ model AdvanceSalary {
   amount             Float?
   productDescription String?
   note               String?
-  trackerSynced      Boolean  @default(true)
   createdAt          DateTime @default(now())
 
   dailyEntry DailyEntry @relation(fields: [dailyEntryId], references: [id])
   employee   Employee   @relation(fields: [employeeId], references: [id])
 }
 
-model AuditLog {
-  id         Int      @id @default(autoincrement())
-  userId     Int
-  action     String // CREATE, UPDATE, DELETE
-  entityType String // e.g. DailyEntry, Payment, ExpenseEntry
-  entityId   Int
-  oldValues  String?  @db.Text
-  newValues  String?  @db.Text
-  reason     String?  @db.Text
-  createdAt  DateTime @default(now())
 
-  user User @relation(fields: [userId], references: [id])
-}
 
-model SalaryRecord {
-  id                  Int       @id @default(autoincrement())
-  employeeId          Int
-  employee            Employee  @relation(fields: [employeeId], references: [id])
-  month               Int
-  year                Int
-  trackerAdvanceTotal Float     @default(0)
-  hrAdvanceDeducted   Float     @default(0)
-  leaveDaysTaken      Float     @default(0)
-  leaveAdjustment     Float     @default(0)
-  lateDays            Int       @default(0)
-  otDays              Float     @default(0)
-  attendanceBonus     Float     @default(0)
-  conveyanceOverride  Float?
-  notes               String    @default("") @db.Text
-  lockedAt            DateTime?
-  lockedById          Int?
-  lockedBy            User?     @relation(fields: [lockedById], references: [id])
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
 
-  @@unique([employeeId, month, year])
-}
 
-model EidRecord {
-  id               Int      @id @default(autoincrement())
-  employeeId       Int
-  employee         Employee @relation(fields: [employeeId], references: [id])
-  title            String   @default("Eid Bonus")
-  year             Int
-  salaryPaymentPct Float    @default(50)
-  trackerAdvanceTotal Float  @default(0)
-  hrAdvanceDeducted   Float  @default(0)
-  advanceDeducted  Float    @default(0) // Kept for backward compatibility
-  eidBonusPct      Float    @default(50)
-  createdAt        DateTime @default(now())
-
-  @@unique([employeeId, year, title])
-}
-
-model SalaryUploadLog {
-  id              Int      @id @default(autoincrement())
-  month           Int
-  year            Int
-  fileName        String   @default("")
-  recordsImported Int      @default(0)
-  recordsUpdated  Int      @default(0)
-  source          String   @default("excel")
-  uploadedAt      DateTime @default(now())
-
-  @@unique([month, year])
-}
-
-model SystemSettings {
-  id          Int      @id @default(autoincrement())
-  companyName String   @default("Bindu Premium")
-  logoUrl     String?
-  generatedBy String   @default("")
-  paymentBy   String   @default("")
-  updatedAt   DateTime @updatedAt
-}

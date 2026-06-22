@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const role = req.headers.get('x-user-role')
   if (!role) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
@@ -9,7 +10,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
   try {
     const employee = await prisma.employee.findUnique({
-      where: { id: parseInt(params.id) },
+      where: { id: parseInt(id) },
       include: {
         branch: { select: { name: true } }
       }
@@ -25,7 +26,8 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   }
 }
 
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const role = req.headers.get('x-user-role')
   if (!role || (role !== 'ADMIN' && role !== 'HR_ADMIN')) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -34,7 +36,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   try {
     const data = await req.json()
     const employee = await prisma.employee.update({
-      where: { id: parseInt(params.id) },
+      where: { id: parseInt(id) },
       data: {
         employeeId: data.employeeId !== undefined ? data.employeeId : undefined,
         name: data.name !== undefined ? data.name : undefined,
@@ -61,14 +63,15 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   }
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const role = req.headers.get('x-user-role')
   if (!role || (role !== 'ADMIN' && role !== 'HR_ADMIN')) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
   try {
-    const employeeId = parseInt(params.id)
+    const employeeId = parseInt(id)
     const salaryRecords = await prisma.salaryRecord.count({
       where: { employeeId }
     })

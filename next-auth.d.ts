@@ -8,6 +8,7 @@ declare module 'next-auth' {
       role: string
       branchId: number | null
       managedBranchIds: number[]
+      employeeId: number | null
     }
   }
 }

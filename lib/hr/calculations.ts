@@ -45,7 +45,7 @@ export function calcSalary(employee: Employee, record: SalaryRecord, yearlyUsedL
 
   const netPayable =
     employee.basicSalary
-    - record.advanceDeducted
+    - (record.trackerAdvanceTotal + record.hrAdvanceDeducted)
     - leaveDeduction
     - lateDeduction
     + otAddition
@@ -71,14 +71,15 @@ export function calcSalary(employee: Employee, record: SalaryRecord, yearlyUsedL
 export function calcEid(employee: Employee, record: EidRecord): EidCalc {
   const salaryPayment = Math.round(employee.basicSalary * record.salaryPaymentPct / 100)
   const eidBonus = Math.round(employee.basicSalary * record.eidBonusPct / 100)
-  const netPayable = salaryPayment - record.advanceDeducted + eidBonus
+  const advanceDeducted = (record.trackerAdvanceTotal ?? 0) + (record.hrAdvanceDeducted ?? 0)
+  const netPayable = salaryPayment - advanceDeducted + eidBonus
 
   return {
     employee,
     record,
     basicSalary: employee.basicSalary,
     salaryPayment,
-    advanceDeducted: record.advanceDeducted,
+    advanceDeducted,
     eidBonus,
     netPayable: Math.round(netPayable / 10) * 10,
   }

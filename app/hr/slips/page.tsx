@@ -75,7 +75,7 @@ function SlipsContent() {
       
       for (const calc of slips) {
         const bid = calc.employee.branchId?.toString() ?? 'unassigned'
-        if (calc.employee.branch) brs.set(bid, calc.employee.branch as any)
+        if ((calc.employee as any).branch) brs.set(bid, (calc.employee as any).branch)
         
         if (!map.has(bid)) map.set(bid, [])
         map.get(bid)!.push(calc)

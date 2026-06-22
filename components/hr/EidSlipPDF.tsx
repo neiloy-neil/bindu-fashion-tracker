@@ -125,9 +125,15 @@ function Slip({ calc, generatedBy, paymentBy }: {
         </View>
 
         <View style={s.tRow}>
-          <Cell style={s.tDesc}>Advance Received</Cell>
+          <Cell style={s.tDesc}>Branch Advance</Cell>
           <Cell style={s.tOp}>(-)</Cell>
-          <Cell style={s.tAmt}>{fmt(advanceDeducted)}</Cell>
+          <Cell style={s.tAmt}>{fmt((record as any).trackerAdvanceTotal ?? 0)}</Cell>
+        </View>
+
+        <View style={s.tRow}>
+          <Cell style={s.tDesc}>HR Advance</Cell>
+          <Cell style={s.tOp}>(-)</Cell>
+          <Cell style={s.tAmt}>{fmt((record as any).hrAdvanceDeducted ?? 0)}</Cell>
         </View>
 
         <View style={s.tRow}>
@@ -137,9 +143,6 @@ function Slip({ calc, generatedBy, paymentBy }: {
         </View>
       </View>
 
-      {record.notes && (
-        <Text style={s.noteText}>Note: {record.notes}</Text>
-      )}
 
       <View style={[s.sigRow, { marginTop: 24 }]}>
         <View style={{ alignItems: 'center' }}>

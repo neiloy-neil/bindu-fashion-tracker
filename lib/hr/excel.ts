@@ -189,7 +189,7 @@ export type SheetRow = {
   name: string
   branch: string
   basicSalary: number
-  advanceDeducted: number
+  hrAdvanceDeducted: number
   leaveDaysTaken: number
   leaveAdjustment: number
   lateDays: number
@@ -215,7 +215,7 @@ export function downloadTemplate(
       'Name': emp.name,
       'Branch': branchName,
       'Basic Salary': emp.basicSalary,
-      'Advance (৳)': rec?.advanceDeducted ?? 0,
+      'Advance (৳)': (rec?.hrAdvanceDeducted ?? 0) + (rec?.trackerAdvanceTotal ?? 0),
       'Leave (days)': rec?.leaveDaysTaken ?? 0,
       'Leave Adjustment (±days)': rec?.leaveAdjustment ?? 0,
       'Late (days)': rec?.lateDays ?? 0,
@@ -303,7 +303,7 @@ export function parseSalarySheet(
             name,
             branch: String(normalizedRow['branch'] ?? normalizedRow['branch name'] ?? '').trim(),
             basicSalary: Number(normalizedRow['basic salary'] ?? normalizedRow['basic_salary'] ?? normalizedRow['basic'] ?? 0) || 0,
-            advanceDeducted: Number(normalizedRow['advance (৳)'] ?? normalizedRow['advance'] ?? normalizedRow['advance deducted'] ?? normalizedRow['total advance'] ?? 0) || 0,
+            hrAdvanceDeducted: Number(normalizedRow['advance (৳)'] ?? normalizedRow['advance'] ?? normalizedRow['advance deducted'] ?? normalizedRow['total advance'] ?? 0) || 0,
             leaveDaysTaken: Number(normalizedRow['leave (days)'] ?? normalizedRow['leave'] ?? normalizedRow['leave days'] ?? normalizedRow['total leave'] ?? 0) || 0,
             leaveAdjustment: Number(normalizedRow['leave adjustment (±days)'] ?? normalizedRow['leave adjustment'] ?? normalizedRow['leave adj'] ?? 0) || 0,
             lateDays: Number(normalizedRow['late (days)'] ?? normalizedRow['late'] ?? normalizedRow['late days'] ?? normalizedRow['total late'] ?? 0) || 0,

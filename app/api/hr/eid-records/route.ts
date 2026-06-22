@@ -3,8 +3,8 @@ import { prisma } from '@/lib/prisma'
 
 export async function GET(req: NextRequest) {
   const role = req.headers.get('x-user-role')
-  if (!role) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+  if (!role || (role !== 'ADMIN' && role !== 'HR_ADMIN' && role !== 'AUDITOR')) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
   const { searchParams } = new URL(req.url)
@@ -60,18 +60,16 @@ export async function POST(req: NextRequest) {
           update: {
             title: title || r.title || `Eid Bonus ${y}`,
             salaryPaymentPct: r.salaryPaymentPct !== undefined ? r.salaryPaymentPct : undefined,
-            advanceDeducted: r.advanceDeducted !== undefined ? r.advanceDeducted : undefined,
+            hrAdvanceDeducted: r.hrAdvanceDeducted !== undefined ? r.hrAdvanceDeducted : undefined,
             eidBonusPct: r.eidBonusPct !== undefined ? r.eidBonusPct : undefined,
-            notes: r.notes !== undefined ? r.notes : undefined,
           },
           create: {
             employeeId: r.employeeId,
             year: y,
             title: title || r.title || `Eid Bonus ${y}`,
             salaryPaymentPct: r.salaryPaymentPct || 0,
-            advanceDeducted: r.advanceDeducted || 0,
+            hrAdvanceDeducted: r.hrAdvanceDeducted || 0,
             eidBonusPct: r.eidBonusPct || 0,
-            notes: r.notes || '',
           }
         })
       )

@@ -6,8 +6,8 @@ export async function GET(req: NextRequest) {
   const role = req.headers.get('x-user-role')
   const userIdStr = req.headers.get('x-user-id')
 
-  if (!role || !userIdStr) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+  if (!role || !userIdStr || (role !== 'ADMIN' && role !== 'HR_ADMIN' && role !== 'AUDITOR' && role !== 'BRANCH')) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
   const { searchParams } = new URL(req.url)
@@ -24,17 +24,25 @@ export async function GET(req: NextRequest) {
 
   // RBAC logic
   if (role === 'BRANCH') {
-    const user = await prisma.user.findUnique({ where: { id: parseInt(userIdStr) } })
-    if (!user) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    let ownEmployeeId = req.headers.get('x-user-employee-id')
+
+    if (!ownEmployeeId) {
+      const user = await prisma.user.findUnique({ where: { id: parseInt(userIdStr) } })
+      if (!user) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
+      if (!user.employeeId) {
+        return NextResponse.json({ error: 'No associated employee record found' }, { status: 404 })
+      }
+      ownEmployeeId = user.employeeId.toString()
     }
 
-    if (!user.employeeId) {
-      return NextResponse.json({ error: 'No associated employee record found' }, { status: 404 })
+    if (employeeId && employeeId !== ownEmployeeId) {
+      return NextResponse.json({ error: 'Forbidden: Cannot access other employee slips' }, { status: 403 })
     }
 
     // Branch users can only see their own slip
-    effectiveEmployeeId = user.employeeId.toString()
+    effectiveEmployeeId = ownEmployeeId
   }
 
   try {

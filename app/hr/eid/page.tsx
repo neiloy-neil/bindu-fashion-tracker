@@ -66,7 +66,7 @@ function EidContent() {
         employee: emp,
         record: recMap.get(emp.id) ?? {
           employeeId: emp.id, year, title: `Eid ul Adha Bonus ${year}`,
-          salaryPaymentPct: 50, advanceDeducted: 0, eidBonusPct: 50, notes: ''
+          salaryPaymentPct: 50, hrAdvanceDeducted: 0, trackerAdvanceTotal: 0, eidBonusPct: 50
         },
         dirty: false,
       })))
@@ -94,9 +94,8 @@ function EidContent() {
       employeeId: r.employee.id,
       title,
       salaryPaymentPct: r.record.salaryPaymentPct ?? 50,
-      advanceDeducted: r.record.advanceDeducted ?? 0,
+      hrAdvanceDeducted: r.record.hrAdvanceDeducted ?? 0,
       eidBonusPct: r.record.eidBonusPct ?? 50,
-      notes: r.record.notes ?? '',
     }))
 
     try {
@@ -229,12 +228,15 @@ function EidContent() {
                     Salary Pct<br /><span className="normal-case font-normal text-gray-400 text-[10px]">(%)</span>
                   </th>
                   <th className="text-center px-2 py-2.5 font-semibold text-gray-500 w-24">
-                    Advance<br /><span className="normal-case font-normal text-gray-400 text-[10px]">(৳)</span>
+                    Branch Advance<br /><span className="normal-case font-normal text-gray-400 text-[10px]">(৳)</span>
+                  </th>
+                  <th className="text-center px-2 py-2.5 font-semibold text-gray-500 w-24">
+                    HR Advance<br /><span className="normal-case font-normal text-gray-400 text-[10px]">(৳)</span>
                   </th>
                   <th className="text-center px-2 py-2.5 font-semibold text-gray-500 w-24">
                     Eid Bonus<br /><span className="normal-case font-normal text-gray-400 text-[10px]">(%)</span>
                   </th>
-                  <th className="text-left px-3 py-2.5 font-semibold text-gray-500" style={{ minWidth: 160 }}>Notes</th>
+
                   <th className="text-right px-3 py-2.5 font-semibold text-gray-700 bg-blue-50/80">Net Payable</th>
                 </tr>
               </thead>
@@ -256,20 +258,17 @@ function EidContent() {
                         <Input type="number" min="0" value={rec.salaryPaymentPct ?? 50} onChange={e => update(row.employee.id, 'salaryPaymentPct', +e.target.value)} className="text-right h-7 text-xs w-full min-w-[60px] border-gray-300 bg-white text-gray-900 focus:border-blue-500" />
                       </td>
                       <td className="px-2 py-2">
-                        <Input type="number" min="0" value={rec.advanceDeducted ?? 0} onChange={e => update(row.employee.id, 'advanceDeducted', +e.target.value)} className="text-right h-7 text-xs w-full min-w-[60px] border-gray-300 bg-white text-gray-900 focus:border-blue-500" />
+                        <div className="text-right text-gray-700 text-xs py-1 pr-2">
+                          {formatTaka(rec.trackerAdvanceTotal ?? 0)}
+                        </div>
+                      </td>
+                      <td className="px-2 py-2">
+                        <Input type="number" min="0" value={rec.hrAdvanceDeducted ?? 0} onChange={e => update(row.employee.id, 'hrAdvanceDeducted', +e.target.value)} className="text-right h-7 text-xs w-full min-w-[60px] border-gray-300 bg-white text-gray-900 focus:border-blue-500" />
                       </td>
                       <td className="px-2 py-2">
                         <Input type="number" min="0" value={rec.eidBonusPct ?? 50} onChange={e => update(row.employee.id, 'eidBonusPct', +e.target.value)} className="text-right h-7 text-xs w-full min-w-[60px] border-gray-300 bg-white text-gray-900 focus:border-blue-500" />
                       </td>
-                      <td className="px-3 py-2 align-top" style={{ minWidth: 160 }}>
-                        <textarea
-                          value={rec.notes ?? ''}
-                          onChange={e => update(row.employee.id, 'notes', e.target.value)}
-                          placeholder="Note..."
-                          rows={1}
-                          className="w-full text-xs px-2 py-1.5 border border-gray-300 rounded-md bg-white text-gray-900 placeholder:text-gray-400 resize-y focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                      </td>
+
                       <td className="px-3 py-2 text-right font-semibold text-blue-700 bg-blue-50/40 whitespace-nowrap text-sm">
                         {formatTaka(calc.netPayable)}
                       </td>
@@ -278,7 +277,7 @@ function EidContent() {
                 })}
                 {displayed.length === 0 && (
                   <tr>
-                    <td colSpan={8} className="text-center py-16">
+                    <td colSpan={7} className="text-center py-16">
                       <Users size={32} className="mx-auto text-gray-300 mb-2" />
                       <p className="text-gray-400 text-sm">No employees found</p>
                     </td>
@@ -293,7 +292,7 @@ function EidContent() {
                       Total ({totals.count} emp.)
                     </td>
                     <td className="px-2 py-2.5 text-center text-gray-600">{formatTaka(Math.round(totals.payment))}</td>
-                    <td className="px-2 py-2.5 text-center text-red-600">{formatTaka(Math.round(totals.advance))}</td>
+                    <td className="px-2 py-2.5 text-center text-red-600" colSpan={2}>{formatTaka(Math.round(totals.advance))}</td>
                     <td className="px-2 py-2.5 text-center text-green-600">{formatTaka(Math.round(totals.bonus))}</td>
                     <td className="px-3 py-2.5" />
                     <td className="px-3 py-2.5 text-right font-bold text-blue-800 bg-blue-50 text-base">{formatTaka(Math.round(totals.net))}</td>

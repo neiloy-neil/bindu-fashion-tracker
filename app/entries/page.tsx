@@ -13,6 +13,7 @@ import EditRequestModal from '@/components/EditRequestModal'
 import EntryViewModal from '@/components/dashboard/EntryViewModal'
 
 import { useSearchParams } from 'next/navigation'
+import { BrandSpinner } from '@/components/ui/BrandSpinner'
 
 function Entries() {
   const searchParams = useSearchParams()
@@ -230,7 +231,7 @@ function Entries() {
       return (
         <input
           ref={inputRef}
-          className="cell-input"
+          className="cell-input tabular-nums text-right font-mono focus:ring-2 focus:ring-[var(--accent)] outline-none transition-all"
           value={editValue}
           onChange={(e) => setEditValue(e.target.value)}
           onBlur={saveEdit}
@@ -242,7 +243,7 @@ function Entries() {
 
     return (
       <span
-        className="editable-cell"
+        className="editable-cell tabular-nums text-right font-mono hover:ring-2 hover:ring-[var(--accent)] hover:outline-none rounded px-1 transition-all"
         onClick={() => startEdit(entry, category, value)}
         title="Click to edit"
         style={{ display: 'block', minWidth: 70, cursor: 'pointer' }}
@@ -315,16 +316,17 @@ function Entries() {
       <div className="page-body" style={{ padding: '16px 20px' }}>
         {loading || categories.length === 0 ? (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '300px', gap: 12 }}>
-            <div className="spinner" />
-            <span style={{ color: 'var(--text-secondary)' }}>Loading sheet…</span>
+            <BrandSpinner />
+            <span style={{ color: 'var(--text-secondary)' }}>Loading register data...</span>
           </div>
         ) : entries.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '80px 0', color: 'var(--text-muted)' }}>
-            <div style={{ fontSize: 48, marginBottom: 16 }}>📋</div>
-            <p style={{ margin: '0 0 16px', fontSize: 16 }}>No entries for {MONTHS[month-1]} {year}</p>
+            <div style={{ fontSize: 48, marginBottom: 16 }}>📝</div>
+            <h3 style={{ fontSize: 20, color: 'var(--text-primary)', marginBottom: 8, fontWeight: 600 }}>No register data submitted</h3>
+            <p style={{ margin: '0 0 24px', fontSize: 14 }}>There are no entries for {MONTHS[month-1]} {year} yet.<br />If the shop is open today, click '+ New Entry' to start the daily sheet.</p>
             <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
-              <Link href="/import" className="btn btn-primary">Import Excel</Link>
-              <Link href="/entries/new" className="btn btn-secondary">Add Entry</Link>
+              <Link href="/entries/new" className="btn btn-primary" style={{ minWidth: 160 }}>+ New Entry</Link>
+              <Link href="/import" className="btn btn-secondary" style={{ minWidth: 160 }}>Import Excel</Link>
             </div>
           </div>
         ) : (
@@ -336,9 +338,9 @@ function Entries() {
                   <th className="col-sticky-0" rowSpan={2} style={{ textAlign: 'left', minWidth: 90 }}>Date</th>
                   <th className="col-sticky-1" rowSpan={2} style={{ textAlign: 'left' }}>Branch</th>
                   <th className="income-header" colSpan={incomeCategories.length}>Income</th>
-                  <th style={{ background: '#0a1628', color: '#f0f4ff', fontWeight: 700, padding: '8px 12px', fontSize: 10, textAlign: 'center' }} colSpan={2}>Summary</th>
+                  <th style={{ background: 'var(--bg-card)', color: '#f0f4ff', fontWeight: 700, padding: '8px 12px', fontSize: 10, textAlign: 'center' }} colSpan={2}>Summary</th>
                   <th className="expense-header" colSpan={expenseCategories.length}>Expenses</th>
-                  <th style={{ background: '#0a1628', color: '#f0f4ff', fontWeight: 700, padding: '8px 12px', fontSize: 10, textAlign: 'center' }} colSpan={2}>Totals</th>
+                  <th style={{ background: 'var(--bg-card)', color: '#f0f4ff', fontWeight: 700, padding: '8px 12px', fontSize: 10, textAlign: 'center' }} colSpan={2}>Totals</th>
                   <th className="col-sticky-right-3" rowSpan={2} style={{ textAlign: 'center', width: 60 }}>View</th>
                   <th className="col-sticky-right-2" rowSpan={2} style={{ textAlign: 'center', width: 60 }}>EOD</th>
                   <th className="col-sticky-right-1" rowSpan={2} style={{ textAlign: 'center', width: 60 }}>Chat</th>
@@ -382,10 +384,10 @@ function Entries() {
                             {renderCell(entry, c)}
                           </td>
                         ))}
-                        <td className="total-cell" style={{ color: 'var(--accent-light)' }}>
+                        <td className="total-cell tabular-nums text-right font-mono" style={{ color: 'var(--accent-light)' }}>
                           {formatCurrency(totals.totalSale)}
                         </td>
-                        <td className="total-cell" style={{ color: 'var(--accent-light)' }}>
+                        <td className="total-cell tabular-nums text-right font-mono" style={{ color: 'var(--accent-light)' }}>
                           {formatCurrency(totals.totalAmount)}
                         </td>
                         {expenseCategories.map((c) => (
@@ -393,16 +395,16 @@ function Entries() {
                             {renderCell(entry, c)}
                           </td>
                         ))}
-                        <td className="total-cell" style={{ color: 'var(--danger-light)' }}>
+                        <td className="total-cell tabular-nums text-right font-mono" style={{ color: 'var(--danger-light)' }}>
                           {formatCurrency(totals.totalExpense)}
                         </td>
-                        <td className={totals.netBalance >= 0 ? 'net-positive' : 'net-negative'}>
+                        <td className={`tabular-nums text-right font-mono ${totals.netBalance >= 0 ? 'net-positive' : 'net-negative'}`}>
                           {formatCurrency(totals.netBalance)}
                         </td>
                         <td className="col-sticky-right-3" style={{ textAlign: 'center', background: 'var(--bg-secondary)' }}>
                           <button 
                             onClick={() => setActiveViewEntry(entry)}
-                            className="p-2 hover:bg-[#1e2d45] rounded-full text-[#8899aa] hover:text-white transition-colors"
+                            className="p-2 hover:bg-[var(--border)] rounded-full text-[var(--text-secondary)] hover:text-white transition-colors"
                             title="View Full Entry"
                           >
                             <Eye size={18} />
@@ -412,19 +414,19 @@ function Entries() {
                           {(entry as any).eodChecklist ? (
                             <button 
                               onClick={() => setActiveChecklist((entry as any).eodChecklist)}
-                              className="p-2 hover:bg-[#1e2d45] rounded-full text-[#10b981] hover:text-[#059669] transition-colors"
+                              className="p-2 hover:bg-[var(--border)] rounded-full text-[var(--success)] hover:text-[var(--success)] opacity-80 hover:opacity-100 transition-colors"
                               title="View EOD Checklist"
                             >
                               <CheckSquare size={18} />
                             </button>
                           ) : (
-                            <span className="text-[#8899aa] opacity-50">-</span>
+                            <span className="text-[var(--text-secondary)] opacity-50">-</span>
                           )}
                         </td>
                         <td className="col-sticky-right-1" style={{ textAlign: 'center', background: 'var(--bg-secondary)' }}>
                           <button 
                             onClick={() => setActiveChat({ id: entry.id, branchName: entry.branch?.name || 'Branch', date: entry.date })}
-                            className="p-2 hover:bg-[#1e2d45] rounded-full text-[#00d2ff] hover:text-[#00a8cc] transition-colors"
+                            className="p-2 hover:bg-[var(--border)] rounded-full text-[var(--accent)] hover:text-[var(--accent)] opacity-80 hover:opacity-100 transition-colors"
                             title="Open Chat"
                           >
                             <MessageCircle size={18} />
@@ -444,7 +446,7 @@ function Entries() {
       {saving && (
         <div style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 9999 }}>
           <div className="toast toast-success" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div className="spinner" style={{ width: 14, height: 14, borderColor: 'rgba(255,255,255,0.3)', borderTopColor: '#fff' }} />
+            <BrandSpinner size={16} />
             Saving…
           </div>
         </div>
@@ -469,12 +471,12 @@ function Entries() {
           <div className="bg-[#162033] border border-[#1e2d45] rounded-xl max-w-md w-full p-6 shadow-2xl relative">
             <button 
               onClick={() => setActiveChecklist(null)} 
-              className="absolute top-4 right-4 text-[#8899aa] hover:text-white"
+              className="absolute top-4 right-4 text-[var(--text-secondary)] hover:text-white"
             >
               <X size={20} />
             </button>
             <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-              <CheckSquare className="text-[#10b981]" /> Digital Audit Log
+              <CheckSquare className="text-[var(--success)]" /> Digital Audit Log
             </h3>
             
             <div className="space-y-4 mb-6">
@@ -486,7 +488,7 @@ function Entries() {
                 { key: 'cashVerified', label: 'Cash count has been double-verified' },
               ].map((item) => (
                 <div key={item.key} className="flex items-center gap-3">
-                  <div className={`w-5 h-5 rounded flex items-center justify-center ${activeChecklist[item.key] ? 'bg-[#10b981] text-black' : 'bg-[#1e2d45] text-transparent'}`}>
+                  <div className={`w-5 h-5 rounded flex items-center justify-center ${activeChecklist[item.key] ? 'bg-[#10b981] text-black' : 'bg-[var(--border)] text-transparent'}`}>
                     ✓
                   </div>
                   <span className="text-[#f0f4ff] text-sm">{item.label}</span>
@@ -495,8 +497,8 @@ function Entries() {
             </div>
 
             <div className="bg-[#0a0f18] border border-[#1e2d45] rounded p-4 text-center">
-              <div className="text-xs text-[#8899aa] uppercase tracking-wider mb-2">Signed Off By</div>
-              <div className="font-mono text-lg text-[#00d2ff]">{activeChecklist.signature}</div>
+              <div className="text-xs text-[var(--text-secondary)] uppercase tracking-wider mb-2">Signed Off By</div>
+              <div className="font-mono text-lg text-[var(--accent)]">{activeChecklist.signature}</div>
             </div>
           </div>
         </div>
@@ -534,7 +536,7 @@ export default function EntriesPage() {
   return (
     <Suspense fallback={
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', gap: 12 }}>
-        <div className="spinner" />
+        <BrandSpinner />
         <span style={{ color: 'var(--text-secondary)' }}>Loading Sheet…</span>
       </div>
     }>

@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { toast } from 'react-hot-toast'
 import useSWR from 'swr'
+import { BrandSpinner } from '@/components/ui/BrandSpinner'
 
 const fetcher = (url: string) => fetch(url).then(res => res.json())
 
@@ -124,7 +125,7 @@ export default function AdminRequestsPage() {
 
         {isLoading ? (
           <div className="flex justify-center items-center h-40">
-            <div className="spinner" />
+            <BrandSpinner />
           </div>
         ) : filteredRequests.length === 0 ? (
           <div className="text-center p-12 text-[#8899aa] bg-[#0a0f18] rounded-xl border border-[#1e2d45]">

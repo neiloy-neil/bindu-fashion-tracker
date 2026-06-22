@@ -8,8 +8,12 @@ export const exportReportAsPdf = async (entryData: any, branchName: string, sele
 
   const doc = new jsPDF()
 
+  doc.setFont('times', 'bold')
+  doc.setTextColor(42, 53, 110)
   doc.setFontSize(18)
-  doc.text(`Bindu Fashion - Daily Report`, 14, 20)
+  doc.text(`Bindu Premium - Daily Report`, 14, 20)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(0, 0, 0)
   doc.setFontSize(12)
   doc.text(`Branch: ${branchName}`, 14, 28)
   doc.text(`Date: ${formatDate(selectedDate)}`, 14, 34)
@@ -25,7 +29,7 @@ export const exportReportAsPdf = async (entryData: any, branchName: string, sele
       head: [head],
       body,
       theme: 'grid',
-      headStyles: { fillColor: [30, 45, 69] }
+      headStyles: { fillColor: [42, 53, 110] }
     })
     currentY = (doc as any).lastAutoTable.finalY + 15
   }
@@ -80,7 +84,7 @@ export const exportReportAsPdf = async (entryData: any, branchName: string, sele
       head: [['Opening Time', 'Closing Time']],
       body: [[entryData.openingTime || '-', entryData.closingTime || '-']],
       theme: 'grid',
-      headStyles: { fillColor: [30, 45, 69] }
+      headStyles: { fillColor: [42, 53, 110] }
     })
   }
 

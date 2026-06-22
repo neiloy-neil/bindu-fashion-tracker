@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useEffect, useState } from 'react'
 import { signOut } from 'next-auth/react'
 
@@ -204,7 +205,7 @@ const navItems = [
 export function Sidebar({ isOpen, setIsOpen }: { isOpen?: boolean, setIsOpen?: (v: boolean) => void }) {
   const pathname = usePathname()
   const router = useRouter()
-  const [role, setRole] = useState<'ADMIN' | 'BRANCH' | null>(null)
+  const [role, setRole] = useState<'ADMIN' | 'BRANCH' | 'AUDITOR' | 'AREA_MANAGER' | null>(null)
   const [isLightMode, setIsLightMode] = useState(false)
   const [pendingTransfers, setPendingTransfers] = useState(0)
 
@@ -274,9 +275,12 @@ export function Sidebar({ isOpen, setIsOpen }: { isOpen?: boolean, setIsOpen?: (
         />
       )}
       <aside className={`sidebar z-50 ${isOpen ? 'mobile-open' : ''}`}>
-      <div className="sidebar-logo">
-        <h1>Bindu Fashion</h1>
-        <p>Sales & Expense Tracker</p>
+      <div className="sidebar-logo flex items-center gap-3">
+        <Image src="/bindu-logo.webp" alt="Bindu Premium" width={32} height={32} className="object-contain" />
+        <div>
+          <h1 className="font-display">Bindu Premium</h1>
+          <p>Tracking & Insights</p>
+        </div>
       </div>
 
       <nav className="sidebar-nav" style={{ flex: 1, overflowY: 'auto' }}>
@@ -368,7 +372,7 @@ export function Sidebar({ isOpen, setIsOpen }: { isOpen?: boolean, setIsOpen?: (
             fontSize: '14px',
             fontWeight: 500,
           }}
-          onMouseOver={(e) => (e.currentTarget.style.color = '#ff6b6b')}
+          onMouseOver={(e) => (e.currentTarget.style.color = 'var(--danger)')}
           onMouseOut={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
         >
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth={2}>

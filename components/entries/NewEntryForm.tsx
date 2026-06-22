@@ -9,7 +9,7 @@ import { Account, Branch, Category, Employee, ExpenseCategory, Party } from '@/l
 import { computeTotals, formatCurrency } from '@/lib/utils'
 import { dhakaDateString, NewEntryPayload } from '@/lib/new-entry'
 import toast from 'react-hot-toast'
-import { ChevronDown, ChevronRight } from 'lucide-react'
+import { ChevronDown, ChevronRight, TrendingUp, TrendingDown } from 'lucide-react'
 
 import { IncomeSection } from './IncomeSection'
 import { ExpenseSection } from './ExpenseSection'
@@ -17,6 +17,7 @@ import { TransferSection } from './TransferSection'
 import { PaymentSection } from './PaymentSection'
 import { AdvanceSalarySection } from './AdvanceSalarySection'
 import { EODChecklistModal } from './EODChecklistModal'
+import { BrandSpinner } from '@/components/ui/BrandSpinner'
 
 const generateId = () => Math.random().toString(36).substring(2, 9)
 
@@ -316,7 +317,7 @@ export function NewEntryForm({ initialData, userId }: Props) {
         {/* Income Section */}
         <div className="bg-card rounded-lg border border-border overflow-hidden">
           <button type="button" aria-expanded={showIncome}
-            className="flex w-full justify-between items-center gap-3 p-4 bg-muted/30 text-left"
+            className="flex w-full justify-between items-center gap-3 p-4 bg-[var(--bg-card)] border-b border-[var(--border)] text-left"
             onClick={() => setShowIncome(!showIncome)}
           >
             <h2 className="text-lg font-semibold flex flex-wrap items-center gap-2 min-w-0">
@@ -347,7 +348,7 @@ export function NewEntryForm({ initialData, userId }: Props) {
         {/* Unified Expenses Section */}
         <div className="bg-card rounded-lg border border-border overflow-hidden">
           <button type="button" aria-expanded={showExpense}
-            className="flex w-full justify-between items-center gap-3 p-4 bg-muted/30 text-left"
+            className="flex w-full justify-between items-center gap-3 p-4 bg-[var(--bg-card)] border-b border-[var(--border)] text-left"
             onClick={() => setShowExpense(!showExpense)}
           >
             <h2 className="text-lg font-semibold flex flex-wrap items-center gap-2 min-w-0">
@@ -370,9 +371,9 @@ export function NewEntryForm({ initialData, userId }: Props) {
         </div>
 
         {/* Net Balance & Physical Cash */}
-        <div className="bg-gradient-to-br from-primary/10 to-blue-500/10 p-5 sm:p-6 rounded-lg border border-primary/30 relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
-            <svg viewBox="0 0 24 24" width="100" height="100" fill="currentColor" className="text-primary"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.31-8.86c-1.77-.45-2.34-.94-2.34-1.67 0-.84.79-1.43 2.1-1.43 1.38 0 1.9.66 1.94 1.64h1.71c-.05-1.34-.87-2.57-2.49-2.97V5H10.9v1.69c-1.51.32-2.72 1.3-2.72 2.81 0 1.79 1.49 2.69 3.66 3.21 1.95.46 2.34 1.15 2.34 1.87 0 .53-.39 1.64-2.25 1.64-1.74 0-2.4-.91-2.51-1.92H7.72c.12 1.96 1.49 3.33 3.18 3.73V20h2.4v-1.72c1.69-.32 3.01-1.37 3.01-3.08 0-2.39-2.04-3.07-4.04-3.56z"/></svg>
+        <div className="bg-[var(--bg-card)] p-5 sm:p-6 rounded-lg border border-[var(--border)] shadow-xl relative overflow-hidden">
+          <div className="absolute top-1/2 right-0 -translate-y-1/2 opacity-[0.03] pointer-events-none z-0 overflow-hidden">
+            <img src="/bindu-logo.webp" alt="" className="w-64 h-64 object-contain translate-x-1/4" />
           </div>
           
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 relative z-10">
@@ -426,10 +427,10 @@ export function NewEntryForm({ initialData, userId }: Props) {
           </button>
           <button 
             type="submit" 
-            className="btn btn-primary justify-center sm:min-w-[200px]"
+            className="w-full sm:w-auto py-4 px-8 bg-[var(--accent)] hover:bg-[var(--accent-dark)] text-white font-bold rounded-lg shadow-lg shadow-[var(--accent-glow)] transition-all flex justify-center items-center"
             disabled={loading || hasInvalidPayments}
           >
-            {loading ? <span className="spinner" /> : 'Close Register'}
+            {loading ? <BrandSpinner size={16} /> : 'Close Register'}
           </button>
         </div>
       </form>

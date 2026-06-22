@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Branch } from '@/lib/types'
+import { BrandSpinner } from '@/components/ui/BrandSpinner'
 
 export default function BranchesPage() {
   const [branches, setBranches] = useState<Branch[]>([])
@@ -31,7 +32,7 @@ export default function BranchesPage() {
       <div className="page-body">
         {loading ? (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '200px', gap: 12 }}>
-            <div className="spinner" />
+            <BrandSpinner />
             <span style={{ color: 'var(--text-secondary)' }}>Loading…</span>
           </div>
         ) : (

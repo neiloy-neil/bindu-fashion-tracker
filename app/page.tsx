@@ -13,7 +13,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from 'recharts'
 
-const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899']
+const COLORS = ['#F4881F', '#2A356E', '#2F9E6B', '#FA9A3E', '#4A537A', '#11162B', '#E8E2D5']
 
 function formatDate(dateStr: string) {
   if (!dateStr) return ''
@@ -39,7 +39,7 @@ function DateFilter({
       {userRole === 'ADMIN' && (
         <select
           className="form-input form-select"
-          style={{ width: 140, borderColor: '#00d2ff', color: '#00d2ff', fontWeight: 'bold' }}
+          style={{ width: 140, borderColor: 'var(--accent)', color: 'var(--accent)', fontWeight: 'bold' }}
           value={branchId}
           onChange={(e) => onBranchChange(e.target.value)}
         >
@@ -112,6 +112,7 @@ function DateFilter({
 }
 
 import { useSearchParams } from 'next/navigation'
+import { BrandSpinner } from '@/components/ui/BrandSpinner'
 
 function Dashboard() {
   const searchParams = useSearchParams()
@@ -196,7 +197,7 @@ function Dashboard() {
       <div className="page-body">
         {loading ? (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '300px', gap: 12 }}>
-            <div className="spinner" />
+            <BrandSpinner />
             <span style={{ color: 'var(--text-secondary)' }}>Loading data…</span>
           </div>
         ) : !data ? (
@@ -217,31 +218,34 @@ function Dashboard() {
             <div className="stats-grid">
               <div className="stat-card">
                 <div className="stat-label">Total Sales</div>
-                <div className="stat-value green">৳{formatCurrency(data.totalSales)}</div>
+                <div className="stat-value success">৳{formatCurrency(data.totalSales)}</div>
                 <div className="stat-change">{MONTHS[month - 1]} {year}</div>
               </div>
-              <div className="stat-card danger">
+              <div className="stat-card">
                 <div className="stat-label">Total Expenses</div>
-                <div className="stat-value red">৳{formatCurrency(data.totalExpenses)}</div>
+                <div className="stat-value">৳{formatCurrency(data.totalExpenses)}</div>
                 <div className="stat-change">{MONTHS[month - 1]} {year}</div>
               </div>
-              <div className={`stat-card ${data.netBalance >= 0 ? '' : 'danger'}`}>
-                <div className="stat-label">Net Balance</div>
-                <div className={`stat-value ${data.netBalance >= 0 ? 'green' : 'red'}`}>
+              <div className={`stat-card ${data.netBalance >= 0 ? '' : 'danger'}`} style={{ overflow: 'hidden', position: 'relative' }}>
+                <svg className="absolute top-0 right-0 -mr-4 -mt-4 w-32 h-32 opacity-10 pointer-events-none" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C16.84 22 20.86 18.55 21.8 14H19.74C18.84 17.43 15.7 20 12 20C7.58 20 4 16.42 4 12C4 7.58 7.58 4 12 4C14.7 4 17.08 5.34 18.5 7.4L15 7.4V9.4H22V2.4H20V5.13C18.17 2.58 15.26 1 12 2V2Z" fill="var(--brand-orange)"/>
+                </svg>
+                <div className="stat-label" style={{ position: 'relative', zIndex: 10 }}>Net Balance</div>
+                <div className={`stat-value font-display ${data.netBalance >= 0 ? 'success' : 'red'}`} style={{ position: 'relative', zIndex: 10, fontSize: '36px' }}>
                   ৳{formatCurrency(Math.abs(data.netBalance))}
                 </div>
-                <div className="stat-change">{data.netBalance >= 0 ? 'Profit' : 'Loss'}</div>
+                <div className="stat-change" style={{ position: 'relative', zIndex: 10 }}>{data.netBalance >= 0 ? 'Profit' : 'Loss'}</div>
               </div>
               <div className="stat-card info">
                 <div className="stat-label">Active Branches</div>
-                <div className="stat-value" style={{ color: '#60a5fa' }}>
+                <div className="stat-value" style={{ color: 'var(--text-primary)' }}>
                   {data.branchStats.length}
                 </div>
                 <div className="stat-change">With activity this month</div>
               </div>
               <div className="stat-card warning">
                 <div className="stat-label">Total Physical Cash</div>
-                <div className="stat-value" style={{ color: '#fcd34d' }}>
+                <div className="stat-value" style={{ color: 'var(--warning)' }}>
                   ৳{formatCurrency(data.branchStats.reduce((sum, b) => sum + (b.physicalCash || 0), 0))}
                 </div>
                 <div className="stat-change">In branch drawers</div>
@@ -273,8 +277,8 @@ function Dashboard() {
                       labelFormatter={(l) => new Date(l).toLocaleDateString('en-BD', { day: 'numeric', month: 'short' })}
                     />
                     <Legend wrapperStyle={{ fontSize: 12 }} />
-                    <Line type="monotone" dataKey="totalSale" stroke="#10b981" strokeWidth={2} dot={false} name="Sales" />
-                    <Line type="monotone" dataKey="totalExpense" stroke="#ef4444" strokeWidth={2} dot={false} name="Expenses" />
+                    <Line type="monotone" dataKey="totalSale" stroke="var(--success)" strokeWidth={2} dot={false} name="Sales" />
+                    <Line type="monotone" dataKey="totalExpense" stroke="var(--text-secondary)" strokeWidth={2} dot={false} name="Expenses" />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
@@ -284,7 +288,7 @@ function Dashboard() {
                 <div style={{ marginBottom: 16, fontWeight: 700, fontSize: 14 }}>
                   Expense Breakdown
                   {data.expenseBreakdown.filter(eb => eb.amount > (data.totalExpenses * 0.3) && eb.amount > 0).length > 0 && (
-                    <div style={{ marginTop: 8, padding: '6px 10px', background: 'rgba(239, 68, 68, 0.1)', color: '#f87171', borderRadius: 6, fontSize: 11, fontWeight: 600 }}>
+                    <div style={{ marginTop: 8, padding: '6px 10px', background: 'var(--danger-glow)', color: 'var(--text-secondary)', borderRadius: 6, fontSize: 11, fontWeight: 600 }}>
                       ⚠️ Anomaly: {data.expenseBreakdown.filter(eb => eb.amount > (data.totalExpenses * 0.3) && eb.amount > 0).map(eb => eb.category).join(', ')} exceed 30% of total expenses.
                     </div>
                   )}
@@ -345,8 +349,8 @@ function Dashboard() {
                         formatter={(v: any) => [`৳${formatCurrency(v)}`, undefined]}
                       />
                       <Legend wrapperStyle={{ fontSize: 12 }} />
-                      <Bar dataKey="totalSale" fill="#10b981" name="Sales" radius={[4, 4, 0, 0]} />
-                      <Bar dataKey="totalExpense" fill="#ef4444" name="Expenses" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="totalSale" fill="var(--success)" name="Sales" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="totalExpense" fill="var(--text-secondary)" name="Expenses" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -368,12 +372,12 @@ function Dashboard() {
                           .map((b) => (
                             <tr key={b.branchName} style={{ borderBottom: '1px solid rgba(30,45,69,0.5)', transition: 'background 0.1s' }}>
                               <td style={{ padding: '10px 14px', fontWeight: 600 }}>{b.branchName}</td>
-                              <td style={{ padding: '10px 14px', textAlign: 'right', color: 'var(--accent-light)' }}>৳{formatCurrency(b.totalSale)}</td>
-                              <td style={{ padding: '10px 14px', textAlign: 'right', color: 'var(--danger-light)' }}>৳{formatCurrency(b.totalExpense)}</td>
-                              <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: b.netBalance >= 0 ? 'var(--accent-light)' : 'var(--danger-light)' }}>
+                              <td style={{ padding: '10px 14px', textAlign: 'right', color: 'var(--text-primary)' }}>৳{formatCurrency(b.totalSale)}</td>
+                              <td style={{ padding: '10px 14px', textAlign: 'right', color: 'var(--text-secondary)' }}>৳{formatCurrency(b.totalExpense)}</td>
+                              <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: b.netBalance >= 0 ? 'var(--success)' : 'var(--text-primary)' }}>
                                 ৳{formatCurrency(Math.abs(b.netBalance))}
                               </td>
-                              <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 600, color: '#fcd34d' }}>
+                              <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 600, color: 'var(--warning)' }}>
                                 ৳{formatCurrency(b.physicalCash || 0)}
                               </td>
                               <td style={{ padding: '10px 14px', textAlign: 'right' }}>
@@ -400,7 +404,7 @@ export default function DashboardPage() {
   return (
     <Suspense fallback={
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', gap: 12 }}>
-        <div className="spinner" />
+        <BrandSpinner />
         <span style={{ color: 'var(--text-secondary)' }}>Loading Dashboard…</span>
       </div>
     }>

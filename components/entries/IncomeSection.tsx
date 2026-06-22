@@ -34,7 +34,7 @@ export function IncomeSection({ control, register, setValue, categories, inputCl
         const isOpeningBalance = currentCat?.name === 'Opening Balance';
 
         return (
-        <div key={field.id} className="bg-card border border-border rounded-lg p-4 mb-3 relative group">
+        <div key={field.id} className="bg-[var(--bg-card)] border border-[var(--border)] rounded-lg p-4 mb-3 relative group">
           {!isOpeningBalance && (
             <button type="button" aria-label="Remove income" onClick={() => remove(idx)} className="absolute -right-2 -top-2 bg-destructive text-destructive-foreground p-1 rounded-full z-10">
               <X size={14} />
@@ -56,8 +56,8 @@ export function IncomeSection({ control, register, setValue, categories, inputCl
             </div>
             <div className="sm:col-span-2">
               <input 
-                type="number" 
-                className={`${inputClass} ${isOpeningBalance ? 'opacity-70 pointer-events-none' : ''}`} 
+                type="number"
+                className={`text-right tabular-nums font-mono ${inputClass} ${isOpeningBalance ? 'opacity-70 pointer-events-none' : ''}`} 
                 readOnly={isOpeningBalance}
                 placeholder="Amount" 
                 {...register(`incomeItems.${idx}.amount` as const)} 

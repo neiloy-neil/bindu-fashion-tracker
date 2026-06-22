@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
 import { Plus, Edit2, Trash2 } from 'lucide-react'
+import { BrandSpinner } from '@/components/ui/BrandSpinner'
 
 type Tab = 'BRANCHES' | 'PARTIES' | 'ACCOUNTS' | 'EXPENSE_CATEGORIES' | 'EMPLOYEES'
 
@@ -255,7 +256,7 @@ export default function AdminSettings() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-20"><div className="spinner"></div></div>
+        <div className="flex justify-center py-20"><BrandSpinner /></div>
       ) : (
         <div>
           <div className="flex justify-between items-center mb-6">

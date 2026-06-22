@@ -6,6 +6,7 @@ import {
   LineChart, Line, PieChart, Pie, Cell
 } from 'recharts'
 import { formatCurrency } from '@/lib/utils'
+import { BrandSpinner } from '@/components/ui/BrandSpinner'
 
 const COLORS = ['#00d2ff', '#3a7bd5', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16', '#14b8a6']
 
@@ -78,7 +79,7 @@ export default function AdminAnalyticsDashboard() {
   }
 
   if (loading && !data) {
-    return <div className="flex items-center justify-center min-h-[50vh]"><div className="spinner" /></div>
+    return <div className="flex items-center justify-center min-h-[50vh]"><BrandSpinner /></div>
   }
 
   return (

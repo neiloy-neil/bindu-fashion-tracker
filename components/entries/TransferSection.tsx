@@ -23,7 +23,7 @@ export function TransferSection({ control, register, accounts, inputClass, selec
     <div>
       <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Bank/Bkash Transfers</h3>
       {fields.map((field, idx) => (
-        <div key={field.id} className="bg-card border border-border rounded-lg p-4 mb-3 relative group">
+        <div key={field.id} className="bg-[var(--bg-card)] border border-[var(--border)] rounded-lg p-4 mb-3 relative group">
           <button type="button" aria-label="Remove transfer" onClick={() => remove(idx)} className="absolute -right-2 -top-2 bg-destructive text-destructive-foreground p-1 rounded-full z-10">
             <X size={14} />
           </button>
@@ -36,7 +36,8 @@ export function TransferSection({ control, register, accounts, inputClass, selec
               {errors.transfers?.[idx]?.accountId?.message && <span className="text-xs text-destructive mt-1 block">{errors.transfers[idx].accountId.message}</span>}
             </div>
             <div>
-              <input type="number" className={inputClass} placeholder="Amount" {...register(`transfers.${idx}.amount` as const)} />
+              <input type="number"
+                className={`text-right tabular-nums font-mono ${inputClass}`} placeholder="Amount" {...register(`transfers.${idx}.amount` as const)} />
               {errors.transfers?.[idx]?.amount?.message && <span className="text-xs text-destructive mt-1 block">{errors.transfers[idx].amount.message}</span>}
             </div>
             <div className="sm:col-span-2">

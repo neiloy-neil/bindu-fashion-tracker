@@ -14,9 +14,13 @@ export function EODChecklistModal({ control, register, setShowChecklistModal, on
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50" role="presentation">
-      <div role="dialog" aria-modal="true" aria-labelledby="checklist-title" className="bg-card border border-border rounded-xl shadow-2xl max-w-md max-h-[90vh] overflow-y-auto w-full p-6 animate-in slide-in-from-bottom-4">
+      <div role="dialog" aria-modal="true" aria-labelledby="checklist-title" className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl shadow-2xl max-w-md max-h-[90vh] overflow-y-auto w-full p-6 animate-in slide-in-from-bottom-4 relative overflow-hidden">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.03] pointer-events-none z-0">
+          <img src="/bindu-logo.webp" alt="" className="w-64 h-64 object-contain" />
+        </div>
+        <div className="relative z-10">
         <h3 id="checklist-title" className="text-xl font-bold mb-4 flex items-center gap-2">
-          <Lock className="text-primary" /> Final Checklist
+          <Lock className="text-[var(--accent)]" /> Final Checklist
         </h3>
         <p className="text-sm text-muted-foreground mb-6">
           Please confirm the following closing procedures have been completed before final submission.
@@ -30,10 +34,10 @@ export function EODChecklistModal({ control, register, setShowChecklistModal, on
             { id: 'shuttersDown', label: 'Shutters down & padlocked' },
             { id: 'cashVerified', label: 'Physical cash recounted & verified' }
           ] as const).map(item => (
-            <label key={item.id} className="flex items-center gap-3 p-3 bg-muted/20 border border-border rounded-lg cursor-pointer hover:border-primary/50 transition-colors">
+            <label key={item.id} className="flex items-center gap-3 p-3 bg-[var(--bg-primary)] border border-[var(--border)] rounded-lg cursor-pointer hover:border-[var(--accent)] transition-colors">
               <input 
                 type="checkbox" 
-                className="w-5 h-5 rounded border-border bg-card text-primary focus:ring-primary focus:ring-offset-0"
+                className="w-5 h-5 rounded border-[var(--border)] bg-[var(--bg-primary)] text-[var(--accent)] focus:ring-[var(--accent)] focus:ring-offset-0"
                 {...register(`eodChecklist.${item.id}`)}
               />
               <span className="text-sm select-none">{item.label}</span>
@@ -44,14 +48,14 @@ export function EODChecklistModal({ control, register, setShowChecklistModal, on
         <div className="flex gap-3">
           <button 
             type="button" 
-            className="btn btn-secondary flex-1" 
+            className="btn btn-secondary flex-1 py-4" 
             onClick={() => setShowChecklistModal(false)}
           >
             Cancel
           </button>
           <button 
             type="button" 
-            className="btn btn-primary flex-1" 
+            className="flex-1 py-4 bg-[var(--accent)] hover:bg-[var(--accent-dark)] text-white font-bold rounded-lg shadow-lg shadow-[var(--accent-glow)] transition-all flex justify-center items-center" 
             onClick={() => {
               setShowChecklistModal(false)
               onSubmitFinal()
@@ -61,6 +65,7 @@ export function EODChecklistModal({ control, register, setShowChecklistModal, on
           </button>
         </div>
       </div>
+        </div>
     </div>
   )
 }

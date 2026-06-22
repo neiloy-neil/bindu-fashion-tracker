@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { BrandSpinner } from '@/components/ui/BrandSpinner'
 
 type AuditLog = {
   id: number
@@ -110,7 +111,7 @@ export default function AuditLogsPage() {
 
       {loading ? (
         <div className="flex justify-center p-12">
-          <div className="spinner" />
+          <BrandSpinner />
         </div>
       ) : (
         <div className="bg-[#131b2c] rounded-lg border border-[#1e2d45] overflow-hidden">

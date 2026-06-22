@@ -28,7 +28,7 @@ export function ExpenseSection({ control, register, setValue, expenseCategories,
     <div>
       <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Expenses</h3>
       {fields.map((field, idx) => (
-        <div key={field.id} className="bg-card border border-border rounded-lg p-4 mb-3 relative group">
+        <div key={field.id} className="bg-[var(--bg-card)] border border-[var(--border)] rounded-lg p-4 mb-3 relative group">
           <button type="button" aria-label="Remove expense" onClick={() => remove(idx)} className="absolute -right-2 -top-2 bg-destructive text-destructive-foreground p-1 rounded-full z-10">
             <X size={14} />
           </button>
@@ -41,7 +41,8 @@ export function ExpenseSection({ control, register, setValue, expenseCategories,
               {errors.expenseEntries?.[idx]?.categoryId?.message && <span className="text-xs text-destructive mt-1 block">{errors.expenseEntries[idx].categoryId.message}</span>}
             </div>
             <div>
-              <input type="number" className={inputClass} placeholder="Amount" {...register(`expenseEntries.${idx}.amount` as const)} />
+              <input type="number"
+                className={`text-right tabular-nums font-mono ${inputClass}`} placeholder="Amount" {...register(`expenseEntries.${idx}.amount` as const)} />
               {errors.expenseEntries?.[idx]?.amount?.message && <span className="text-xs text-destructive mt-1 block">{errors.expenseEntries[idx].amount.message}</span>}
             </div>
             <div className="sm:col-span-2">

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { Plus, Edit2, Trash2, CheckCircle2, XCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { Category } from '@/lib/types'
+import { BrandSpinner } from '@/components/ui/BrandSpinner'
 
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([])
@@ -111,7 +112,7 @@ export default function CategoriesPage() {
       <div className="page-body">
         {loading ? (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '200px', gap: 12 }}>
-            <div className="spinner" />
+            <BrandSpinner />
             <span style={{ color: 'var(--text-secondary)' }}>Loading...</span>
           </div>
         ) : (

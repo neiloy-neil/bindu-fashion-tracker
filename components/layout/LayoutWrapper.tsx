@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { useState, useEffect } from 'react'
 import { Menu, X } from 'lucide-react'
+import Image from 'next/image'
 
 export function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
@@ -16,17 +17,20 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
   }, [pathname])
 
   if (isLoginPage) {
-    return <div className="min-h-screen bg-[#0a0f18]">{children}</div>
+    return <div className="min-h-screen bg-[var(--bg-primary)]">{children}</div>
   }
 
   return (
     <div className="app-layout">
       {/* Mobile Top Bar */}
-      <div className="mobile-top-bar items-center justify-between p-4 bg-[#0a0f18] border-b border-[#1e2d45] fixed top-0 w-full z-40">
-        <h1 className="text-xl font-bold bg-gradient-to-r from-[#00d2ff] to-[#3a7bd5] bg-clip-text text-transparent">
-          Bindu Fashion
-        </h1>
-        <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="text-white p-2">
+      <div className="mobile-top-bar items-center justify-between p-4 bg-[var(--bg-secondary)] border-b border-[var(--border)] fixed top-0 w-full z-40 flex md:hidden">
+        <div className="flex items-center gap-2">
+          <Image src="/bindu-logo.webp" alt="Bindu Premium" width={28} height={28} className="object-contain" />
+          <h1 className="text-xl font-display font-bold text-[var(--text-primary)]">
+            Bindu Premium
+          </h1>
+        </div>
+        <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="text-[var(--text-primary)] p-2">
           {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
       </div>

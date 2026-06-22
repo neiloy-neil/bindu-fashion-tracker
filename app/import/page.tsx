@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import { BrandSpinner } from '@/components/ui/BrandSpinner'
 
 export default function ImportPage() {
   const [dragging, setDragging] = useState(false)
@@ -145,7 +146,7 @@ export default function ImportPage() {
             >
               {loading ? (
                 <>
-                  <div className="spinner" style={{ width: 16, height: 16, borderColor: 'rgba(255,255,255,0.3)', borderTopColor: '#fff' }} />
+                  <BrandSpinner size={16} />
                   Importing…
                 </>
               ) : '📥 Import Data'}

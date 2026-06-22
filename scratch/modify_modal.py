@@ -1,47 +1,60 @@
 import re
 
-with open('components/dashboard/EntryViewModal.tsx', 'r', encoding='utf-8') as f:
+file_path = "d:/AI/bindu-fashion-tracker/components/entries/EODChecklistModal.tsx"
+with open(file_path, "r", encoding="utf-8") as f:
     content = f.read()
 
-# Add transfers render section after expense details
-transfer_addition = """          {renderSection('Expense Details', 'EXPENSE')}
+# 1. Dialog background and watermark
+# className="bg-card border border-border rounded-xl shadow-2xl max-w-md max-h-[90vh] overflow-y-auto w-full p-6 animate-in slide-in-from-bottom-4"
+# -> className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl shadow-2xl max-w-md max-h-[90vh] overflow-y-auto w-full p-6 animate-in slide-in-from-bottom-4 relative overflow-hidden"
+content = content.replace(
+    'className="bg-card border border-border rounded-xl shadow-2xl max-w-md max-h-[90vh] overflow-y-auto w-full p-6 animate-in slide-in-from-bottom-4"',
+    'className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl shadow-2xl max-w-md max-h-[90vh] overflow-y-auto w-full p-6 animate-in slide-in-from-bottom-4 relative overflow-hidden"'
+)
 
-          {entry.transfers && entry.transfers.length > 0 && (
-            <div className="mb-6">
-              <h4 className="font-bold text-[#a78bfa] mb-3 pb-1 border-b border-[#1e2d45]">Sent Transfers</h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                {entry.transfers.map((t: any, i: number) => (
-                  <div key={`st-${i}`} className="p-3 rounded-lg border border-[#1e2d45] bg-[#0a0f18]">
-                    <div className="flex justify-between items-start mb-1">
-                      <div className="text-xs text-[#8899aa]">{t.account?.name || '-'}</div>
-                      {t.status === 'PENDING' && <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#f59e0b]/20 text-[#f59e0b]">PENDING</span>}
-                      {t.status === 'ACKNOWLEDGED' && <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#10b981]/20 text-[#10b981]">ACKNOWLEDGED</span>}
-                      {t.status === 'REJECTED' && <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#ef4444]/20 text-[#ef4444]">REJECTED</span>}
-                      {t.status === 'NOT_APPLICABLE' && <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#64748b]/20 text-[#64748b]">N/A</span>}
-                    </div>
-                    <div className="text-[#a78bfa] font-bold">৳{formatCurrency(t.amount)}</div>
-                    {t.rejectionReason && t.status === 'REJECTED' && <div className="text-xs text-[#ef4444] mt-1 italic">Reason: {t.rejectionReason}</div>}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+# Insert watermark right after the dialog div
+watermark = '''<div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.03] pointer-events-none z-0">
+          <img src="/bindu-logo.webp" alt="" className="w-64 h-64 object-contain" />
+        </div>'''
+content = content.replace(
+    '<h3 id="checklist-title"',
+    f'{watermark}\n        <div className="relative z-10">\n        <h3 id="checklist-title"'
+)
+# we need to close the z-10 div at the end before the last closing tags
+content = content.replace(
+    '</div>\n    </div>\n  )\n}',
+    '</div>\n        </div>\n    </div>\n  )\n}'
+)
 
-          {entry.receivedTransfers && entry.receivedTransfers.length > 0 && (
-            <div className="mb-6">
-              <h4 className="font-bold text-[#34d399] mb-3 pb-1 border-b border-[#1e2d45]">Acknowledged Incoming Transfers</h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                {entry.receivedTransfers.map((t: any, i: number) => (
-                  <div key={`rt-${i}`} className="p-3 rounded-lg border border-[#1e2d45] bg-[#0a0f18]">
-                    <div className="text-xs text-[#8899aa] mb-1">From: {t.dailyEntry?.branch?.name || '-'}</div>
-                    <div className="text-[#34d399] font-bold">৳{formatCurrency(t.amount)}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}"""
+# 2. Checkboxes
+# className="w-5 h-5 rounded border-border bg-card text-primary focus:ring-primary focus:ring-offset-0"
+content = content.replace(
+    'className="w-5 h-5 rounded border-border bg-card text-primary focus:ring-primary focus:ring-offset-0"',
+    'className="w-5 h-5 rounded border-[var(--border)] bg-[var(--bg-primary)] text-[var(--accent)] focus:ring-[var(--accent)] focus:ring-offset-0"'
+)
 
-content = content.replace("          {renderSection('Expense Details', 'EXPENSE')}", transfer_addition)
+# 3. Label background
+# className="flex items-center gap-3 p-3 bg-muted/20 border border-border rounded-lg cursor-pointer hover:border-primary/50 transition-colors"
+content = content.replace(
+    'className="flex items-center gap-3 p-3 bg-muted/20 border border-border rounded-lg cursor-pointer hover:border-primary/50 transition-colors"',
+    'className="flex items-center gap-3 p-3 bg-[var(--bg-primary)] border border-[var(--border)] rounded-lg cursor-pointer hover:border-[var(--accent)] transition-colors"'
+)
 
-with open('components/dashboard/EntryViewModal.tsx', 'w', encoding='utf-8') as f:
+# 4. Icon
+# <Lock className="text-primary" /> -> <Lock className="text-[var(--accent)]" />
+content = content.replace('<Lock className="text-primary" />', '<Lock className="text-[var(--accent)]" />')
+
+# 5. Buttons
+content = content.replace(
+    'className="btn btn-secondary flex-1"',
+    'className="btn btn-secondary flex-1 py-4"'
+)
+content = content.replace(
+    'className="btn btn-primary flex-1"',
+    'className="flex-1 py-4 bg-[var(--accent)] hover:bg-[var(--accent-dark)] text-white font-bold rounded-lg shadow-lg shadow-[var(--accent-glow)] transition-all flex justify-center items-center"'
+)
+
+with open(file_path, "w", encoding="utf-8") as f:
     f.write(content)
+
+print("Updated EODChecklistModal.tsx")

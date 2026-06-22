@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { toast } from 'react-hot-toast'
+import { BrandSpinner } from '@/components/ui/BrandSpinner'
 
 export default function BranchRequestsPage() {
   const [requests, setRequests] = useState<any[]>([])
@@ -93,7 +94,7 @@ export default function BranchRequestsPage() {
       <div className="page-body p-5">
         {loading ? (
           <div className="flex justify-center items-center h-40">
-            <div className="spinner" />
+            <BrandSpinner />
           </div>
         ) : requests.length === 0 ? (
           <div className="text-center p-12 text-[#8899aa]">

@@ -11,8 +11,12 @@ export default function PdfGenerator({ data, month, year, branchName }: { data: 
     const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
     
     // Header
+    doc.setFont('times', 'bold')
+    doc.setTextColor(42, 53, 110)
     doc.setFontSize(20)
-    doc.text(`Bindu Fashion - ${branchName ? branchName + ' Summary' : 'Monthly Summary'}`, 14, 22)
+    doc.text(`Bindu Premium - ${branchName ? branchName + ' Summary' : 'Monthly Summary'}`, 14, 22)
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(0, 0, 0)
     doc.setFontSize(12)
     doc.text(`Period: ${MONTHS[month - 1]} ${year}`, 14, 30)
 
@@ -29,7 +33,7 @@ export default function PdfGenerator({ data, month, year, branchName }: { data: 
         `Taka ${formatCurrency(data.netBalance)}`
       ]],
       theme: 'grid',
-      headStyles: { fillColor: [30, 45, 69] }
+      headStyles: { fillColor: [42, 53, 110] }
     })
 
     // Branch Performance
@@ -49,7 +53,7 @@ export default function PdfGenerator({ data, month, year, branchName }: { data: 
         head: [['Branch', 'Sales', 'Expenses', 'Net Balance']],
         body: branchBody,
         theme: 'striped',
-        headStyles: { fillColor: [30, 45, 69] }
+        headStyles: { fillColor: [42, 53, 110] }
       })
     }
 

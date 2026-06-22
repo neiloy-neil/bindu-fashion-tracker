@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { BrandSpinner } from '@/components/ui/BrandSpinner'
 
 type Activity = {
   id: string
@@ -29,7 +30,7 @@ export default function RecentActivity() {
   if (loading) {
     return (
       <div className="card" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px' }}>
-        <div className="spinner" />
+        <BrandSpinner />
       </div>
     )
   }

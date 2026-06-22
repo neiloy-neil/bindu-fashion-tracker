@@ -21,9 +21,12 @@ export const authOptions: NextAuthOptions = {
         if (!credentials?.username || !credentials?.password) {
           throw new Error('Invalid credentials');
         }
-        
-        const user = await prisma.user.findUnique({
-          where: { username: credentials.username },
+        const isEmail = credentials.username.includes('@');
+
+        const user = await prisma.user.findFirst({
+          where: isEmail 
+            ? { email: credentials.username }
+            : { username: credentials.username },
           include: { managedBranches: { select: { id: true } } }
         });
 

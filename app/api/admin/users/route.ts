@@ -14,6 +14,7 @@ export async function GET(req: NextRequest) {
       select: {
         id: true,
         username: true,
+        email: true,
         role: true,
         isActive: true,
         branchId: true,
@@ -40,7 +41,7 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) {
     return NextResponse.json({ error: 'Invalid input', details: parsed.error.format() }, { status: 400 })
   }
-  const { username, password, role, branchId, isActive, managedBranchIds } = parsed.data
+  const { username, email, password, role, branchId, isActive, managedBranchIds } = parsed.data
 
   try {
     const existing = await prisma.user.findUnique({ where: { username } })
@@ -54,6 +55,7 @@ export async function POST(req: NextRequest) {
     const user = await prisma.user.create({
       data: {
         username,
+        email: email || null,
         passwordHash,
         role,
         ...(branchId && role === 'BRANCH' ? { branch: { connect: { id: parseInt(String(branchId)) } } } : {}),
@@ -63,6 +65,7 @@ export async function POST(req: NextRequest) {
       select: {
         id: true,
         username: true,
+        email: true,
         role: true,
         isActive: true,
         branchId: true,

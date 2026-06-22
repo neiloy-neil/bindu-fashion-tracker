@@ -171,6 +171,22 @@ export async function POST(req: NextRequest) {
       })
     }
 
+    // Trigger async advance salary sync
+    if (body.advanceSalaries && body.advanceSalaries.length > 0) {
+      const entryDate = new Date(body.date)
+      const host = req.headers.get('host') || 'localhost:3000'
+      const proto = req.headers.get('x-forwarded-proto') || 'http'
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || `${proto}://${host}`
+      fetch(`${appUrl}/api/hr/sync/advance`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          month: entryDate.getMonth() + 1,
+          year: entryDate.getFullYear(),
+        })
+      }).catch(e => console.error('Advance sync failed in background:', e))
+    }
+
     return NextResponse.json(entry, { status: 201 })
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {

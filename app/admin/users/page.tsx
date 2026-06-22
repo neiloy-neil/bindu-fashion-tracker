@@ -7,6 +7,7 @@ import toast from 'react-hot-toast'
 type User = {
   id: number
   username: string
+  email?: string | null
   role: string
   branchId: number | null
   branch: { name: string } | null
@@ -25,6 +26,7 @@ export default function UsersPage() {
 
   // Form
   const [username, setUsername] = useState('')
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [role, setRole] = useState('BRANCH')
   const [branchId, setBranchId] = useState('')
@@ -59,6 +61,7 @@ export default function UsersPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
         username, 
+        email: email || undefined,
         password, 
         role, 
         branchId: role === 'BRANCH' ? branchId : undefined,
@@ -70,6 +73,7 @@ export default function UsersPage() {
     if (res.ok) {
       setUsers([data, ...users])
       setUsername('')
+      setEmail('')
       setPassword('')
       setRole('BRANCH')
       setBranchId('')
@@ -104,6 +108,20 @@ export default function UsersPage() {
             </div>
 
             <div>
+              <label className="block text-sm text-[var(--text-muted)] mb-1">
+                Email {role === 'HR_ADMIN' && <span className="text-red-500">*</span>}
+              </label>
+              <input 
+                type="email"
+                required={role === 'HR_ADMIN'}
+                className="form-input w-full" 
+                value={email} 
+                onChange={e => setEmail(e.target.value)} 
+                placeholder="Optional for most, required for HR_ADMIN"
+              />
+            </div>
+
+            <div>
               <label className="block text-sm text-[var(--text-muted)] mb-1">Password</label>
               <input 
                 required 
@@ -120,6 +138,7 @@ export default function UsersPage() {
                 <option value="BRANCH">BRANCH</option>
                 <option value="AREA_MANAGER">AREA_MANAGER</option>
                 <option value="AUDITOR">AUDITOR</option>
+                <option value="HR_ADMIN">HR_ADMIN</option>
                 <option value="ADMIN">ADMIN</option>
               </select>
             </div>
@@ -170,6 +189,7 @@ export default function UsersPage() {
               <thead>
                 <tr className="bg-[var(--border)]/50 border-b border-[var(--border)] text-sm text-[var(--text-muted)]">
                   <th className="p-3">Username</th>
+                  <th className="p-3">Email</th>
                   <th className="p-3">Role</th>
                   <th className="p-3">Assigned Branch</th>
                 </tr>
@@ -178,6 +198,7 @@ export default function UsersPage() {
                 {users.map(u => (
                   <tr key={u.id} className="border-b border-[var(--border)] hover:bg-[var(--border)]/30">
                     <td className="p-3 font-medium">{u.username}</td>
+                    <td className="p-3 text-sm text-[var(--text-muted)]">{u.email || '-'}</td>
                     <td className="p-3">
                       <span className={`text-xs px-2 py-1 rounded ${u.role === 'ADMIN' ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/20 text-blue-400'}`}>
                         {u.role}

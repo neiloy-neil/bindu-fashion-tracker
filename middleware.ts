@@ -84,6 +84,27 @@ export async function middleware(req: NextRequest) {
       }
     }
 
+    // Check if HR_ADMIN is trying to access restricted pages
+    if (role === 'HR_ADMIN') {
+      if (
+        pathname.startsWith('/entries/new') ||
+        pathname.startsWith('/admin/users') ||
+        pathname.startsWith('/admin/settings') ||
+        pathname.startsWith('/branches') ||
+        pathname.startsWith('/import') ||
+        pathname.startsWith('/parties') ||
+        pathname.startsWith('/categories')
+      ) {
+        if (pathname.startsWith('/api/')) {
+          return new NextResponse(
+            JSON.stringify({ error: "Forbidden", message: "HR Admin cannot access this resource" }), 
+            { status: 403, headers: { 'content-type': 'application/json' } }
+          )
+        }
+        return NextResponse.redirect(new URL('/entries', req.url))
+      }
+    }
+
     // INJECT VERIFIED HEADERS
     requestHeaders.set('x-user-id', String(token.id))
     requestHeaders.set('x-user-role', role)

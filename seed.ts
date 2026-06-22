@@ -159,6 +159,20 @@ async function main() {
     }
   }
 
+  // Seed SystemSettings
+  const existingSettings = await prisma.systemSettings.findFirst()
+  if (!existingSettings) {
+    await prisma.systemSettings.create({
+      data: {
+        companyName: 'Bindu Premium',
+        generatedBy: ''
+      }
+    })
+    console.log('✅ SystemSettings seeded.')
+  } else {
+    console.log('✅ SystemSettings already exists.')
+  }
+
   console.log('✅ Seeding completed!')
 }
 

@@ -33,8 +33,9 @@ export const categorySchema = z.object({
 
 export const userSchema = z.object({
   username: z.string().min(1),
+  email: z.string().email().optional().or(z.literal('')),
   password: z.string().min(6),
-  role: z.enum(['ADMIN', 'BRANCH', 'AUDITOR', 'AREA_MANAGER']),
+  role: z.enum(['ADMIN', 'BRANCH', 'AUDITOR', 'AREA_MANAGER', 'HR_ADMIN']),
   branchId: z.union([z.string(), z.number()]).optional().nullable(),
   isActive: z.boolean().optional(),
   managedBranchIds: z.array(z.number()).optional()

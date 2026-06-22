@@ -56,7 +56,7 @@ export default function AuditLogsPage() {
     try {
       const parsed = JSON.parse(dataStr)
       return (
-        <div className="bg-[#0a0f18] p-2 rounded text-xs text-[var(--accent-light)] max-h-32 overflow-y-auto whitespace-pre-wrap font-mono border border-[#1e2d45]">
+        <div className="bg-[var(--bg-card)] p-2 rounded text-xs text-[var(--accent-light)] max-h-32 overflow-y-auto whitespace-pre-wrap font-mono border border-[var(--border)]">
           {JSON.stringify(parsed, null, 2)}
         </div>
       )
@@ -78,11 +78,11 @@ export default function AuditLogsPage() {
         </div>
       </div>
 
-      <div className="bg-[#131b2c] p-4 rounded-lg border border-[#1e2d45] mb-6 flex gap-4">
+      <div className="bg-[var(--bg-card)] p-4 rounded-lg border border-[var(--border)] mb-6 flex gap-4">
         <div>
           <label className="block text-xs text-[var(--text-muted)] mb-1 uppercase tracking-wider">Action</label>
           <select 
-            className="form-input form-select bg-[#0a0f18] text-sm py-1.5"
+            className="form-input form-select bg-[var(--bg-card)] text-sm py-1.5"
             value={filterAction}
             onChange={e => { setFilterAction(e.target.value); setPage(1); }}
           >
@@ -95,7 +95,7 @@ export default function AuditLogsPage() {
         <div>
           <label className="block text-xs text-[var(--text-muted)] mb-1 uppercase tracking-wider">Entity</label>
           <select 
-            className="form-input form-select bg-[#0a0f18] text-sm py-1.5"
+            className="form-input form-select bg-[var(--bg-card)] text-sm py-1.5"
             value={filterEntity}
             onChange={e => { setFilterEntity(e.target.value); setPage(1); }}
           >
@@ -114,10 +114,10 @@ export default function AuditLogsPage() {
           <BrandSpinner />
         </div>
       ) : (
-        <div className="bg-[#131b2c] rounded-lg border border-[#1e2d45] overflow-hidden">
+        <div className="bg-[var(--bg-card)] rounded-lg border border-[var(--border)] overflow-hidden">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-[#1e2d45]/50 border-b border-[#1e2d45] text-xs text-[var(--text-muted)] uppercase tracking-wider">
+              <tr className="bg-[var(--border)]/50 border-b border-[var(--border)] text-xs text-[var(--text-muted)] uppercase tracking-wider">
                 <th className="p-3 w-40">Timestamp</th>
                 <th className="p-3 w-32">User</th>
                 <th className="p-3 w-24">Action</th>
@@ -134,7 +134,7 @@ export default function AuditLogsPage() {
                   </td>
                 </tr>
               ) : logs.map(log => (
-                <tr key={log.id} className="border-b border-[#1e2d45] hover:bg-[#1e2d45]/30 align-top text-sm">
+                <tr key={log.id} className="border-b border-[var(--border)] hover:bg-[var(--border)]/30 align-top text-sm">
                   <td className="p-3 text-[var(--text-secondary)] whitespace-nowrap">
                     {new Date(log.createdAt).toLocaleString()}
                   </td>
@@ -144,9 +144,9 @@ export default function AuditLogsPage() {
                   </td>
                   <td className="p-3">
                     <span className={`px-2 py-0.5 rounded text-xs font-bold ${
-                      log.action === 'CREATE' ? 'bg-[#10b981]/20 text-[#10b981]' :
-                      log.action === 'UPDATE' ? 'bg-[#3b82f6]/20 text-[#3b82f6]' :
-                      'bg-[#ef4444]/20 text-[#ef4444]'
+                      log.action === 'CREATE' ? 'bg-[var(--success)]/20 text-[var(--success)]' :
+                      log.action === 'UPDATE' ? 'bg-[var(--accent)]/20 text-[var(--accent)]' :
+                      'bg-[var(--danger)]/20 text-[var(--danger)]'
                     }`}>
                       {log.action}
                     </span>
@@ -164,22 +164,22 @@ export default function AuditLogsPage() {
                     {log.action === 'UPDATE' ? (
                       <div className="grid grid-cols-2 gap-2">
                         <div>
-                          <div className="text-xs text-[#ef4444] mb-1 font-bold">Old Values</div>
+                          <div className="text-xs text-[var(--danger)] mb-1 font-bold">Old Values</div>
                           {renderJsonViewer(log.oldValues)}
                         </div>
                         <div>
-                          <div className="text-xs text-[#10b981] mb-1 font-bold">New Values</div>
+                          <div className="text-xs text-[var(--success)] mb-1 font-bold">New Values</div>
                           {renderJsonViewer(log.newValues)}
                         </div>
                       </div>
                     ) : log.action === 'CREATE' ? (
                       <div>
-                        <div className="text-xs text-[#10b981] mb-1 font-bold">Initial Snapshot</div>
+                        <div className="text-xs text-[var(--success)] mb-1 font-bold">Initial Snapshot</div>
                         {renderJsonViewer(log.newValues)}
                       </div>
                     ) : (
                       <div>
-                        <div className="text-xs text-[#ef4444] mb-1 font-bold">Final Snapshot</div>
+                        <div className="text-xs text-[var(--danger)] mb-1 font-bold">Final Snapshot</div>
                         {renderJsonViewer(log.oldValues)}
                       </div>
                     )}
@@ -189,7 +189,7 @@ export default function AuditLogsPage() {
             </tbody>
           </table>
           
-          <div className="p-4 border-t border-[#1e2d45] flex items-center justify-between text-sm">
+          <div className="p-4 border-t border-[var(--border)] flex items-center justify-between text-sm">
             <span className="text-[var(--text-muted)]">
               Page {page} of {totalPages || 1}
             </span>

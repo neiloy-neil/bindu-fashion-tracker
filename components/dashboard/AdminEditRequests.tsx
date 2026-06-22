@@ -59,7 +59,7 @@ export default function AdminEditRequests() {
               <div style={{ color: 'var(--text-secondary)', marginTop: 4 }}>
                 Reason: <span style={{ fontStyle: 'italic' }}>{req.reason || 'No reason provided'}</span>
               </div>
-              <div style={{ color: '#f59e0b', fontSize: 12, marginTop: 4, fontWeight: 500 }}>
+              <div style={{ color: 'var(--warning)', fontSize: 12, marginTop: 4, fontWeight: 500 }}>
                 {Object.keys(JSON.parse(req.changes)).includes('items') 
                   ? 'Items changed'
                   : Object.keys(JSON.parse(req.changes)).join(', ') + ' changed'}
@@ -67,7 +67,7 @@ export default function AdminEditRequests() {
             </div>
             <div className="flex gap-2 items-center">
               <button 
-                className="p-1.5 text-[#00d2ff] hover:bg-[#00d2ff]/10 rounded transition-colors"
+                className="p-1.5 text-[var(--accent)] hover:bg-[var(--accent)]/10 rounded transition-colors"
                 title="View Full Entry"
                 onClick={() => setViewingEntry({ entry: req.entry, changes: req.changes })}
               >

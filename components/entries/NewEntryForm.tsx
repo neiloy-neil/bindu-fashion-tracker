@@ -322,7 +322,7 @@ export function NewEntryForm({ initialData, userId }: Props) {
           >
             <h2 className="text-lg font-semibold flex flex-wrap items-center gap-2 min-w-0">
               💰 Income & Collections
-              <span className="text-xs bg-[#10b981]/20 text-[#10b981] px-2 py-0.5 rounded ml-2 font-mono">
+              <span className="text-xs bg-[var(--success)]/20 text-[var(--success)] px-2 py-0.5 rounded ml-2 font-mono">
                 {formatCurrency(totals.totalAmount)}
               </span>
             </h2>

@@ -28,7 +28,7 @@ export default function AdminRequestsPage() {
           toast.success(`New Support Request from ${latestRequest.branch?.name}!`, { 
             icon: '🔔', 
             duration: 6000,
-            style: { background: '#0a0f18', color: '#fff', border: '1px solid #00d2ff' }
+            style: { background: 'var(--bg-card)', color: '#fff', border: '1px solid var(--accent)' }
           })
           lastSeenIdRef.current = latestRequest.id
         }
@@ -77,10 +77,10 @@ export default function AdminRequestsPage() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'PENDING': return <span className="px-2 py-1 bg-[#f59e0b]/20 text-[#f59e0b] rounded text-xs font-bold border border-[#f59e0b]/30">Pending</span>
-      case 'IN_PROGRESS': return <span className="px-2 py-1 bg-[#3b82f6]/20 text-[#3b82f6] rounded text-xs font-bold border border-[#3b82f6]/30">In Progress</span>
-      case 'RESOLVED': return <span className="px-2 py-1 bg-[#10b981]/20 text-[#10b981] rounded text-xs font-bold border border-[#10b981]/30">Resolved</span>
-      case 'REJECTED': return <span className="px-2 py-1 bg-[#ef4444]/20 text-[#ef4444] rounded text-xs font-bold border border-[#ef4444]/30">Rejected</span>
+      case 'PENDING': return <span className="px-2 py-1 bg-[var(--warning)]/20 text-[var(--warning)] rounded text-xs font-bold border border-[var(--warning)]/30">Pending</span>
+      case 'IN_PROGRESS': return <span className="px-2 py-1 bg-[var(--accent)]/20 text-[var(--accent)] rounded text-xs font-bold border border-[var(--accent)]/30">In Progress</span>
+      case 'RESOLVED': return <span className="px-2 py-1 bg-[var(--success)]/20 text-[var(--success)] rounded text-xs font-bold border border-[var(--success)]/30">Resolved</span>
+      case 'REJECTED': return <span className="px-2 py-1 bg-[var(--danger)]/20 text-[var(--danger)] rounded text-xs font-bold border border-[var(--danger)]/30">Rejected</span>
       default: return null
     }
   }
@@ -114,8 +114,8 @@ export default function AdminRequestsPage() {
               onClick={() => setFilter(f)}
               className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-colors ${
                 filter === f 
-                  ? 'bg-[#00d2ff] text-black' 
-                  : 'bg-[#111827] text-[#8899aa] border border-[#1e2d45] hover:text-white'
+                  ? 'bg-[var(--accent)] text-black' 
+                  : 'bg-[var(--bg-card)] text-[var(--text-secondary)] border border-[var(--border)] hover:text-white'
               }`}
             >
               {f.replace('_', ' ')}
@@ -128,42 +128,42 @@ export default function AdminRequestsPage() {
             <BrandSpinner />
           </div>
         ) : filteredRequests.length === 0 ? (
-          <div className="text-center p-12 text-[#8899aa] bg-[#0a0f18] rounded-xl border border-[#1e2d45]">
+          <div className="text-center p-12 text-[var(--text-secondary)] bg-[var(--bg-card)] rounded-xl border border-[var(--border)]">
             <div className="text-4xl mb-4">🛠️</div>
             <p>No requests found for this filter.</p>
           </div>
         ) : (
           <div className="grid gap-4 max-w-5xl">
             {filteredRequests.map((req: any) => (
-              <div key={req.id} className="bg-[#0a0f18] border border-[#1e2d45] rounded-xl p-5 shadow flex flex-col md:flex-row justify-between items-start gap-4">
+              <div key={req.id} className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-5 shadow flex flex-col md:flex-row justify-between items-start gap-4">
                 <div className="flex-1">
                   <div className="flex flex-wrap items-center gap-3 mb-3">
-                    <span className="font-bold text-white bg-[#1e2d45] px-2 py-1 rounded text-xs">
+                    <span className="font-bold text-white bg-[var(--border)] px-2 py-1 rounded text-xs">
                       {req.branch.name}
                     </span>
-                    <span className="font-bold text-[#00d2ff]">{req.type}</span>
+                    <span className="font-bold text-[var(--accent)]">{req.type}</span>
                     {getPriorityBadge(req.priority)}
-                    <span className="text-xs text-[#8899aa]">
+                    <span className="text-xs text-[var(--text-secondary)]">
                       {new Date(req.createdAt).toLocaleString()}
                     </span>
                   </div>
                   <p className="text-white whitespace-pre-wrap text-sm">{req.description}</p>
                   
                   {req.adminComment && (
-                    <div className="mt-3 p-3 bg-[#1e2d45]/50 border border-[#1e2d45] rounded-lg">
-                      <p className="text-xs text-[#8899aa] mb-1 font-bold">Admin Comment:</p>
-                      <p className="text-sm text-[#00d2ff] whitespace-pre-wrap">{req.adminComment}</p>
+                    <div className="mt-3 p-3 bg-[var(--border)]/50 border border-[var(--border)] rounded-lg">
+                      <p className="text-xs text-[var(--text-secondary)] mb-1 font-bold">Admin Comment:</p>
+                      <p className="text-sm text-[var(--accent)] whitespace-pre-wrap">{req.adminComment}</p>
                     </div>
                   )}
                   
-                  <p className="text-xs text-[#8899aa] mt-3">Requested by: {req.requestedBy?.username}</p>
+                  <p className="text-xs text-[var(--text-secondary)] mt-3">Requested by: {req.requestedBy?.username}</p>
                 </div>
                 
                 <div className="flex flex-col items-end gap-3 min-w-[140px]">
                   {getStatusBadge(req.status)}
                   <button 
                     onClick={() => handleManageClick(req)}
-                    className="text-sm px-4 py-1.5 bg-[#111827] hover:bg-[#1e2d45] text-white border border-[#1e2d45] rounded-lg transition-colors"
+                    className="text-sm px-4 py-1.5 bg-[var(--bg-card)] hover:bg-[var(--border)] text-white border border-[var(--border)] rounded-lg transition-colors"
                   >
                     Manage Request
                   </button>
@@ -177,15 +177,15 @@ export default function AdminRequestsPage() {
       {/* Manage Request Modal */}
       {activeReq && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-[#111827] border border-[#1e2d45] rounded-xl w-full max-w-lg overflow-hidden shadow-2xl">
-            <div className="p-4 border-b border-[#1e2d45] flex justify-between items-center bg-[#0a0f18]">
+          <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl w-full max-w-lg overflow-hidden shadow-2xl">
+            <div className="p-4 border-b border-[var(--border)] flex justify-between items-center bg-[var(--bg-card)]">
               <h3 className="font-bold text-white">Manage Support Request</h3>
-              <button onClick={() => setActiveReq(null)} className="text-[#8899aa] hover:text-white">✕</button>
+              <button onClick={() => setActiveReq(null)} className="text-[var(--text-secondary)] hover:text-white">✕</button>
             </div>
             
-            <div className="p-5 border-b border-[#1e2d45]/50 bg-[#0a0f18]/50">
-              <div className="text-sm text-[#8899aa] mb-1">Original Request from <span className="text-white font-bold">{activeReq.branch.name}</span>:</div>
-              <p className="text-sm text-white bg-[#111827] p-3 rounded border border-[#1e2d45] whitespace-pre-wrap">
+            <div className="p-5 border-b border-[var(--border)]/50 bg-[var(--bg-card)]/50">
+              <div className="text-sm text-[var(--text-secondary)] mb-1">Original Request from <span className="text-white font-bold">{activeReq.branch.name}</span>:</div>
+              <p className="text-sm text-white bg-[var(--bg-card)] p-3 rounded border border-[var(--border)] whitespace-pre-wrap">
                 {activeReq.description}
               </p>
             </div>
@@ -193,22 +193,22 @@ export default function AdminRequestsPage() {
             <form onSubmit={handleUpdate} className="p-5 flex flex-col gap-4">
               <div className="flex gap-4">
                 <div className="flex-1">
-                  <label className="block text-sm font-medium text-[#8899aa] mb-1">Status</label>
+                  <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">Status</label>
                   <select 
-                    className="w-full bg-[#0a0f18] border border-[#1e2d45] rounded-lg px-3 py-2 text-white font-bold focus:outline-none focus:border-[#00d2ff]"
+                    className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-lg px-3 py-2 text-white font-bold focus:outline-none focus:border-[var(--accent)]"
                     value={modalStatus}
                     onChange={e => setModalStatus(e.target.value)}
                   >
-                    <option value="PENDING" className="text-[#f59e0b]">Pending</option>
-                    <option value="IN_PROGRESS" className="text-[#3b82f6]">In Progress</option>
-                    <option value="RESOLVED" className="text-[#10b981]">Resolved</option>
-                    <option value="REJECTED" className="text-[#ef4444]">Rejected</option>
+                    <option value="PENDING" className="text-[var(--warning)]">Pending</option>
+                    <option value="IN_PROGRESS" className="text-[var(--accent)]">In Progress</option>
+                    <option value="RESOLVED" className="text-[var(--success)]">Resolved</option>
+                    <option value="REJECTED" className="text-[var(--danger)]">Rejected</option>
                   </select>
                 </div>
                 <div className="flex-1">
-                  <label className="block text-sm font-medium text-[#8899aa] mb-1">Priority</label>
+                  <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">Priority</label>
                   <select 
-                    className="w-full bg-[#0a0f18] border border-[#1e2d45] rounded-lg px-3 py-2 text-white font-bold focus:outline-none focus:border-[#00d2ff]"
+                    className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-lg px-3 py-2 text-white font-bold focus:outline-none focus:border-[var(--accent)]"
                     value={modalPriority}
                     onChange={e => setModalPriority(e.target.value)}
                   >
@@ -221,9 +221,9 @@ export default function AdminRequestsPage() {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-[#8899aa] mb-1">Admin Comment (Visible to Branch)</label>
+                <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">Admin Comment (Visible to Branch)</label>
                 <textarea
-                  className="w-full bg-[#0a0f18] border border-[#1e2d45] rounded-lg px-3 py-2 text-white focus:outline-none focus:border-[#00d2ff] h-24 resize-none"
+                  className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-lg px-3 py-2 text-white focus:outline-none focus:border-[var(--accent)] h-24 resize-none"
                   placeholder="Leave notes about resolution, schedule, or why it was rejected..."
                   value={modalComment}
                   onChange={e => setModalComment(e.target.value)}
@@ -231,10 +231,10 @@ export default function AdminRequestsPage() {
               </div>
               
               <div className="flex justify-end gap-3 mt-2">
-                <button type="button" onClick={() => setActiveReq(null)} className="px-4 py-2 rounded-lg text-sm font-medium text-[#8899aa] hover:text-white hover:bg-[#1e2d45]">
+                <button type="button" onClick={() => setActiveReq(null)} className="px-4 py-2 rounded-lg text-sm font-medium text-[var(--text-secondary)] hover:text-white hover:bg-[var(--border)]">
                   Cancel
                 </button>
-                <button type="submit" disabled={submitting} className="px-4 py-2 rounded-lg text-sm font-bold bg-[#00d2ff] text-black hover:bg-[#00a8cc] disabled:opacity-50">
+                <button type="submit" disabled={submitting} className="px-4 py-2 rounded-lg text-sm font-bold bg-[var(--accent)] text-black hover:bg-[var(--accent-dark)] disabled:opacity-50">
                   {submitting ? 'Saving...' : 'Save Changes'}
                 </button>
               </div>

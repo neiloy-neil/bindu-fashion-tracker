@@ -37,8 +37,8 @@ export default function DiscrepanciesPage() {
         <h1 className="text-2xl font-bold">Discrepancy Inbox</h1>
       </div>
 
-      <div className="bg-[#131b2c] border border-[#1e2d45] rounded-xl overflow-hidden shadow-xl">
-        <div className="p-6 border-b border-[#1e2d45] flex items-center justify-between">
+      <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl overflow-hidden shadow-xl">
+        <div className="p-6 border-b border-[var(--border)] flex items-center justify-between">
           <div>
             <h2 className="text-lg font-semibold text-white">Flagged Entries</h2>
             <p className="text-sm text-[var(--text-muted)] mt-1">
@@ -52,7 +52,7 @@ export default function DiscrepanciesPage() {
 
         {entries.length === 0 ? (
           <div className="p-12 text-center text-[var(--text-muted)]">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[#1e2d45] mb-4">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[var(--border)] mb-4">
               <FileText className="w-8 h-8 opacity-50" />
             </div>
             <p className="text-lg">No discrepancies found.</p>
@@ -62,7 +62,7 @@ export default function DiscrepanciesPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-[#1e2d45]/50 border-b border-[#1e2d45] text-[var(--text-muted)] text-sm">
+                <tr className="bg-[var(--border)]/50 border-b border-[var(--border)] text-[var(--text-muted)] text-sm">
                   <th className="p-4 font-medium">Date</th>
                   <th className="p-4 font-medium">Branch</th>
                   <th className="p-4 font-medium text-right">System Balance</th>
@@ -72,14 +72,14 @@ export default function DiscrepanciesPage() {
                   <th className="p-4 font-medium text-center">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#1e2d45]">
+              <tbody className="divide-y divide-[var(--border)]">
                 {entries.map(entry => {
                   const expected = entry.expectedNetBalance ?? 0
                   const actual = entry.actualPhysicalCash ?? 0
                   const variance = actual - expected
                   
                   return (
-                    <tr key={entry.id} className="hover:bg-[#1a2436] transition-colors">
+                    <tr key={entry.id} className="hover:bg-[var(--bg-card-hover)] transition-colors">
                       <td className="p-4 whitespace-nowrap">{formatDate(entry.date)}</td>
                       <td className="p-4 font-medium text-white">{entry.branch.name}</td>
                       <td className="p-4 text-right">{formatCurrency(expected)}</td>
@@ -93,7 +93,7 @@ export default function DiscrepanciesPage() {
                         {entry.cashDifferenceNote || <span className="opacity-50">No note provided</span>}
                       </td>
                       <td className="p-4 text-center">
-                        <Link href={`/entries?date=${entry.date.split('T')[0]}&branchId=${entry.branch.id}`} className="text-sm bg-[#1e2d45] hover:bg-[#2a3b59] text-white px-3 py-1.5 rounded transition-colors">
+                        <Link href={`/entries?date=${entry.date.split('T')[0]}&branchId=${entry.branch.id}`} className="text-sm bg-[var(--border)] hover:bg-[var(--border-hover)] text-white px-3 py-1.5 rounded transition-colors">
                           View Entry
                         </Link>
                       </td>

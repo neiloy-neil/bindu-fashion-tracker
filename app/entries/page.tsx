@@ -289,7 +289,7 @@ function Entries() {
             <select
               value={branchFilter}
               onChange={(e) => setBranchFilter(e.target.value)}
-              className="bg-[#0a0f18] border border-[rgba(30,45,69,0.5)] rounded-lg p-2 text-white focus:outline-none focus:border-[#00d2ff]"
+              className="bg-[var(--bg-card)] border border-[var(--border)] rounded-lg p-2 text-white focus:outline-none focus:border-[var(--accent)]"
             >
               <option value="">All Branches</option>
               {branches.map((b) => (
@@ -338,9 +338,9 @@ function Entries() {
                   <th className="col-sticky-0" rowSpan={2} style={{ textAlign: 'left', minWidth: 90 }}>Date</th>
                   <th className="col-sticky-1" rowSpan={2} style={{ textAlign: 'left' }}>Branch</th>
                   <th className="income-header" colSpan={incomeCategories.length}>Income</th>
-                  <th style={{ background: 'var(--bg-card)', color: '#f0f4ff', fontWeight: 700, padding: '8px 12px', fontSize: 10, textAlign: 'center' }} colSpan={2}>Summary</th>
+                  <th style={{ background: 'var(--bg-card)', color: 'var(--text-primary)', fontWeight: 700, padding: '8px 12px', fontSize: 10, textAlign: 'center' }} colSpan={2}>Summary</th>
                   <th className="expense-header" colSpan={expenseCategories.length}>Expenses</th>
-                  <th style={{ background: 'var(--bg-card)', color: '#f0f4ff', fontWeight: 700, padding: '8px 12px', fontSize: 10, textAlign: 'center' }} colSpan={2}>Totals</th>
+                  <th style={{ background: 'var(--bg-card)', color: 'var(--text-primary)', fontWeight: 700, padding: '8px 12px', fontSize: 10, textAlign: 'center' }} colSpan={2}>Totals</th>
                   <th className="col-sticky-right-3" rowSpan={2} style={{ textAlign: 'center', width: 60 }}>View</th>
                   <th className="col-sticky-right-2" rowSpan={2} style={{ textAlign: 'center', width: 60 }}>EOD</th>
                   <th className="col-sticky-right-1" rowSpan={2} style={{ textAlign: 'center', width: 60 }}>Chat</th>
@@ -468,7 +468,7 @@ function Entries() {
       {/* Checklist View Modal */}
       {activeChecklist && (
         <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4">
-          <div className="bg-[#162033] border border-[#1e2d45] rounded-xl max-w-md w-full p-6 shadow-2xl relative">
+          <div className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-xl max-w-md w-full p-6 shadow-2xl relative">
             <button 
               onClick={() => setActiveChecklist(null)} 
               className="absolute top-4 right-4 text-[var(--text-secondary)] hover:text-white"
@@ -488,15 +488,15 @@ function Entries() {
                 { key: 'cashVerified', label: 'Cash count has been double-verified' },
               ].map((item) => (
                 <div key={item.key} className="flex items-center gap-3">
-                  <div className={`w-5 h-5 rounded flex items-center justify-center ${activeChecklist[item.key] ? 'bg-[#10b981] text-black' : 'bg-[var(--border)] text-transparent'}`}>
+                  <div className={`w-5 h-5 rounded flex items-center justify-center ${activeChecklist[item.key] ? 'bg-[var(--success)] text-black' : 'bg-[var(--border)] text-transparent'}`}>
                     ✓
                   </div>
-                  <span className="text-[#f0f4ff] text-sm">{item.label}</span>
+                  <span className="text-[var(--text-primary)] text-sm">{item.label}</span>
                 </div>
               ))}
             </div>
 
-            <div className="bg-[#0a0f18] border border-[#1e2d45] rounded p-4 text-center">
+            <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded p-4 text-center">
               <div className="text-xs text-[var(--text-secondary)] uppercase tracking-wider mb-2">Signed Off By</div>
               <div className="font-mono text-lg text-[var(--accent)]">{activeChecklist.signature}</div>
             </div>

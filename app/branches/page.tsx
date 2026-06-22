@@ -16,8 +16,8 @@ export default function BranchesPage() {
   }, [])
 
   const BRANCH_COLORS = [
-    '#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6',
-    '#06b6d4', '#ec4899', '#84cc16', '#f97316', '#14b8a6', '#a78bfa',
+    'var(--success)', 'var(--accent)', 'var(--warning)', 'var(--danger)', '#8b5cf6',
+    '#06b6d4', '#ec4899', '#84cc16', '#f97316', '#14b8a6', 'var(--accent)',
   ]
 
   return (
@@ -59,7 +59,7 @@ export default function BranchesPage() {
                   {branch.isActive ? (
                     <span className="badge badge-green">● Active</span>
                   ) : (
-                    <span className="badge" style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)' }}>● Inactive</span>
+                    <span className="badge" style={{ background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)', border: '1px solid rgba(239, 68, 68, 0.2)' }}>● Inactive</span>
                   )}
                   <Link href={`/?branchId=${branch.id}`} className="btn btn-secondary btn-sm" style={{ padding: '4px 10px', fontSize: 12 }}>
                     Dashboard →

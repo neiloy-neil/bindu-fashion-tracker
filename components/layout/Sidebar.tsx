@@ -304,7 +304,7 @@ export function Sidebar({ isOpen, setIsOpen }: { isOpen?: boolean, setIsOpen?: (
                 <span style={{
                   position: 'absolute',
                   right: '12px',
-                  backgroundColor: '#ef4444',
+                  backgroundColor: 'var(--danger)',
                   color: 'white',
                   fontSize: '0.75rem',
                   fontWeight: 'bold',

@@ -263,16 +263,16 @@ function Dashboard() {
                     <XAxis
                       dataKey="date"
                       tickFormatter={(v) => new Date(v).getDate().toString()}
-                      tick={{ fill: '#8899aa', fontSize: 11 }}
-                      axisLine={{ stroke: '#1e2d45' }}
+                      tick={{ fill: 'var(--text-secondary)', fontSize: 11 }}
+                      axisLine={{ stroke: 'var(--border)' }}
                     />
                     <YAxis
                       tickFormatter={(v) => `৳${(v / 1000).toFixed(0)}k`}
-                      tick={{ fill: '#8899aa', fontSize: 11 }}
-                      axisLine={{ stroke: '#1e2d45' }}
+                      tick={{ fill: 'var(--text-secondary)', fontSize: 11 }}
+                      axisLine={{ stroke: 'var(--border)' }}
                     />
                     <Tooltip
-                      contentStyle={{ background: '#111827', border: '1px solid #1e2d45', borderRadius: 8, fontSize: 12 }}
+                      contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12 }}
                       formatter={(v: any) => [`৳${formatCurrency(v)}`, undefined]}
                       labelFormatter={(l) => new Date(l).toLocaleDateString('en-BD', { day: 'numeric', month: 'short' })}
                     />
@@ -309,14 +309,14 @@ function Dashboard() {
                       ))}
                     </Pie>
                     <Tooltip
-                      contentStyle={{ background: '#111827', border: '1px solid #1e2d45', borderRadius: 8, fontSize: 12 }}
+                      contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12 }}
                       formatter={(v: any) => [`৳${formatCurrency(v || 0)}`, undefined]}
                     />
                     <Legend
                       layout="vertical"
                       align="right"
                       verticalAlign="middle"
-                      wrapperStyle={{ fontSize: 11, color: '#8899aa' }}
+                      wrapperStyle={{ fontSize: 11, color: 'var(--text-secondary)' }}
                     />
                   </PieChart>
                 </ResponsiveContainer>
@@ -336,16 +336,16 @@ function Dashboard() {
                       <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
                       <XAxis
                         dataKey="branchName"
-                        tick={{ fill: '#8899aa', fontSize: 11 }}
-                        axisLine={{ stroke: '#1e2d45' }}
+                        tick={{ fill: 'var(--text-secondary)', fontSize: 11 }}
+                        axisLine={{ stroke: 'var(--border)' }}
                       />
                       <YAxis
                         tickFormatter={(v) => `৳${(v / 1000).toFixed(0)}k`}
-                        tick={{ fill: '#8899aa', fontSize: 11 }}
-                        axisLine={{ stroke: '#1e2d45' }}
+                        tick={{ fill: 'var(--text-secondary)', fontSize: 11 }}
+                        axisLine={{ stroke: 'var(--border)' }}
                       />
                       <Tooltip
-                        contentStyle={{ background: '#111827', border: '1px solid #1e2d45', borderRadius: 8, fontSize: 12 }}
+                        contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12 }}
                         formatter={(v: any) => [`৳${formatCurrency(v)}`, undefined]}
                       />
                       <Legend wrapperStyle={{ fontSize: 12 }} />
@@ -370,7 +370,7 @@ function Dashboard() {
                         {[...data.branchStats]
                           .sort((a, b) => b.totalSale - a.totalSale)
                           .map((b) => (
-                            <tr key={b.branchName} style={{ borderBottom: '1px solid rgba(30,45,69,0.5)', transition: 'background 0.1s' }}>
+                            <tr key={b.branchName} style={{ borderBottom: '1px solid var(--border)', transition: 'background 0.1s' }}>
                               <td style={{ padding: '10px 14px', fontWeight: 600 }}>{b.branchName}</td>
                               <td style={{ padding: '10px 14px', textAlign: 'right', color: 'var(--text-primary)' }}>৳{formatCurrency(b.totalSale)}</td>
                               <td style={{ padding: '10px 14px', textAlign: 'right', color: 'var(--text-secondary)' }}>৳{formatCurrency(b.totalExpense)}</td>

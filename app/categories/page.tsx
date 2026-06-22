@@ -131,7 +131,7 @@ export default function CategoriesPage() {
                   <tr key={cat.id} style={{ borderBottom: '1px solid var(--border)' }}>
                     <td style={{ padding: '16px', fontWeight: 500 }}>
                       {cat.name}
-                      {cat.isDefault && <span className="ml-2 text-xs bg-[#1e2d45] text-[#8899aa] px-2 py-1 rounded">System</span>}
+                      {cat.isDefault && <span className="ml-2 text-xs bg-[var(--border)] text-[var(--text-secondary)] px-2 py-1 rounded">System</span>}
                     </td>
                     <td style={{ padding: '16px' }}>
                       <span className={`badge ${cat.type === 'INCOME' ? 'badge-green' : 'badge-red'}`}>
@@ -140,21 +140,21 @@ export default function CategoriesPage() {
                     </td>
                     <td style={{ padding: '16px' }}>
                       {cat.isActive ? (
-                        <span style={{ color: '#10b981', display: 'flex', alignItems: 'center', gap: 4, fontSize: 14 }}>
+                        <span style={{ color: 'var(--success)', display: 'flex', alignItems: 'center', gap: 4, fontSize: 14 }}>
                           <CheckCircle2 size={16} /> Active
                         </span>
                       ) : (
-                        <span style={{ color: '#ef4444', display: 'flex', alignItems: 'center', gap: 4, fontSize: 14 }}>
+                        <span style={{ color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: 4, fontSize: 14 }}>
                           <XCircle size={16} /> Inactive
                         </span>
                       )}
                     </td>
                     <td style={{ padding: '16px', textAlign: 'right' }}>
-                      <button onClick={() => openEdit(cat)} className="p-2 text-[#8899aa] hover:text-white transition-colors" title="Edit">
+                      <button onClick={() => openEdit(cat)} className="p-2 text-[var(--text-secondary)] hover:text-white transition-colors" title="Edit">
                         <Edit2 size={16} />
                       </button>
                       {!cat.isDefault && (
-                        <button onClick={() => handleDelete(cat.id)} className="p-2 text-[#ef4444] hover:bg-[#ef4444]/10 rounded transition-colors ml-2" title="Delete">
+                        <button onClick={() => handleDelete(cat.id)} className="p-2 text-[var(--danger)] hover:bg-[var(--danger)]/10 rounded transition-colors ml-2" title="Delete">
                           <Trash2 size={16} />
                         </button>
                       )}
@@ -169,10 +169,10 @@ export default function CategoriesPage() {
 
       {showModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-          <div className="bg-[#0f172a] border border-[#1e2d45] rounded-xl w-full max-w-md shadow-2xl flex flex-col overflow-hidden">
-            <div className="p-5 border-b border-[#1e2d45] flex justify-between items-center bg-[#0a1628]">
+          <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl w-full max-w-md shadow-2xl flex flex-col overflow-hidden">
+            <div className="p-5 border-b border-[var(--border)] flex justify-between items-center bg-[var(--bg-secondary)]">
               <h3 className="font-bold text-white text-lg">{editingCategory ? 'Edit Category' : 'New Category'}</h3>
-              <button onClick={() => setShowModal(false)} className="text-[#8899aa] hover:text-white transition-colors text-xl font-bold px-2">✕</button>
+              <button onClick={() => setShowModal(false)} className="text-[var(--text-secondary)] hover:text-white transition-colors text-xl font-bold px-2">✕</button>
             </div>
             
             <form onSubmit={handleSave} className="p-6 flex flex-col gap-5">
@@ -213,7 +213,7 @@ export default function CategoriesPage() {
                 </label>
               </div>
 
-              <div className="flex gap-3 pt-4 border-t border-[#1e2d45]">
+              <div className="flex gap-3 pt-4 border-t border-[var(--border)]">
                 <button type="button" onClick={() => setShowModal(false)} className="btn btn-secondary flex-1">Cancel</button>
                 <button type="submit" className="btn btn-primary flex-1">Save Category</button>
               </div>

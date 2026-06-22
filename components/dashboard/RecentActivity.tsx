@@ -46,7 +46,7 @@ export default function RecentActivity() {
             <div key={a.id} style={{ display: 'flex', gap: 10, alignItems: 'center', fontSize: 13, borderBottom: '1px solid var(--border)', paddingBottom: 8, paddingRight: 8 }}>
               <div style={{
                 width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
-                background: a.type === 'ENTRY_SUBMITTED' ? '#10b981' : '#f59e0b'
+                background: a.type === 'ENTRY_SUBMITTED' ? 'var(--success)' : 'var(--warning)'
               }} />
               <div style={{ flex: 1, color: 'var(--text-primary)' }}>{a.message}</div>
               <div style={{ color: 'var(--text-muted)', fontSize: 11, whiteSpace: 'nowrap' }}>

@@ -57,12 +57,12 @@ export default function DailyReportPage() {
     
     // add some padding or white background if needed
     const oldBg = el.style.background
-    el.style.background = '#0f172a' // match dark theme
+    el.style.background = 'var(--bg-card)' // match dark theme
     
     try {
       const dataUrl = type === 'png' 
-        ? await toPng(el, { quality: 1, backgroundColor: '#0f172a', pixelRatio: 2 })
-        : await toJpeg(el, { quality: 1, backgroundColor: '#0f172a', pixelRatio: 2 })
+        ? await toPng(el, { quality: 1, backgroundColor: 'var(--bg-card)', pixelRatio: 2 })
+        : await toJpeg(el, { quality: 1, backgroundColor: 'var(--bg-card)', pixelRatio: 2 })
       
       const link = document.createElement('a')
       const branchName = branches.find(b => b.id === parseInt(selectedBranchId))?.name || 'Branch'
@@ -124,12 +124,12 @@ export default function DailyReportPage() {
         </div>
 
         {loading ? (
-          <div className="flex justify-center p-8 text-[#8899aa]">Loading report...</div>
+          <div className="flex justify-center p-8 text-[var(--text-secondary)]">Loading report...</div>
         ) : hasSearched && !entryData ? (
           <div className="card text-center py-12">
             <div className="text-4xl mb-4">📭</div>
             <h3 className="text-xl font-bold text-white mb-2">No Entry Found</h3>
-            <p className="text-[#8899aa]">There is no daily entry recorded for this branch on the selected date.</p>
+            <p className="text-[var(--text-secondary)]">There is no daily entry recorded for this branch on the selected date.</p>
           </div>
         ) : entryData ? (
           <div>
@@ -149,7 +149,7 @@ export default function DailyReportPage() {
             {/* Rendered Report Area */}
             <div 
               ref={reportRef} 
-              className="bg-[#0f172a] p-8 rounded-xl border border-[#1e2d45] shadow-xl text-white"
+              className="bg-[var(--bg-card)] p-8 rounded-xl border border-[var(--border)] shadow-xl text-white"
             >
               <DailyReportTemplate entryData={entryData} />
             </div>

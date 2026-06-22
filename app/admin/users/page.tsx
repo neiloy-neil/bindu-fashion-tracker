@@ -90,8 +90,8 @@ export default function UsersPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         <div className="md:col-span-1">
-          <form onSubmit={handleSubmit} className="bg-[#131b2c] p-6 rounded-lg border border-[#1e2d45] space-y-4">
-            <h2 className="text-lg font-semibold border-b border-[#1e2d45] pb-2 mb-4">Create User</h2>
+          <form onSubmit={handleSubmit} className="bg-[var(--bg-card)] p-6 rounded-lg border border-[var(--border)] space-y-4">
+            <h2 className="text-lg font-semibold border-b border-[var(--border)] pb-2 mb-4">Create User</h2>
 
             <div>
               <label className="block text-sm text-[var(--text-muted)] mb-1">Username</label>
@@ -137,12 +137,12 @@ export default function UsersPage() {
             {role === 'AREA_MANAGER' && (
               <div>
                 <label className="block text-sm text-[var(--text-muted)] mb-1">Managed Branches</label>
-                <div className="bg-[#0a0f18] border border-[#1e2d45] rounded-lg p-3 max-h-48 overflow-y-auto space-y-2">
+                <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-lg p-3 max-h-48 overflow-y-auto space-y-2">
                   {branches.map(b => (
                     <label key={b.id} className="flex items-center gap-3 cursor-pointer">
                       <input 
                         type="checkbox" 
-                        className="rounded border-[#1e2d45] bg-[#162033] text-[#3b82f6] focus:ring-[#3b82f6]"
+                        className="rounded border-[var(--border)] bg-[var(--bg-secondary)] text-[var(--accent)] focus:ring-[var(--accent)]"
                         checked={managedBranchIds.includes(b.id)}
                         onChange={(e) => {
                           setManagedBranchIds(prev => 
@@ -150,14 +150,14 @@ export default function UsersPage() {
                           )
                         }}
                       />
-                      <span className="text-sm text-[#f0f4ff]">{b.name}</span>
+                      <span className="text-sm text-[var(--text-primary)]">{b.name}</span>
                     </label>
                   ))}
                 </div>
               </div>
             )}
 
-            <button type="submit" className="w-full mt-2 py-2 rounded font-medium flex items-center justify-center bg-[#00d2ff] hover:bg-[#00d2ff]/80 text-black">
+            <button type="submit" className="w-full mt-2 py-2 rounded font-medium flex items-center justify-center bg-[var(--accent)] hover:bg-[var(--accent)]/80 text-black">
               <PlusCircle size={16} className="mr-2" />
               Create User
             </button>
@@ -165,10 +165,10 @@ export default function UsersPage() {
         </div>
 
         <div className="md:col-span-2">
-          <div className="bg-[#131b2c] rounded-lg border border-[#1e2d45] overflow-hidden">
+          <div className="bg-[var(--bg-card)] rounded-lg border border-[var(--border)] overflow-hidden">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-[#1e2d45]/50 border-b border-[#1e2d45] text-sm text-[var(--text-muted)]">
+                <tr className="bg-[var(--border)]/50 border-b border-[var(--border)] text-sm text-[var(--text-muted)]">
                   <th className="p-3">Username</th>
                   <th className="p-3">Role</th>
                   <th className="p-3">Assigned Branch</th>
@@ -176,7 +176,7 @@ export default function UsersPage() {
               </thead>
               <tbody>
                 {users.map(u => (
-                  <tr key={u.id} className="border-b border-[#1e2d45] hover:bg-[#1e2d45]/30">
+                  <tr key={u.id} className="border-b border-[var(--border)] hover:bg-[var(--border)]/30">
                     <td className="p-3 font-medium">{u.username}</td>
                     <td className="p-3">
                       <span className={`text-xs px-2 py-1 rounded ${u.role === 'ADMIN' ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/20 text-blue-400'}`}>

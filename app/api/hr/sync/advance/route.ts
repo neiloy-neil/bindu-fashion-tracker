@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import prisma from '@/lib/prisma'
+import { prisma } from '@/lib/prisma'
 import { startOfMonth, endOfMonth } from 'date-fns'
 
 export async function POST(req: Request) {

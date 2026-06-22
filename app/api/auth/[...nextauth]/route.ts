@@ -50,6 +50,7 @@ export const authOptions: NextAuthOptions = {
           role: user.role,
           branchId: user.branchId,
           managedBranchIds: user.managedBranches?.map(b => b.id) || [],
+          employeeId: user.employeeId,
         };
       }
     })
@@ -62,6 +63,7 @@ export const authOptions: NextAuthOptions = {
         token.role = (user as any).role;
         token.branchId = (user as any).branchId;
         token.managedBranchIds = (user as any).managedBranchIds;
+        token.employeeId = (user as any).employeeId;
       }
       return token;
     },
@@ -74,6 +76,7 @@ export const authOptions: NextAuthOptions = {
           role: token.role,
           branchId: token.branchId,
           managedBranchIds: token.managedBranchIds,
+          employeeId: token.employeeId,
         };
       }
       return session;

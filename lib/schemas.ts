@@ -38,7 +38,8 @@ export const userSchema = z.object({
   role: z.enum(['ADMIN', 'BRANCH', 'AUDITOR', 'AREA_MANAGER', 'HR_ADMIN']),
   branchId: z.union([z.string(), z.number()]).optional().nullable(),
   isActive: z.boolean().optional(),
-  managedBranchIds: z.array(z.number()).optional()
+  managedBranchIds: z.array(z.number()).optional(),
+  employeeId: z.union([z.string(), z.number()]).optional().nullable()
 })
 
 export const branchRequestSchema = z.object({

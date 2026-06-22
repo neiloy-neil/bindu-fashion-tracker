@@ -15,6 +15,8 @@ const BRANCHES = [
   { name: 'Barishal',     code: 'BARISHAL' },
   { name: 'Teknaf',       code: 'TEKNAF' },
   { name: 'Jashore',      code: 'JASHORE' },
+  { name: 'Sylhet',       code: 'SYLHET' },
+  { name: 'Office',       code: 'OFFICE' },
 ]
 
 const DEFAULT_INCOME_CATEGORIES = [
@@ -86,6 +88,23 @@ async function main() {
     console.log(`✅ Admin user seeded! Username: admin | Password: ${adminPasswordPlain} (Change this immediately!)`)
   } else {
     console.log(`✅ Admin user already exists.`)
+  }
+
+  // HR Admin User
+  const hrAdminPasswordPlain = 'ChangeMe123!'
+  const hrAdminPasswordHash = await bcrypt.hash(hrAdminPasswordPlain, 10)
+  const existingHrAdmin = await prisma.user.findUnique({ where: { username: 'hr_admin' } })
+  if (!existingHrAdmin) {
+    await prisma.user.create({
+      data: {
+        username: 'hr_admin',
+        passwordHash: hrAdminPasswordHash,
+        role: 'HR_ADMIN'
+      }
+    })
+    console.log(`✅ HR Admin user seeded! Username: hr_admin | Password: ${hrAdminPasswordPlain}`)
+  } else {
+    console.log(`✅ HR Admin user already exists.`)
   }
 
   for (const branch of branchRecords) {
@@ -165,12 +184,19 @@ async function main() {
     await prisma.systemSettings.create({
       data: {
         companyName: 'Bindu Premium',
-        generatedBy: ''
+        generatedBy: 'Nahid'
       }
     })
     console.log('✅ SystemSettings seeded.')
   } else {
-    console.log('✅ SystemSettings already exists.')
+    await prisma.systemSettings.update({
+      where: { id: existingSettings.id },
+      data: {
+        companyName: 'Bindu Premium',
+        generatedBy: 'Nahid'
+      }
+    })
+    console.log('✅ SystemSettings updated.')
   }
 
   console.log('✅ Seeding completed!')

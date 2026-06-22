@@ -29,21 +29,12 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const employees = await prisma.employee.findMany({
-      where: {
-        OR: [
-          { name: user.username },
-          { employeeId: user.username }
-        ]
-      }
-    })
-
-    if (employees.length === 0) {
+    if (!user.employeeId) {
       return NextResponse.json({ error: 'No associated employee record found' }, { status: 404 })
     }
 
     // Branch users can only see their own slip
-    effectiveEmployeeId = employees[0].id.toString()
+    effectiveEmployeeId = user.employeeId.toString()
   }
 
   try {

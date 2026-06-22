@@ -18,7 +18,10 @@ export async function GET(req: NextRequest) {
         role: true,
         isActive: true,
         branchId: true,
+        employeeId: true,
         branch: { select: { id: true, name: true, code: true } },
+        employeeId: true,
+        employee: { select: { id: true, name: true } },
         managedBranches: { select: { id: true, name: true } },
         createdAt: true,
       },
@@ -41,7 +44,7 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) {
     return NextResponse.json({ error: 'Invalid input', details: parsed.error.format() }, { status: 400 })
   }
-  const { username, email, password, role, branchId, isActive, managedBranchIds } = parsed.data
+  const { username, email, password, role, branchId, isActive, managedBranchIds, employeeId } = parsed.data
 
   try {
     const existing = await prisma.user.findUnique({ where: { username } })
@@ -60,6 +63,7 @@ export async function POST(req: NextRequest) {
         role,
         ...(branchId && role === 'BRANCH' ? { branch: { connect: { id: parseInt(String(branchId)) } } } : {}),
         ...(managedBranchIds && role === 'AREA_MANAGER' ? { managedBranches: { connect: managedBranchIds.map((id: number) => ({ id })) } } : {}),
+        ...(employeeId ? { employee: { connect: { id: parseInt(String(employeeId)) } } } : {}),
         isActive: isActive !== undefined ? isActive : true,
       },
       select: {
@@ -69,6 +73,7 @@ export async function POST(req: NextRequest) {
         role: true,
         isActive: true,
         branchId: true,
+        employeeId: true,
         createdAt: true,
       }
     })

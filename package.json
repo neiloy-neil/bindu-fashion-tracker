@@ -8,13 +8,13 @@
     "start": "next start",
     "lint": "eslint",
     "db:migrate": "prisma migrate dev",
-    "db:seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} seed.ts",
+    "db:seed": "ts-node -O \"{\\\"module\\\":\\\"CommonJS\\\", \\\"moduleResolution\\\":\\\"node\\\"}\" seed.ts",
     "db:studio": "prisma studio",
     "postinstall": "prisma generate",
     "test": "vitest run"
   },
   "prisma": {
-    "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} seed.ts"
+    "seed": "ts-node -O \"{\\\"module\\\":\\\"CommonJS\\\", \\\"moduleResolution\\\":\\\"node\\\"}\" seed.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",

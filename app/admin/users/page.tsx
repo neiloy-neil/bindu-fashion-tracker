@@ -12,6 +12,14 @@ type User = {
   branchId: number | null
   branch: { name: string } | null
   managedBranches?: { id: number, name: string }[]
+  employeeId?: number | null
+  employee?: { id: number, name: string } | null
+}
+
+type Employee = {
+  id: number
+  name: string
+  employeeId: string
 }
 
 type Branch = {
@@ -22,6 +30,7 @@ type Branch = {
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([])
   const [branches, setBranches] = useState<Branch[]>([])
+  const [employees, setEmployees] = useState<Employee[]>([])
   const [loading, setLoading] = useState(true)
 
   // Form
@@ -30,15 +39,18 @@ export default function UsersPage() {
   const [password, setPassword] = useState('')
   const [role, setRole] = useState('BRANCH')
   const [branchId, setBranchId] = useState('')
+  const [employeeId, setEmployeeId] = useState('')
   const [managedBranchIds, setManagedBranchIds] = useState<number[]>([])
 
   useEffect(() => {
     Promise.all([
       fetch('/api/admin/users').then(r => r.json()),
-      fetch('/api/branches').then(r => r.json())
-    ]).then(([uData, bData]) => {
+      fetch('/api/branches').then(r => r.json()),
+      fetch('/api/hr/employees?active=true').then(r => r.json())
+    ]).then(([uData, bData, eData]) => {
       if (Array.isArray(uData)) setUsers(uData)
       if (Array.isArray(bData)) setBranches(bData)
+      if (Array.isArray(eData)) setEmployees(eData)
       setLoading(false)
     })
   }, [])
@@ -65,6 +77,7 @@ export default function UsersPage() {
         password, 
         role, 
         branchId: role === 'BRANCH' ? branchId : undefined,
+        employeeId: employeeId || undefined,
         managedBranchIds: role === 'AREA_MANAGER' ? managedBranchIds : undefined
       }),
     })
@@ -77,6 +90,7 @@ export default function UsersPage() {
       setPassword('')
       setRole('BRANCH')
       setBranchId('')
+      setEmployeeId('')
       setManagedBranchIds([])
       toast.success('User created successfully!')
     } else {
@@ -144,13 +158,22 @@ export default function UsersPage() {
             </div>
 
             {role === 'BRANCH' && (
-              <div>
-                <label className="block text-sm text-[var(--text-muted)] mb-1">Branch</label>
-                <select className="form-input form-select w-full" value={branchId} onChange={e => setBranchId(e.target.value)}>
-                  <option value="">-- Select Branch --</option>
-                  {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-                </select>
-              </div>
+              <>
+                <div>
+                  <label className="block text-sm text-[var(--text-muted)] mb-1">Branch</label>
+                  <select className="form-input form-select w-full" value={branchId} onChange={e => setBranchId(e.target.value)}>
+                    <option value="">-- Select Branch --</option>
+                    {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm text-[var(--text-muted)] mb-1">Linked Employee (Optional)</label>
+                  <select className="form-input form-select w-full" value={employeeId} onChange={e => setEmployeeId(e.target.value)}>
+                    <option value="">-- No Employee Linked --</option>
+                    {employees.map(e => <option key={e.id} value={e.id}>{e.name} ({e.employeeId})</option>)}
+                  </select>
+                </div>
+              </>
             )}
 
             {role === 'AREA_MANAGER' && (
@@ -192,6 +215,7 @@ export default function UsersPage() {
                   <th className="p-3">Email</th>
                   <th className="p-3">Role</th>
                   <th className="p-3">Assigned Branch</th>
+                  <th className="p-3">Linked Employee</th>
                 </tr>
               </thead>
               <tbody>
@@ -209,6 +233,9 @@ export default function UsersPage() {
                        u.role === 'AUDITOR' ? 'All Branches (Read-Only)' :
                        u.role === 'AREA_MANAGER' ? (u.managedBranches?.map(b => b.name).join(', ') || 'None') :
                        u.branch?.name || 'Unassigned'}
+                    </td>
+                    <td className="p-3 text-[var(--text-muted)] text-sm">
+                      {u.employee?.name || '-'}
                     </td>
                   </tr>
                 ))}

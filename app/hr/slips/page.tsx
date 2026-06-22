@@ -184,8 +184,21 @@ function SlipsContent() {
   const yearOptions = [currentYear - 1, currentYear, currentYear + 1]
 
   if (role === 'BRANCH') {
+    const allSlips = Array.from(calcsByBranch.values()).flat()
+    
+    if (allSlips.length === 0) {
+      return (
+        <div className="p-4 sm:p-6 lg:p-8 max-w-xl mx-auto">
+          <div className="bg-orange-50 border border-orange-200 text-orange-800 rounded-lg p-6 text-center shadow-sm">
+            <h2 className="text-lg font-semibold mb-2">Account Not Linked</h2>
+            <p className="text-sm">Your account is not yet linked to an employee profile. Contact your admin to set this up.</p>
+          </div>
+        </div>
+      )
+    }
+
     // Show only their own slip
-    const slip = Array.from(calcsByBranch.values()).flat()[0]
+    const slip = allSlips[0]
     return (
       <div className="p-4 sm:p-6 lg:p-8 max-w-xl mx-auto">
         <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4">My Salary Slip</h1>

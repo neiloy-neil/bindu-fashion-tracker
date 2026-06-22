@@ -1,120 +1,14 @@
-'use client'
+import os
 
-import { useState, Suspense } from 'react'
-import useSWR from 'swr'
-import { formatCurrency } from '@/lib/utils'
-import { SummaryStats, Branch } from '@/lib/types'
-import AdminEditRequests from '@/components/dashboard/AdminEditRequests'
-import RecentActivity from '@/components/dashboard/RecentActivity'
-import PdfGenerator from '@/components/dashboard/PdfGenerator'
-import ExcelExport from '@/components/dashboard/ExcelExport'
-import {
-  LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-} from 'recharts'
+filepath = "d:/AI/bindu-fashion-tracker/app/page.tsx"
 
-const COLORS = ['#F4881F', '#2A356E', '#2F9E6B', '#FA9A3E', '#4A537A', '#11162B', '#E8E2D5']
+with open(filepath, "r", encoding="utf-8") as f:
+    content = f.read()
 
-function formatDate(dateStr: string) {
-  if (!dateStr) return ''
-  return new Date(dateStr).toLocaleDateString('en-BD', { day: 'numeric', month: 'short', year: 'numeric' })
-}
+# I will use replace to insert the new logic. Let's build a robust script.
+# We will inject the new components into the file and replace the Dashboard component.
 
-function DateFilter({
-  month, year, startDate, endDate, viewMode, onChange, branches, branchId, onBranchChange, userRole
-}: {
-  month: number
-  year: number
-  startDate: string
-  endDate: string
-  viewMode: 'daily' | 'month' | 'custom'
-  onChange: (m: number, y: number, sd: string, ed: string, mode: 'daily' | 'month' | 'custom') => void
-  branches: Branch[]
-  branchId: string
-  onBranchChange: (b: string) => void
-  userRole: string
-}) {
-  return (
-    <div className="filters-bar" style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-      {userRole === 'ADMIN' && (
-        <select
-          className="form-input form-select"
-          style={{ width: 140, borderColor: 'var(--accent)', color: 'var(--accent)', fontWeight: 'bold' }}
-          value={branchId}
-          onChange={(e) => onBranchChange(e.target.value)}
-        >
-          <option value="all">All Branches</option>
-          {branches.map(b => (
-            <option key={b.id} value={String(b.id)}>{b.name}</option>
-          ))}
-        </select>
-      )}
-      <select
-        className="form-input form-select"
-        style={{ width: 140 }}
-        value={viewMode}
-        onChange={(e) => onChange(month, year, startDate, endDate, e.target.value as any)}
-      >
-        <option value="daily">Daily View</option>
-        <option value="month">Monthly View</option>
-        <option value="custom">Custom Range</option>
-      </select>
-
-      {viewMode === 'custom' ? (
-        <>
-          <input
-            type="date"
-            className="form-input"
-            value={startDate}
-            onChange={(e) => onChange(month, year, e.target.value, endDate, viewMode)}
-          />
-          <span style={{ color: 'var(--text-muted)' }}>to</span>
-          <input
-            type="date"
-            className="form-input"
-            value={endDate}
-            onChange={(e) => onChange(month, year, startDate, e.target.value, viewMode)}
-          />
-        </>
-      ) : viewMode === 'daily' ? (
-        <input
-          type="date"
-          className="form-input"
-          value={startDate}
-          onChange={(e) => onChange(month, year, e.target.value, e.target.value, viewMode)}
-        />
-      ) : (
-        <>
-          <select
-            className="form-input form-select"
-            style={{ width: 140 }}
-            value={month}
-            onChange={(e) => onChange(parseInt(e.target.value), year, startDate, endDate, viewMode)}
-          >
-            {['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].map((m, i) => (
-              <option key={i + 1} value={i + 1}>{m}</option>
-            ))}
-          </select>
-          <select
-            className="form-input form-select"
-            style={{ width: 100 }}
-            value={year}
-            onChange={(e) => onChange(month, parseInt(e.target.value), startDate, endDate, viewMode)}
-          >
-            {[2024, 2025, 2026, 2027].map((y) => (
-              <option key={y} value={y}>{y}</option>
-            ))}
-          </select>
-        </>
-      )}
-    </div>
-  )
-}
-
-import { useSearchParams } from 'next/navigation'
-import { BrandSpinner } from '@/components/ui/BrandSpinner'
-
-
+new_dashboard = """
 import Link from 'next/link'
 import { FileText, Users, DollarSign, AlertCircle, CheckCircle, Clock } from 'lucide-react'
 
@@ -526,8 +420,11 @@ function Dashboard() {
     </>
   )
 }
+"""
 
-export default function DashboardPage() {
+start_idx = content.find("function Dashboard()")
+if start_idx != -1:
+    content = content[:start_idx] + new_dashboard + """\nexport default function DashboardPage() {
   return (
     <Suspense fallback={
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', gap: 12 }}>
@@ -539,3 +436,9 @@ export default function DashboardPage() {
     </Suspense>
   )
 }
+"""
+    with open(filepath, "w", encoding="utf-8") as f:
+        f.write(content)
+else:
+    print("Could not find Dashboard function.")
+

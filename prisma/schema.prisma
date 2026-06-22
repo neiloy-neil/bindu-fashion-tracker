@@ -43,6 +43,9 @@ model User {
   createdAt             DateTime        @default(now())
   acknowledgedTransfers Transfer[]      @relation("TransferAcknowledger")
   salaryRecords         SalaryRecord[]
+
+  employeeId            Int?            @unique
+  employee              Employee?       @relation(fields: [employeeId], references: [id], onDelete: SetNull)
 }
 
 model DailyEntry {
@@ -330,6 +333,8 @@ model Employee {
   advanceSalaries AdvanceSalary[]
   salaryRecords   SalaryRecord[]
   eidRecords      EidRecord[]
+
+  user            User?
 }
 
 model AdvanceSalary {

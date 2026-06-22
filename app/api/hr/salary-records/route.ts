@@ -29,7 +29,45 @@ export async function GET(req: NextRequest) {
       },
       orderBy: { employee: { id: 'asc' } }
     })
-    return NextResponse.json(records)
+
+    // Fetch advances to resolve branch users
+    const startOfMonth = new Date(parseInt(year), parseInt(month) - 1, 1)
+    const endOfMonth = new Date(parseInt(year), parseInt(month), 0, 23, 59, 59, 999)
+
+    const advances = await prisma.advanceSalary.findMany({
+      where: {
+        createdAt: { gte: startOfMonth, lte: endOfMonth }
+      },
+      include: {
+        dailyEntry: {
+          select: { branchId: true }
+        }
+      }
+    })
+
+    // Fetch BRANCH users to map branchId -> username
+    const branchUsers = await prisma.user.findMany({
+      where: { role: 'BRANCH' },
+      select: { username: true, branchId: true }
+    })
+
+    const branchToUserMap = new Map()
+    branchUsers.forEach(u => {
+      if (u.branchId) branchToUserMap.set(u.branchId, u.username)
+    })
+
+    const recordsWithAdvances = records.map(r => {
+      const empAdvances = advances
+        .filter(a => a.employeeId === r.employeeId)
+        .map(a => ({
+          amount: a.amount,
+          date: a.createdAt,
+          user: a.dailyEntry?.branchId ? branchToUserMap.get(a.dailyEntry.branchId) || 'Unknown' : 'Unknown'
+        }))
+      return { ...r, advances: empAdvances }
+    })
+
+    return NextResponse.json(recordsWithAdvances)
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }

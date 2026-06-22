@@ -366,7 +366,10 @@ function SalaryContent() {
                       <td className="px-3 py-2 text-gray-500 text-xs">{row.employee.branch?.name}</td>
                       <td className="px-3 py-2 text-right text-gray-700 text-sm whitespace-nowrap font-medium">{formatTaka(row.employee.basicSalary)}</td>
                       
-                      <td className="px-2 py-2 text-center text-gray-500 font-medium">
+                      <td 
+                        className="px-2 py-2 text-center text-gray-500 font-medium cursor-help"
+                        title={((rec as any).advances || []).map((a: any) => `Given by ${a.user} on ${new Date(a.date).toLocaleDateString()}`).join('\n') || undefined}
+                      >
                         {formatTaka(rec.trackerAdvanceTotal ?? 0)}
                       </td>
 

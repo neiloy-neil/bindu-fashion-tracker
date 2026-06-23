@@ -5,8 +5,8 @@ export async function GET(req: NextRequest) {
   const userRole = req.headers.get('x-user-role')
   const userBranchId = req.headers.get('x-user-branch-id')
 
-  let entryWhere: any = {}
-  let requestWhere: any = {}
+  const entryWhere: any = {}
+  const requestWhere: any = {}
 
   if (userRole === 'BRANCH' && userBranchId) {
     entryWhere.branchId = parseInt(userBranchId)

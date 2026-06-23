@@ -1,13 +1,12 @@
 'use client'
 
-import { useEffect, useState, useRef, Suspense, useMemo } from 'react'
-import { useSearchParams, useRouter } from 'next/navigation'
+import { useEffect, useState, Suspense, useMemo } from 'react'
+import { useSearchParams } from 'next/navigation'
 import type { Employee, Branch, SalaryRecord } from '@prisma/client'
 import { calcSalary } from '@/lib/hr/calculations'
-import { downloadTemplate, parseSalarySheet } from '@/lib/hr/excel'
 // import { downloadCSV } from '@/lib/hr/csv' // we'll skip CSV export for now or stub it
 import { toast } from 'sonner'
-import { Save, ChevronRight, Download, Upload, Users, CheckCircle2, Clock, CalendarDays, AlertCircle, Trash2, Lock, RefreshCw } from 'lucide-react'
+import { Save, Users, AlertCircle, Lock, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -37,7 +36,6 @@ function formatTaka(amount: number) {
 
 function SalaryContent() {
   const params = useSearchParams()
-  const router = useRouter()
   const now = new Date()
   const currentYear = now.getFullYear()
   const [month, setMonth] = useState(+(params.get('month') ?? now.getMonth() + 1))
@@ -46,52 +44,63 @@ function SalaryContent() {
   const [saving, setSaving] = useState(false)
   const [filterBranch, setFilterBranch] = useState('all')
   const [branches, setBranches] = useState<Branch[]>([])
-  const [uploading, setUploading] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
   const [pageLoading, setPageLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [sortValue, setSortValue] = useState('name_asc')
   
   const [isLocked, setIsLocked] = useState(false)
   const [syncing, setSyncing] = useState(false)
+  const [reloadNonce, setReloadNonce] = useState(0)
 
-  async function load() {
-    setPageLoading(true)
-    try {
-      const [empsRes, recsRes] = await Promise.all([
-        fetch('/api/hr/employees?active=true'),
-        fetch(`/api/hr/salary-records?month=${month}&year=${year}`)
-      ])
+  useEffect(() => {
+    let cancelled = false
 
-      const emps = empsRes.ok ? await empsRes.json() : []
-      const recs = recsRes.ok ? await recsRes.json() : []
+    const load = async () => {
+      setPageLoading(true)
+      try {
+        const [empsRes, recsRes] = await Promise.all([
+          fetch('/api/hr/employees?active=true'),
+          fetch(`/api/hr/salary-records?month=${month}&year=${year}`)
+        ])
 
-      setIsLocked(recs.some((r: any) => r.lockedAt !== null))
+        const emps = empsRes.ok ? await empsRes.json() : []
+        const recs = recsRes.ok ? await recsRes.json() : []
 
-      const uniqueBranches = Array.from(new Map(emps.filter((e:any)=>e.branch).map((e:any)=>[e.branch.id, e.branch])).values()) as Branch[]
-      setBranches(uniqueBranches)
+        if (cancelled) return
 
-      const recMap = new Map((recs).map((r: any) => [r.employeeId, r]))
-      setRows(emps.map((emp: any) => ({
-        employee: emp,
-        record: recMap.get(emp.id) ?? {
-          employeeId: emp.id, month, year,
-          trackerAdvanceTotal: 0, hrAdvanceDeducted: 0,
-          leaveDaysTaken: 0, leaveAdjustment: 0,
-          lateDays: 0, otDays: 0, attendanceBonus: 0,
-          conveyanceOverride: emp.conveyance,
-          notes: '',
-        },
-        dirty: false,
-      })))
-    } catch (e) {
-      console.error(e)
-    } finally {
-      setPageLoading(false)
+        setIsLocked(recs.some((r: any) => r.lockedAt !== null))
+
+        const uniqueBranches = Array.from(new Map(emps.filter((e: any) => e.branch).map((e: any) => [e.branch.id, e.branch])).values()) as Branch[]
+        setBranches(uniqueBranches)
+
+        const recMap = new Map((recs).map((r: any) => [r.employeeId, r]))
+        setRows(emps.map((emp: any) => ({
+          employee: emp,
+          record: recMap.get(emp.id) ?? {
+            employeeId: emp.id, month, year,
+            trackerAdvanceTotal: 0, hrAdvanceDeducted: 0,
+            leaveDaysTaken: 0, leaveAdjustment: 0,
+            lateDays: 0, otDays: 0, attendanceBonus: 0,
+            conveyanceOverride: emp.conveyance,
+            notes: '',
+          },
+          dirty: false,
+        })))
+      } catch (e) {
+        console.error(e)
+      } finally {
+        if (!cancelled) {
+          setPageLoading(false)
+        }
+      }
     }
-  }
 
-  useEffect(() => { load() }, [month, year])
+    void load()
+
+    return () => {
+      cancelled = true
+    }
+  }, [month, year, reloadNonce])
 
   function update(empId: number, field: keyof SalaryRecord, value: number | string) {
     if (isLocked) return
@@ -153,7 +162,7 @@ function SalaryContent() {
         return
       }
       toast.success('Advances synced from tracker')
-      await load()
+      setReloadNonce((value) => value + 1)
     } finally {
       setSyncing(false)
     }
@@ -168,7 +177,7 @@ function SalaryContent() {
     })
     if (res.ok) {
       toast.success('Month locked')
-      await load()
+      setReloadNonce((value) => value + 1)
     } else {
       const err = await res.json()
       toast.error(err.error || 'Failed to lock month')

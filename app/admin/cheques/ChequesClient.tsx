@@ -31,6 +31,10 @@ interface Cheque {
   }
 }
 
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback
+}
+
 export function ChequesClient() {
   const [cheques, setCheques] = useState<Cheque[]>([])
   const [loading, setLoading] = useState(true)
@@ -39,22 +43,34 @@ export function ChequesClient() {
   const [actionLoading, setActionLoading] = useState<number | null>(null)
   const [receiptUrl, setReceiptUrl] = useState<string | null>(null)
 
-  const fetchCheques = async () => {
-    setLoading(true)
-    try {
-      const res = await fetch(`/api/cheques?status=${filter}`)
-      if (!res.ok) throw new Error('Failed to fetch cheques')
-      const data = await res.json()
-      setCheques(data)
-    } catch (err: any) {
-      toast.error(err.message || 'Error loading cheques')
-    } finally {
-      setLoading(false)
-    }
-  }
-
   useEffect(() => {
-    fetchCheques()
+    let cancelled = false
+
+    const fetchCheques = async () => {
+      setLoading(true)
+      try {
+        const res = await fetch(`/api/cheques?status=${filter}`)
+        if (!res.ok) throw new Error('Failed to fetch cheques')
+        const data: Cheque[] = await res.json()
+        if (!cancelled) {
+          setCheques(data)
+        }
+      } catch (error: unknown) {
+        if (!cancelled) {
+          toast.error(getErrorMessage(error, 'Error loading cheques'))
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false)
+        }
+      }
+    }
+
+    void fetchCheques()
+
+    return () => {
+      cancelled = true
+    }
   }, [filter])
 
   const handleAction = async (id: number, action: 'approve' | 'reject') => {
@@ -72,9 +88,9 @@ export function ChequesClient() {
         throw new Error(data.error || `Failed to ${action} cheque`)
       }
       toast.success(`Cheque ${action === 'approve' ? 'Cleared' : 'Rejected'} successfully`)
-      fetchCheques()
-    } catch (err: any) {
-      toast.error(err.message)
+      setCheques((current) => current.filter((cheque) => cheque.id !== id))
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, `Failed to ${action} cheque`))
     } finally {
       setActionLoading(null)
     }
@@ -93,7 +109,7 @@ export function ChequesClient() {
             🏦 Cheque Approval
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Manage pending cheques. Approving a cheque clears it and decrements the vendor's balance.
+            Manage pending cheques. Approving a cheque clears it and decrements the vendor&apos;s balance.
           </p>
         </div>
       </div>
@@ -156,7 +172,7 @@ export function ChequesClient() {
                     <div className="flex flex-col items-center justify-center">
                       <AlertCircle size={32} className="mb-4 opacity-20 text-[var(--accent)]" />
                       <h3 className="text-lg text-foreground font-semibold mb-2">No {filter.toLowerCase()} cheques require approval</h3>
-                      <p className="text-sm">You're all caught up. New cheques from branch payments will appear here.</p>
+                      <p className="text-sm">You&apos;re all caught up. New cheques from branch payments will appear here.</p>
                     </div>
                   </td>
                 </tr>

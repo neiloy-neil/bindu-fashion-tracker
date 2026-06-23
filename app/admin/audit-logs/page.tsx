@@ -25,30 +25,41 @@ export default function AuditLogsPage() {
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
-
   const [filterAction, setFilterAction] = useState('')
   const [filterEntity, setFilterEntity] = useState('')
 
-  const fetchLogs = async () => {
-    setLoading(true)
-    const params = new URLSearchParams({
-      page: String(page),
-      limit: '50'
-    })
-    if (filterAction) params.set('action', filterAction)
-    if (filterEntity) params.set('entityType', filterEntity)
-
-    const res = await fetch(`/api/admin/audit-logs?${params}`)
-    const data = await res.json()
-    if (data.logs) {
-      setLogs(data.logs)
-      setTotalPages(Math.ceil(data.total / data.limit))
-    }
-    setLoading(false)
-  }
-
   useEffect(() => {
-    fetchLogs()
+    let cancelled = false
+
+    const fetchLogs = async () => {
+      setLoading(true)
+      try {
+        const params = new URLSearchParams({
+          page: String(page),
+          limit: '50',
+        })
+        if (filterAction) params.set('action', filterAction)
+        if (filterEntity) params.set('entityType', filterEntity)
+
+        const res = await fetch(`/api/admin/audit-logs?${params}`)
+        const data = await res.json()
+
+        if (!cancelled && data.logs) {
+          setLogs(data.logs)
+          setTotalPages(Math.ceil(data.total / data.limit))
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false)
+        }
+      }
+    }
+
+    void fetchLogs()
+
+    return () => {
+      cancelled = true
+    }
   }, [page, filterAction, filterEntity])
 
   const renderJsonViewer = (dataStr: string | null) => {

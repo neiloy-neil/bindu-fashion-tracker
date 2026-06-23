@@ -16,23 +16,40 @@ export default function BranchRequestsPage() {
   const [description, setDescription] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
-  const fetchRequests = async () => {
-    try {
-      const res = await fetch('/api/branch-requests')
-      const data = await res.json()
-      if (data.requests) setRequests(data.requests)
-    } catch (e) {
-      console.error(e)
-    } finally {
-      setLoading(false)
-    }
-  }
-
   useEffect(() => {
-    fetch('/api/auth/session').then(r => r.json()).then(s => {
-      if (s?.user?.id) setUserId(s.user.id)
-    })
-    fetchRequests()
+    let cancelled = false
+
+    const bootstrap = async () => {
+      try {
+        const [sessionRes, requestsRes] = await Promise.all([
+          fetch('/api/auth/session'),
+          fetch('/api/branch-requests'),
+        ])
+        const session = await sessionRes.json()
+        const data = await requestsRes.json()
+
+        if (!cancelled) {
+          if (session?.user?.id) {
+            setUserId(session.user.id)
+          }
+          if (data.requests) {
+            setRequests(data.requests)
+          }
+        }
+      } catch (e) {
+        console.error(e)
+      } finally {
+        if (!cancelled) {
+          setLoading(false)
+        }
+      }
+    }
+
+    void bootstrap()
+
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -51,7 +68,18 @@ export default function BranchRequestsPage() {
       toast.success('Request submitted successfully')
       setShowModal(false)
       setDescription('')
-      fetchRequests()
+      setRequests((current) => [
+        ...current,
+        {
+          id: Date.now(),
+          type,
+          priority,
+          description,
+          status: 'PENDING',
+          createdAt: new Date().toISOString(),
+          adminComment: '',
+        },
+      ])
     } catch (e: any) {
       toast.error(e.message)
     } finally {
@@ -99,7 +127,7 @@ export default function BranchRequestsPage() {
         ) : requests.length === 0 ? (
           <div className="text-center p-12 text-[var(--text-secondary)]">
             <div className="text-4xl mb-4">🛠️</div>
-            <p>You haven't submitted any requests yet.</p>
+            <p>You haven&apos;t submitted any requests yet.</p>
           </div>
         ) : (
           <div className="grid gap-4 max-w-4xl">

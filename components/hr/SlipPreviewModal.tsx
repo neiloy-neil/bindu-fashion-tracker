@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { Eye, Download } from 'lucide-react'
 import type { SalaryCalc } from '@/lib/hr/calculations'
 import { BINDU_LOGO } from '@/lib/logo-base64'
@@ -32,6 +33,8 @@ export type SlipPreviewProps = {
   settings?: Settings
 }
 
+type SlipEmployee = SalaryCalc['employee'] & { branch?: { name: string } | null }
+
 export function SlipPreview({ calc, month, year, settings }: SlipPreviewProps) {
   const { employee: emp, record, basicSalary,
           leaveDeduction, lateDeduction, otAddition, conveyance,
@@ -42,7 +45,7 @@ export function SlipPreview({ calc, month, year, settings }: SlipPreviewProps) {
   const advanceDeducted = branchAdvance + hrAdvance
 
   const monthName = `${MONTHS[month - 1]} ${year}`
-  const branchName = (emp as any).branch?.name ?? ''
+  const branchName = (emp as SlipEmployee).branch?.name ?? ''
 
   const deductible_leave = Math.max(0, (record.leaveDaysTaken ?? 0) - emp.yearlyLeaveAllowance - (record.leaveAdjustment ?? 0))
   const sub1 = basicSalary - advanceDeducted
@@ -72,7 +75,7 @@ export function SlipPreview({ calc, month, year, settings }: SlipPreviewProps) {
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-5 max-w-sm mx-auto text-gray-800 font-sans">
       <div className="flex justify-center mb-1">
-        <img src={BINDU_LOGO} alt="Bindu Premium" className="h-9 object-contain" />
+        <Image src={BINDU_LOGO} alt="Bindu Premium" width={160} height={36} className="h-9 w-auto object-contain" unoptimized />
       </div>
 
       <p className="text-center text-xs tracking-widest text-gray-600 mb-2">SALARY SHEET</p>

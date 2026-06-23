@@ -54,7 +54,26 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 interface Props {
-  employee: any | null
+  employee: {
+    id: number
+    name: string
+    employeeId?: string | null
+    designation?: string | null
+    branch?: { name: string } | null
+    isActive: boolean
+    oldIdCard?: string | null
+    basicSalary: number
+    conveyance: number
+    yearlyLeaveAllowance: number
+    joiningDate?: string | null
+    dateOfBirth?: string | null
+    bloodGroup?: string | null
+    mobileNumber?: string | null
+    nidNumber?: string | null
+    address?: string | null
+    emergencyContact?: string | null
+    photoUrl?: string | null
+  } | null
   open: boolean
   onOpenChange: (open: boolean) => void
   onEdit?: () => void

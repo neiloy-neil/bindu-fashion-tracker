@@ -1,11 +1,11 @@
 'use client'
 
 import { useEffect, useState, useMemo, Suspense } from 'react'
-import { useSearchParams, useRouter } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import type { Employee, Branch, EidRecord } from '@prisma/client'
 import { calcEid, formatTaka } from '@/lib/hr/calculations'
 import { toast } from 'sonner'
-import { Save, Users, Trash2 } from 'lucide-react'
+import { Save, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -27,7 +27,6 @@ const SORT_OPTIONS: SortOption[] = [
 
 function EidContent() {
   const params = useSearchParams()
-  const router = useRouter()
   const now = new Date()
   const currentYear = now.getFullYear()
   const [year, setYear] = useState(+(params.get('year') ?? currentYear))
@@ -41,43 +40,51 @@ function EidContent() {
   const [search, setSearch] = useState('')
   const [sortValue, setSortValue] = useState('name_asc')
 
-  async function load() {
-    setPageLoading(true)
-    try {
-      const [empsRes, recsRes] = await Promise.all([
-        fetch('/api/hr/employees?active=true'),
-        fetch(`/api/hr/eid-records?year=${year}`)
-      ])
+  useEffect(() => {
+    let cancelled = false
 
-      const emps = empsRes.ok ? await empsRes.json() : []
-      const recs = recsRes.ok ? await recsRes.json() : []
+    const load = async () => {
+      setPageLoading(true)
+      try {
+        const [empsRes, recsRes] = await Promise.all([
+          fetch('/api/hr/employees?active=true'),
+          fetch(`/api/hr/eid-records?year=${year}`)
+        ])
 
-      if (recs.length > 0 && recs[0].title) {
-        setTitle(recs[0].title)
-      } else {
-        setTitle(`Eid ul Adha Bonus ${year}`)
+        const emps = empsRes.ok ? await empsRes.json() : []
+        const recs = recsRes.ok ? await recsRes.json() : []
+
+        if (cancelled) return
+
+        setTitle(recs.length > 0 && recs[0].title ? recs[0].title : `Eid ul Adha Bonus ${year}`)
+
+        const uniqueBranches = Array.from(new Map(emps.filter((e: any) => e.branch).map((e: any) => [e.branch.id, e.branch])).values()) as Branch[]
+        setBranches(uniqueBranches)
+
+        const recMap = new Map((recs).map((r: any) => [r.employeeId, r]))
+        setRows(emps.map((emp: any) => ({
+          employee: emp,
+          record: recMap.get(emp.id) ?? {
+            employeeId: emp.id, year, title: `Eid ul Adha Bonus ${year}`,
+            salaryPaymentPct: 50, hrAdvanceDeducted: 0, trackerAdvanceTotal: 0, eidBonusPct: 50
+          },
+          dirty: false,
+        })))
+      } catch (e) {
+        console.error(e)
+      } finally {
+        if (!cancelled) {
+          setPageLoading(false)
+        }
       }
-
-      const uniqueBranches = Array.from(new Map(emps.filter((e:any)=>e.branch).map((e:any)=>[e.branch.id, e.branch])).values()) as Branch[]
-      setBranches(uniqueBranches)
-
-      const recMap = new Map((recs).map((r: any) => [r.employeeId, r]))
-      setRows(emps.map((emp: any) => ({
-        employee: emp,
-        record: recMap.get(emp.id) ?? {
-          employeeId: emp.id, year, title: `Eid ul Adha Bonus ${year}`,
-          salaryPaymentPct: 50, hrAdvanceDeducted: 0, trackerAdvanceTotal: 0, eidBonusPct: 50
-        },
-        dirty: false,
-      })))
-    } catch (e) {
-      console.error(e)
-    } finally {
-      setPageLoading(false)
     }
-  }
 
-  useEffect(() => { load() }, [year])
+    void load()
+
+    return () => {
+      cancelled = true
+    }
+  }, [year])
 
   function update(empId: number, field: keyof EidRecord, value: number | string) {
     setRows(prev => prev.map(r =>

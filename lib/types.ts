@@ -53,7 +53,7 @@ export interface Account {
   createdAt?: string | Date
 }
 
-export interface LedgerAccount extends Account {}
+export type LedgerAccount = Account
 
 export interface Transfer {
   id: number

@@ -11,26 +11,40 @@ export default function CategoriesPage() {
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [editingCategory, setEditingCategory] = useState<Category | null>(null)
+  const [reloadNonce, setReloadNonce] = useState(0)
 
   const [name, setName] = useState('')
   const [type, setType] = useState<'INCOME' | 'EXPENSE'>('INCOME')
   const [isActive, setIsActive] = useState(true)
 
-  const fetchCategories = async () => {
-    setLoading(true)
-    try {
-      const res = await fetch('/api/categories')
-      const data = await res.json()
-      setCategories(data)
-    } catch (err) {
-      toast.error('Failed to load categories')
-    }
-    setLoading(false)
-  }
-
   useEffect(() => {
-    fetchCategories()
-  }, [])
+    let cancelled = false
+
+    const loadCategories = async () => {
+      setLoading(true)
+      try {
+        const res = await fetch('/api/categories')
+        const data = await res.json()
+        if (!cancelled) {
+          setCategories(data)
+        }
+      } catch {
+        if (!cancelled) {
+          toast.error('Failed to load categories')
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false)
+        }
+      }
+    }
+
+    void loadCategories()
+
+    return () => {
+      cancelled = true
+    }
+  }, [reloadNonce])
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -57,7 +71,7 @@ export default function CategoriesPage() {
 
       toast.success(editingCategory ? 'Category updated' : 'Category created')
       setShowModal(false)
-      fetchCategories()
+      setReloadNonce((value) => value + 1)
     } catch (err: any) {
       toast.error(err.message)
     }
@@ -73,7 +87,7 @@ export default function CategoriesPage() {
         throw new Error(error.error || 'Failed to delete')
       }
       toast.success('Category deleted')
-      fetchCategories()
+      setReloadNonce((value) => value + 1)
     } catch (err: any) {
       toast.error(err.message)
     }

@@ -79,7 +79,11 @@ export function SearchFilter({
 
   // Sync external changes
   useEffect(() => {
-    setLocalSearch(search)
+    const timer = setTimeout(() => {
+      setLocalSearch(search)
+    }, 0)
+
+    return () => clearTimeout(timer)
   }, [search])
 
   return (

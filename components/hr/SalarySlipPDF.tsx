@@ -59,8 +59,10 @@ const s = StyleSheet.create({
   noteText: { fontSize: 8.5, marginTop: 8, color: DARK, fontFamily: 'Helvetica-Oblique' },
 })
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function Cell({ style, children }: { style: any; children?: React.ReactNode }) {
+type SlipEmployee = SalaryCalc['employee'] & { branch?: { name: string } | null }
+type CellStyle = React.ComponentProps<typeof View>['style']
+
+function Cell({ style, children }: { style: CellStyle; children?: React.ReactNode }) {
   return <View style={style}><Text>{children ?? ''}</Text></View>
 }
 
@@ -93,7 +95,7 @@ function Slip({ calc, month, year, generatedBy, paymentBy }: {
   const sub2 = sub1 - leaveDeduction - lateDeduction
   const sub3 = sub2 + attendanceBonus
 
-  const branchName = (emp as any).branch?.name ?? ''
+  const branchName = (emp as SlipEmployee).branch?.name ?? ''
 
   return (
     <View style={s.slip}>

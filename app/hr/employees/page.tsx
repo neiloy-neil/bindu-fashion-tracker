@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useMemo, useRef } from 'react'
-import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { SearchFilter } from '@/components/shared/SearchFilter'
 import { EmployeeModal } from '@/components/hr/EmployeeModal'
@@ -11,7 +10,6 @@ import { Plus, User, Pencil, Trash2, Upload, Download } from 'lucide-react'
 import { downloadEmployeeTemplate, parseEmployeeSheet } from '@/lib/hr/excel'
 
 export default function EmployeesPage() {
-  const router = useRouter()
   const [employees, setEmployees] = useState<any[]>([])
   const [branches, setBranches] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -28,33 +26,47 @@ export default function EmployeesPage() {
   
   const [isProfileOpen, setIsProfileOpen] = useState(false)
   const [viewingEmployee, setViewingEmployee] = useState<any | null>(null)
+  const [reloadNonce, setReloadNonce] = useState(0)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const fetchData = async () => {
-    setLoading(true)
-    try {
-      const [empRes, branchRes] = await Promise.all([
-        fetch('/api/hr/employees'),
-        fetch('/api/branches')
-      ])
-      
-      if (!empRes.ok || !branchRes.ok) throw new Error('Failed to fetch data')
-      
-      const emps = await empRes.json()
-      const brs = await branchRes.json()
-      setEmployees(emps)
-      setBranches(brs)
-    } catch (err: any) {
-      toast.error(err.message)
-    } finally {
-      setLoading(false)
-    }
-  }
-
   useEffect(() => {
-    fetchData()
-  }, [])
+    let cancelled = false
+
+    const loadData = async () => {
+      setLoading(true)
+      try {
+        const [empRes, branchRes] = await Promise.all([
+          fetch('/api/hr/employees'),
+          fetch('/api/branches')
+        ])
+        
+        if (!empRes.ok || !branchRes.ok) throw new Error('Failed to fetch data')
+        
+        const emps = await empRes.json()
+        const brs = await branchRes.json()
+
+        if (!cancelled) {
+          setEmployees(emps)
+          setBranches(brs)
+        }
+      } catch (err: any) {
+        if (!cancelled) {
+          toast.error(err.message)
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false)
+        }
+      }
+    }
+
+    void loadData()
+
+    return () => {
+      cancelled = true
+    }
+  }, [reloadNonce])
 
   // Derived state
   const activeCount = employees.filter(e => e.isActive).length
@@ -100,7 +112,7 @@ export default function EmployeesPage() {
         throw new Error(data.error || 'Failed to deactivate')
       }
       toast.success('Employee deactivated')
-      fetchData()
+      setReloadNonce((value) => value + 1)
     } catch (err: any) {
       toast.error(err.message)
     }
@@ -157,7 +169,7 @@ export default function EmployeesPage() {
       }
 
       toast.success(`Imported ${imported} employees`, { id: 'import' })
-      fetchData()
+      setReloadNonce((value) => value + 1)
     } catch (err: any) {
       toast.error(`Import failed: ${err.message}`, { id: 'import' })
     } finally {
@@ -266,7 +278,7 @@ export default function EmployeesPage() {
         onOpenChange={setIsModalOpen}
         employee={editingEmployee}
         branches={branches}
-        onSuccess={fetchData}
+        onSuccess={() => setReloadNonce((value) => value + 1)}
       />
 
       <EmployeeProfileModal 

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, Suspense, useMemo } from 'react'
 import { useSearchParams } from 'next/navigation'
-import type { Employee, Branch, SalaryRecord, SystemSettings } from '@prisma/client'
+import type { Branch, SystemSettings } from '@prisma/client'
 import type { SalaryCalc } from '@/lib/hr/calculations'
 import { formatTaka } from '@/lib/hr/calculations'
 import { toast } from 'sonner'
@@ -39,55 +39,64 @@ function SlipsContent() {
     return () => clearTimeout(timer)
   }, [localSearch, search])
 
-  async function load() {
-    try {
-      const [userRes, setRes, slipsRes, empsRes] = await Promise.all([
-        fetch('/api/auth/session'), // We might need to guess the role. The backend API handles RBAC. Let's just fetch the slips and if it returns one slip, we can assume branch.
-        fetch('/api/hr/settings'),
-        fetch(`/api/hr/slips?month=${month}&year=${year}`),
-        fetch('/api/hr/employees?active=true') // We might only get our own employee if we are branch.
-      ])
+  useEffect(() => {
+    let cancelled = false
 
-      if (setRes.ok) setSettings(await setRes.json())
-      
-      if (!slipsRes.ok) {
-        toast.error('Failed to load slips')
-        return
-      }
-      
-      const slips: SalaryCalc[] = await slipsRes.json()
-      
-      let emps: any[] = []
-      if (empsRes.ok) {
-         emps = await empsRes.json()
-      }
+    const load = async () => {
+      try {
+        const [setRes, slipsRes, empsRes] = await Promise.all([
+          fetch('/api/hr/settings'),
+          fetch(`/api/hr/slips?month=${month}&year=${year}`),
+          fetch('/api/hr/employees?active=true')
+        ])
 
-      // If we only got 1 slip and no other employees, it's likely a BRANCH user
-      const isBranch = emps.length <= 1 && slips.length <= 1 && !empsRes.ok // This is a heuristic. Actually we can check response of empsRes, if forbidden it's branch.
-      if (empsRes.status === 403) {
-         setRole('BRANCH')
-      } else {
-         setRole('ADMIN')
-      }
-
-      const brs = new Map<string, Branch>()
-      const map = new Map<string, SalaryCalc[]>()
-      
-      for (const calc of slips) {
-        const bid = calc.employee.branchId?.toString() ?? 'unassigned'
-        if ((calc.employee as any).branch) brs.set(bid, (calc.employee as any).branch)
+        const nextSettings = setRes.ok ? await setRes.json() : null
         
-        if (!map.has(bid)) map.set(bid, [])
-        map.get(bid)!.push(calc)
-      }
-      setCalcsByBranch(map)
-      setBranches(Array.from(brs.values()))
-    } catch (e) {
-      console.error(e)
-    }
-  }
+        if (!slipsRes.ok) {
+          if (!cancelled) {
+            toast.error('Failed to load slips')
+          }
+          return
+        }
+        
+        const slips: SalaryCalc[] = await slipsRes.json()
+        
+        if (empsRes.ok) {
+          await empsRes.json()
+        }
 
-  useEffect(() => { load() }, [month, year])
+        if (cancelled) return
+
+        setSettings(nextSettings)
+        if (empsRes.status === 403) {
+           setRole('BRANCH')
+        } else {
+           setRole('ADMIN')
+        }
+
+        const brs = new Map<string, Branch>()
+        const map = new Map<string, SalaryCalc[]>()
+        
+        for (const calc of slips) {
+          const bid = calc.employee.branchId?.toString() ?? 'unassigned'
+          if ((calc.employee as any).branch) brs.set(bid, (calc.employee as any).branch)
+          
+          if (!map.has(bid)) map.set(bid, [])
+          map.get(bid)!.push(calc)
+        }
+        setCalcsByBranch(map)
+        setBranches(Array.from(brs.values()))
+      } catch (e) {
+        console.error(e)
+      }
+    }
+
+    void load()
+
+    return () => {
+      cancelled = true
+    }
+  }, [month, year])
 
   async function downloadBranch(branchId: string, branchName: string) {
     let calcs = calcsByBranch.get(branchId) ?? []

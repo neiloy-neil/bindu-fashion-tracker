@@ -10,73 +10,121 @@ import { BrandSpinner } from '@/components/ui/BrandSpinner'
 
 const COLORS = ['var(--accent)', '#3a7bd5', 'var(--success)', 'var(--warning)', 'var(--danger)', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16', '#14b8a6']
 
+type AnalyticsTrendPoint = {
+  date: string
+  revenue: number
+  expenses: number
+}
+
+type AnalyticsBranchPoint = {
+  name: string
+  sales: number
+}
+
+type AnalyticsExpensePoint = {
+  name: string
+  value: number
+}
+
+type AnalyticsResponse = {
+  kpi: {
+    totalRevenue: number
+    totalExpenses: number
+    netProfit: number
+    cashInHand: number
+  }
+  trendData: AnalyticsTrendPoint[]
+  branchData: AnalyticsBranchPoint[]
+  expenseData: AnalyticsExpensePoint[]
+}
+
+type ChartTooltipProps = {
+  active?: boolean
+  payload?: Array<{
+    color?: string
+    name?: string
+    value?: number | string
+  }>
+  label?: string
+}
+
+function AnalyticsTooltip({ active, payload, label }: ChartTooltipProps) {
+  if (!active || !payload?.length) {
+    return null
+  }
+
+  return (
+    <div className="bg-[var(--bg-card)] border border-[var(--border)] p-3 rounded-lg shadow-xl">
+      <p className="text-[var(--text-secondary)] font-semibold mb-2">{label}</p>
+      {payload.map((entry, index) => (
+        <div key={`${entry.name ?? 'series'}-${index}`} className="flex items-center gap-2 text-sm">
+          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }} />
+          <span className="text-white">{entry.name}:</span>
+          <span className="font-mono text-[var(--accent)]">{formatCurrency(Number(entry.value ?? 0))}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export default function AdminAnalyticsDashboard() {
-  const [data, setData] = useState<any>(null)
+  const [data, setData] = useState<AnalyticsResponse | null>(null)
   const [loading, setLoading] = useState(true)
 
   const [dateRange, setDateRange] = useState('today')
   const [customStart, setCustomStart] = useState('')
   const [customEnd, setCustomEnd] = useState('')
 
-  const fetchAnalytics = async () => {
-    setLoading(true)
-    try {
-      const end = new Date()
-      let start = new Date()
+  useEffect(() => {
+    let cancelled = false
 
-      if (dateRange === 'today') {
-        // Today
-      } else if (dateRange === '7days') {
-        start.setDate(end.getDate() - 6)
-      } else if (dateRange === '30days') {
-        start.setDate(end.getDate() - 29)
-      } else if (dateRange === 'thisMonth') {
-        start = new Date(end.getFullYear(), end.getMonth(), 1)
-      } else if (dateRange === 'custom' && customStart && customEnd) {
-        start = new Date(customStart)
-        const customEndDate = new Date(customEnd)
-        if (!isNaN(customEndDate.getTime())) {
-          end.setTime(customEndDate.getTime())
+    const fetchAnalytics = async () => {
+      setLoading(true)
+      try {
+        const end = new Date()
+        let start = new Date()
+
+        if (dateRange === '7days') {
+          start.setDate(end.getDate() - 6)
+        } else if (dateRange === '30days') {
+          start.setDate(end.getDate() - 29)
+        } else if (dateRange === 'thisMonth') {
+          start = new Date(end.getFullYear(), end.getMonth(), 1)
+        } else if (dateRange === 'custom' && customStart && customEnd) {
+          start = new Date(customStart)
+          const customEndDate = new Date(customEnd)
+          if (!Number.isNaN(customEndDate.getTime())) {
+            end.setTime(customEndDate.getTime())
+          }
+        }
+
+        const query = new URLSearchParams({
+          startDate: start.toISOString(),
+          endDate: end.toISOString(),
+        })
+
+        const res = await fetch(`/api/admin/analytics?${query}`)
+        if (!res.ok) throw new Error('Failed to fetch analytics')
+        const json: AnalyticsResponse = await res.json()
+
+        if (!cancelled) {
+          setData(json)
+        }
+      } catch (error) {
+        console.error(error)
+      } finally {
+        if (!cancelled) {
+          setLoading(false)
         }
       }
-
-      const query = new URLSearchParams({
-        startDate: start.toISOString(),
-        endDate: end.toISOString()
-      })
-
-      const res = await fetch(`/api/admin/analytics?${query}`)
-      if (!res.ok) throw new Error('Failed to fetch analytics')
-      const json = await res.json()
-      setData(json)
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setLoading(false)
     }
-  }
 
-  useEffect(() => {
-    fetchAnalytics()
+    void fetchAnalytics()
+
+    return () => {
+      cancelled = true
+    }
   }, [dateRange, customStart, customEnd])
-
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-[var(--bg-card)] border border-[var(--border)] p-3 rounded-lg shadow-xl">
-          <p className="text-[var(--text-secondary)] font-semibold mb-2">{label}</p>
-          {payload.map((entry: any, index: number) => (
-            <div key={index} className="flex items-center gap-2 text-sm">
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }} />
-              <span className="text-white">{entry.name}:</span>
-              <span className="font-mono text-[var(--accent)]">{formatCurrency(entry.value)}</span>
-            </div>
-          ))}
-        </div>
-      )
-    }
-    return null
-  }
 
   if (loading && !data) {
     return <div className="flex items-center justify-center min-h-[50vh]"><BrandSpinner /></div>
@@ -182,7 +230,7 @@ export default function AdminAnalyticsDashboard() {
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
                 <XAxis dataKey="date" stroke="var(--text-secondary)" fontSize={12} tickMargin={10} />
                 <YAxis stroke="var(--text-secondary)" fontSize={12} tickFormatter={(val) => `৳${(val/1000)}k`} />
-                <Tooltip content={<CustomTooltip />} />
+                <Tooltip content={<AnalyticsTooltip />} />
                 <Legend iconType="circle" />
                 <Line type="monotone" dataKey="revenue" name="Revenue" stroke="var(--success)" strokeWidth={3} dot={{ r: 4, fill: 'var(--success)' }} activeDot={{ r: 6 }} />
                 <Line type="monotone" dataKey="expenses" name="Expenses" stroke="var(--danger)" strokeWidth={3} dot={{ r: 4, fill: 'var(--danger)' }} activeDot={{ r: 6 }} />
@@ -200,9 +248,9 @@ export default function AdminAnalyticsDashboard() {
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
                 <XAxis type="number" stroke="var(--text-secondary)" fontSize={12} tickFormatter={(val) => `৳${(val/1000)}k`} />
                 <YAxis dataKey="name" type="category" stroke="var(--text-secondary)" fontSize={12} />
-                <Tooltip content={<CustomTooltip />} />
+                <Tooltip content={<AnalyticsTooltip />} />
                 <Bar dataKey="sales" name="Sales" fill="var(--accent)" radius={[0, 4, 4, 0]}>
-                  {data?.branchData?.map((entry: any, index: number) => (
+                  {data?.branchData?.map((entry, index: number) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Bar>
@@ -226,14 +274,16 @@ export default function AdminAnalyticsDashboard() {
                   paddingAngle={5}
                   dataKey="value"
                   stroke="none"
-                  label={({ name, percent }: any) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  label={({ name, percent }: { name?: string; percent?: number }) =>
+                    `${name ?? ''} ${((percent ?? 0) * 100).toFixed(0)}%`
+                  }
                   labelLine={false}
                 >
-                  {data?.expenseData?.map((entry: any, index: number) => (
+                  {data?.expenseData?.map((entry, index: number) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip content={<CustomTooltip />} />
+                <Tooltip content={<AnalyticsTooltip />} />
               </PieChart>
             </ResponsiveContainer>
           </div>

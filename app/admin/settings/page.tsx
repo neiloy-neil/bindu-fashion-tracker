@@ -17,39 +17,50 @@ export default function AdminSettings() {
   const [employees, setEmployees] = useState<any[]>([])
   
   const [loading, setLoading] = useState(true)
+  const [refreshNonce, setRefreshNonce] = useState(0)
 
   const [modalOpen, setModalOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState<any>(null)
 
-  const fetchData = async () => {
-    setLoading(true)
-    try {
-      if (activeTab === 'BRANCHES') {
-        const res = await fetch('/api/branches')
-        if (res.ok) setBranches(await res.json())
-      } else if (activeTab === 'PARTIES') {
-        const res = await fetch('/api/parties?includeInactive=true')
-        if (res.ok) setParties(await res.json())
-      } else if (activeTab === 'ACCOUNTS') {
-        const res = await fetch('/api/accounts?includeInactive=true')
-        if (res.ok) setAccounts(await res.json())
-      } else if (activeTab === 'EXPENSE_CATEGORIES') {
-        const res = await fetch('/api/expense-categories?includeInactive=true')
-        if (res.ok) setCategories(await res.json())
-      } else if (activeTab === 'EMPLOYEES') {
-        const res = await fetch('/api/employees?includeInactive=true')
-        if (res.ok) setEmployees(await res.json())
-      }
-    } catch (e) {
-      toast.error('Failed to load data')
-    } finally {
-      setLoading(false)
-    }
-  }
-
   useEffect(() => {
-    fetchData()
-  }, [activeTab])
+    let cancelled = false
+
+    const fetchData = async () => {
+      setLoading(true)
+      try {
+        if (activeTab === 'BRANCHES') {
+          const res = await fetch('/api/branches')
+          if (res.ok && !cancelled) setBranches(await res.json())
+        } else if (activeTab === 'PARTIES') {
+          const res = await fetch('/api/parties?includeInactive=true')
+          if (res.ok && !cancelled) setParties(await res.json())
+        } else if (activeTab === 'ACCOUNTS') {
+          const res = await fetch('/api/accounts?includeInactive=true')
+          if (res.ok && !cancelled) setAccounts(await res.json())
+        } else if (activeTab === 'EXPENSE_CATEGORIES') {
+          const res = await fetch('/api/expense-categories?includeInactive=true')
+          if (res.ok && !cancelled) setCategories(await res.json())
+        } else if (activeTab === 'EMPLOYEES') {
+          const res = await fetch('/api/employees?includeInactive=true')
+          if (res.ok && !cancelled) setEmployees(await res.json())
+        }
+      } catch {
+        if (!cancelled) {
+          toast.error('Failed to load data')
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false)
+        }
+      }
+    }
+
+    void fetchData()
+
+    return () => {
+      cancelled = true
+    }
+  }, [activeTab, refreshNonce])
 
   const openModal = (item: any = null) => {
     setSelectedItem(item)
@@ -72,7 +83,7 @@ export default function AdminSettings() {
         throw new Error(err.error)
       }
       toast.success('Deleted successfully')
-      fetchData()
+      setRefreshNonce((value) => value + 1)
     } catch (err: any) {
       toast.error(err.message)
     }
@@ -104,7 +115,7 @@ export default function AdminSettings() {
       if (!res.ok) throw new Error((await res.json()).error)
       toast.success(selectedItem ? 'Updated successfully' : 'Created successfully')
       setModalOpen(false)
-      fetchData()
+      setRefreshNonce((value) => value + 1)
     } catch (err: any) {
       toast.error(err.message)
     }

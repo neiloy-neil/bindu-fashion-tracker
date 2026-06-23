@@ -13,7 +13,6 @@ export default function ExcelExport({ data, month, year, branchName }: { data: S
       'Total Sales': b.totalSale,
       'Total Expenses': b.totalExpense,
       'Net Balance': b.netBalance,
-      // @ts-ignore - dynamic physical cash field
       'Physical Cash': b.physicalCash || 0
     }))
     const wsBranch = XLSX.utils.json_to_sheet(branchRows)

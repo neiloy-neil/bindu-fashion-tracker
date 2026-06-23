@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,87 +10,92 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
 
+type EditableEmployee = {
+  id: number
+  employeeId?: string | null
+  name?: string | null
+  branchId?: number | null
+  designation?: string | null
+  basicSalary?: number | null
+  conveyance?: number | null
+  yearlyLeaveAllowance?: number | null
+  mobileNumber?: string | null
+  dateOfBirth?: string | null
+  joiningDate?: string | null
+  address?: string | null
+  emergencyContact?: string | null
+  bloodGroup?: string | null
+  nidNumber?: string | null
+  oldIdCard?: string | null
+  isActive?: boolean | null
+  photoUrl?: string | null
+}
+
+type EmployeeFormData = {
+  employeeId: string
+  name: string
+  branchId: string
+  designation: string
+  basicSalary: number | string
+  conveyance: number | string
+  yearlyLeaveAllowance: number | string
+  mobileNumber: string
+  dateOfBirth: string
+  joiningDate: string
+  address: string
+  emergencyContact: string
+  bloodGroup: string
+  nidNumber: string
+  oldIdCard: string
+  isActive: boolean
+}
+
 interface Props {
   open: boolean
   onOpenChange: (open: boolean) => void
-  employee: any | null
+  employee: EditableEmployee | null
   branches: { id: number; name: string }[]
   onSuccess: () => void
 }
 
-export function EmployeeModal({ open, onOpenChange, employee, branches, onSuccess }: Props) {
+function createInitialFormData(employee: EditableEmployee | null): EmployeeFormData {
+  return {
+    employeeId: employee?.employeeId || '',
+    name: employee?.name || '',
+    branchId: employee?.branchId ? String(employee.branchId) : '',
+    designation: employee?.designation || '',
+    basicSalary: employee?.basicSalary || 0,
+    conveyance: employee?.conveyance || 1500,
+    yearlyLeaveAllowance: employee?.yearlyLeaveAllowance || 12,
+    mobileNumber: employee?.mobileNumber || '',
+    dateOfBirth: employee?.dateOfBirth || '',
+    joiningDate: employee?.joiningDate || '',
+    address: employee?.address || '',
+    emergencyContact: employee?.emergencyContact || '',
+    bloodGroup: employee?.bloodGroup || '',
+    nidNumber: employee?.nidNumber || '',
+    oldIdCard: employee?.oldIdCard || '',
+    isActive: employee?.isActive ?? true,
+  }
+}
+
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback
+}
+
+function EmployeeModalForm({
+  employee,
+  branches,
+  onOpenChange,
+  onSuccess,
+}: Omit<Props, 'open'>) {
   const [tab, setTab] = useState<'basic' | 'hr'>('basic')
   const [saving, setSaving] = useState(false)
-  
-  const [formData, setFormData] = useState<any>({
-    employeeId: '',
-    name: '',
-    branchId: '',
-    designation: '',
-    basicSalary: 0,
-    conveyance: 1500,
-    yearlyLeaveAllowance: 12,
-    mobileNumber: '',
-    dateOfBirth: '',
-    joiningDate: '',
-    address: '',
-    emergencyContact: '',
-    bloodGroup: '',
-    nidNumber: '',
-    oldIdCard: '',
-    isActive: true
-  })
-
+  const [formData, setFormData] = useState<EmployeeFormData>(() => createInitialFormData(employee))
   const [photoFile, setPhotoFile] = useState<File | null>(null)
 
-  useEffect(() => {
-    if (open) {
-      setTab('basic')
-      setPhotoFile(null)
-      if (employee) {
-        setFormData({
-          employeeId: employee.employeeId || '',
-          name: employee.name || '',
-          branchId: employee.branchId ? String(employee.branchId) : '',
-          designation: employee.designation || '',
-          basicSalary: employee.basicSalary || 0,
-          conveyance: employee.conveyance || 1500,
-          yearlyLeaveAllowance: employee.yearlyLeaveAllowance || 12,
-          mobileNumber: employee.mobileNumber || '',
-          dateOfBirth: employee.dateOfBirth || '',
-          joiningDate: employee.joiningDate || '',
-          address: employee.address || '',
-          emergencyContact: employee.emergencyContact || '',
-          bloodGroup: employee.bloodGroup || '',
-          nidNumber: employee.nidNumber || '',
-          oldIdCard: employee.oldIdCard || '',
-          isActive: employee.isActive ?? true
-        })
-      } else {
-        setFormData({
-          employeeId: '',
-          name: '',
-          branchId: '',
-          designation: '',
-          basicSalary: 0,
-          conveyance: 1500,
-          yearlyLeaveAllowance: 12,
-          mobileNumber: '',
-          dateOfBirth: '',
-          joiningDate: '',
-          address: '',
-          emergencyContact: '',
-          bloodGroup: '',
-          nidNumber: '',
-          oldIdCard: '',
-          isActive: true
-        })
-      }
-    }
-  }, [open, employee])
-
-  const handleChange = (field: string, value: any) => {
-    setFormData((prev: any) => ({ ...prev, [field]: value }))
+  const handleChange = <K extends keyof EmployeeFormData>(field: K, value: EmployeeFormData[K]) => {
+    setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
   const handleSave = async () => {
@@ -155,129 +160,143 @@ export function EmployeeModal({ open, onOpenChange, employee, branches, onSucces
       toast.success(employee ? 'Employee updated' : 'Employee created')
       onSuccess()
       onOpenChange(false)
-    } catch (err: any) {
-      toast.error(err.message)
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, 'Failed to save employee'))
     } finally {
       setSaving(false)
     }
   }
 
   return (
+    <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogHeader>
+        <DialogTitle>{employee ? 'Edit Employee' : 'Add Employee'}</DialogTitle>
+      </DialogHeader>
+
+      <div className="flex gap-2 border-b border-border mb-4">
+        <button
+          className={`pb-2 px-1 text-sm font-medium ${tab === 'basic' ? 'border-b-2 border-[var(--brand-orange)] text-[var(--brand-orange)]' : 'text-muted-foreground'}`}
+          onClick={() => setTab('basic')}
+        >
+          Basic Info
+        </button>
+        <button
+          className={`pb-2 px-1 text-sm font-medium ${tab === 'hr' ? 'border-b-2 border-[var(--brand-orange)] text-[var(--brand-orange)]' : 'text-muted-foreground'}`}
+          onClick={() => setTab('hr')}
+        >
+          HR Details
+        </button>
+      </div>
+
+      <div className="space-y-4">
+        {tab === 'basic' && (
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label>Employee ID *</Label>
+              <Input value={formData.employeeId} onChange={e => handleChange('employeeId', e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Full Name *</Label>
+              <Input value={formData.name} onChange={e => handleChange('name', e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Branch</Label>
+              <Select value={formData.branchId} onValueChange={v => handleChange('branchId', v ?? '')}>
+                <SelectTrigger><SelectValue placeholder="Select Branch" /></SelectTrigger>
+                <SelectContent>
+                  {branches.map(b => (
+                    <SelectItem key={b.id} value={String(b.id)}>{b.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Designation</Label>
+              <Input value={formData.designation} onChange={e => handleChange('designation', e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Basic Salary (৳)</Label>
+              <Input type="number" value={formData.basicSalary} onChange={e => handleChange('basicSalary', e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Conveyance (৳)</Label>
+              <Input type="number" value={formData.conveyance} onChange={e => handleChange('conveyance', e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Yearly Leave Allowance</Label>
+              <Input type="number" value={formData.yearlyLeaveAllowance} onChange={e => handleChange('yearlyLeaveAllowance', e.target.value)} />
+            </div>
+            <div className="flex items-center gap-2 pt-8">
+              <Checkbox id="isActive" checked={formData.isActive} onCheckedChange={(v) => handleChange('isActive', !!v)} />
+              <Label htmlFor="isActive" className="cursor-pointer">Active Employee</Label>
+            </div>
+          </div>
+        )}
+
+        {tab === 'hr' && (
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label>NID Number</Label>
+              <Input value={formData.nidNumber} onChange={e => handleChange('nidNumber', e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Blood Group</Label>
+              <Input value={formData.bloodGroup} onChange={e => handleChange('bloodGroup', e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Date of Birth</Label>
+              <Input type="date" value={formData.dateOfBirth} onChange={e => handleChange('dateOfBirth', e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Joining Date</Label>
+              <Input type="date" value={formData.joiningDate} onChange={e => handleChange('joiningDate', e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Mobile Number</Label>
+              <Input value={formData.mobileNumber} onChange={e => handleChange('mobileNumber', e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Emergency Contact</Label>
+              <Input value={formData.emergencyContact} onChange={e => handleChange('emergencyContact', e.target.value)} />
+            </div>
+            <div className="col-span-2 space-y-1.5">
+              <Label>Address</Label>
+              <Input value={formData.address} onChange={e => handleChange('address', e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Old ID Card Number</Label>
+              <Input value={formData.oldIdCard} onChange={e => handleChange('oldIdCard', e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Photo Upload</Label>
+              <Input type="file" accept="image/*" onChange={e => setPhotoFile(e.target.files?.[0] || null)} />
+            </div>
+          </div>
+        )}
+      </div>
+
+      <DialogFooter className="mt-6">
+        <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>Cancel</Button>
+        <Button onClick={handleSave} disabled={saving} className="bg-[var(--brand-orange)] hover:bg-orange-600 text-white">
+          {saving ? 'Saving...' : 'Save Employee'}
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  )
+}
+
+export function EmployeeModal({ open, onOpenChange, employee, branches, onSuccess }: Props) {
+  return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{employee ? 'Edit Employee' : 'Add Employee'}</DialogTitle>
-        </DialogHeader>
-
-        <div className="flex gap-2 border-b border-border mb-4">
-          <button 
-            className={`pb-2 px-1 text-sm font-medium ${tab === 'basic' ? 'border-b-2 border-[var(--brand-orange)] text-[var(--brand-orange)]' : 'text-muted-foreground'}`}
-            onClick={() => setTab('basic')}
-          >
-            Basic Info
-          </button>
-          <button 
-            className={`pb-2 px-1 text-sm font-medium ${tab === 'hr' ? 'border-b-2 border-[var(--brand-orange)] text-[var(--brand-orange)]' : 'text-muted-foreground'}`}
-            onClick={() => setTab('hr')}
-          >
-            HR Details
-          </button>
-        </div>
-
-        <div className="space-y-4">
-          {tab === 'basic' && (
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label>Employee ID *</Label>
-                <Input value={formData.employeeId} onChange={e => handleChange('employeeId', e.target.value)} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Full Name *</Label>
-                <Input value={formData.name} onChange={e => handleChange('name', e.target.value)} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Branch</Label>
-                <Select value={formData.branchId} onValueChange={v => handleChange('branchId', v)}>
-                  <SelectTrigger><SelectValue placeholder="Select Branch" /></SelectTrigger>
-                  <SelectContent>
-                    {branches.map(b => (
-                      <SelectItem key={b.id} value={String(b.id)}>{b.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label>Designation</Label>
-                <Input value={formData.designation} onChange={e => handleChange('designation', e.target.value)} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Basic Salary (৳)</Label>
-                <Input type="number" value={formData.basicSalary} onChange={e => handleChange('basicSalary', e.target.value)} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Conveyance (৳)</Label>
-                <Input type="number" value={formData.conveyance} onChange={e => handleChange('conveyance', e.target.value)} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Yearly Leave Allowance</Label>
-                <Input type="number" value={formData.yearlyLeaveAllowance} onChange={e => handleChange('yearlyLeaveAllowance', e.target.value)} />
-              </div>
-              <div className="flex items-center gap-2 pt-8">
-                <Checkbox id="isActive" checked={formData.isActive} onCheckedChange={(v) => handleChange('isActive', !!v)} />
-                <Label htmlFor="isActive" className="cursor-pointer">Active Employee</Label>
-              </div>
-            </div>
-          )}
-
-          {tab === 'hr' && (
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label>NID Number</Label>
-                <Input value={formData.nidNumber} onChange={e => handleChange('nidNumber', e.target.value)} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Blood Group</Label>
-                <Input value={formData.bloodGroup} onChange={e => handleChange('bloodGroup', e.target.value)} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Date of Birth</Label>
-                <Input type="date" value={formData.dateOfBirth} onChange={e => handleChange('dateOfBirth', e.target.value)} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Joining Date</Label>
-                <Input type="date" value={formData.joiningDate} onChange={e => handleChange('joiningDate', e.target.value)} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Mobile Number</Label>
-                <Input value={formData.mobileNumber} onChange={e => handleChange('mobileNumber', e.target.value)} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Emergency Contact</Label>
-                <Input value={formData.emergencyContact} onChange={e => handleChange('emergencyContact', e.target.value)} />
-              </div>
-              <div className="col-span-2 space-y-1.5">
-                <Label>Address</Label>
-                <Input value={formData.address} onChange={e => handleChange('address', e.target.value)} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Old ID Card Number</Label>
-                <Input value={formData.oldIdCard} onChange={e => handleChange('oldIdCard', e.target.value)} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Photo Upload</Label>
-                <Input type="file" accept="image/*" onChange={e => setPhotoFile(e.target.files?.[0] || null)} />
-              </div>
-            </div>
-          )}
-        </div>
-
-        <DialogFooter className="mt-6">
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>Cancel</Button>
-          <Button onClick={handleSave} disabled={saving} className="bg-[var(--brand-orange)] hover:bg-orange-600 text-white">
-            {saving ? 'Saving...' : 'Save Employee'}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
+      {open ? (
+        <EmployeeModalForm
+          key={`${employee?.id ?? 'new'}-${open ? 'open' : 'closed'}`}
+          employee={employee}
+          branches={branches}
+          onOpenChange={onOpenChange}
+          onSuccess={onSuccess}
+        />
+      ) : null}
     </Dialog>
   )
 }

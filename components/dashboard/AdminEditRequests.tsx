@@ -9,22 +9,30 @@ export default function AdminEditRequests() {
   const [loading, setLoading] = useState(true)
   const [viewingEntry, setViewingEntry] = useState<{ entry: any, changes: string } | null>(null)
 
-  const fetchRequests = async () => {
-    try {
-      const res = await fetch('/api/edit-requests')
-      const data = await res.json()
-      if (data.requests) {
-        setRequests(data.requests.filter((r: any) => r.status === 'PENDING'))
-      }
-    } catch (e) {
-      console.error(e)
-    } finally {
-      setLoading(false)
-    }
-  }
-
   useEffect(() => {
-    fetchRequests()
+    let cancelled = false
+
+    const fetchRequests = async () => {
+      try {
+        const res = await fetch('/api/edit-requests')
+        const data = await res.json()
+        if (!cancelled && data.requests) {
+          setRequests(data.requests.filter((r: any) => r.status === 'PENDING'))
+        }
+      } catch (e) {
+        console.error(e)
+      } finally {
+        if (!cancelled) {
+          setLoading(false)
+        }
+      }
+    }
+
+    void fetchRequests()
+
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   const handleAction = async (requestId: number, status: 'APPROVED' | 'REJECTED') => {
@@ -36,7 +44,7 @@ export default function AdminEditRequests() {
       })
       if (!res.ok) throw new Error('Failed to update request')
       toast.success(`Request ${status.toLowerCase()}`)
-      fetchRequests()
+      setRequests((current) => current.filter((request) => request.id !== requestId))
     } catch (e: any) {
       toast.error(e.message)
     }

@@ -42,33 +42,40 @@ function Entries() {
   const [activeViewEntry, setActiveViewEntry] = useState<DailyEntry | null>(null)
   const [requestEditData, setRequestEditData] = useState<{ id: number, branchName: string, date: string, categoryId: number, categoryName: string, oldValue: number } | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-
-  const fetchEntries = useCallback(async () => {
-    setLoading(true)
-    const params = new URLSearchParams({
-      month: String(month),
-      year: String(year),
-      limit: '1000',
-    })
-    if (branchFilter) params.set('branchId', branchFilter)
-    const res = await fetch(`/api/entries?${params}`)
-    const data = await res.json()
-    setEntries(data.entries || [])
-    setLoading(false)
-  }, [month, year, branchFilter])
+  const [entriesReloadNonce, setEntriesReloadNonce] = useState(0)
 
   const [userRole, setUserRole] = useState<'ADMIN' | 'BRANCH' | null>(null)
-  const [userId, setUserId] = useState<number | null>(null)
 
   useEffect(() => {
-    fetch('/api/branches').then((r) => r.json()).then(setBranches)
-    fetch('/api/categories').then((r) => r.json()).then(setCategories)
-    fetch('/api/auth/session').then(r => r.json()).then(session => {
-      if (session?.user) {
-        setUserRole(session.user.role)
-        setUserId(session.user.id)
+    let cancelled = false
+
+    const bootstrap = async () => {
+      const [branchRes, categoryRes, sessionRes] = await Promise.all([
+        fetch('/api/branches'),
+        fetch('/api/categories'),
+        fetch('/api/auth/session'),
+      ])
+
+      const [branchData, categoryData, session] = await Promise.all([
+        branchRes.json(),
+        categoryRes.json(),
+        sessionRes.json(),
+      ])
+
+      if (!cancelled) {
+        setBranches(branchData)
+        setCategories(categoryData)
+        if (session?.user) {
+          setUserRole(session.user.role)
+        }
       }
-    })
+    }
+
+    void bootstrap()
+
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   useEffect(() => {
@@ -78,7 +85,37 @@ function Entries() {
     }
   }, [entries.length, visibleCount, loading])
 
-  useEffect(() => { fetchEntries() }, [fetchEntries])
+  useEffect(() => {
+    let cancelled = false
+
+    const loadEntries = async () => {
+      setLoading(true)
+      try {
+        const params = new URLSearchParams({
+          month: String(month),
+          year: String(year),
+          limit: '1000',
+        })
+        if (branchFilter) params.set('branchId', branchFilter)
+        const res = await fetch(`/api/entries?${params}`)
+        const data = await res.json()
+
+        if (!cancelled) {
+          setEntries(data.entries || [])
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false)
+        }
+      }
+    }
+
+    void loadEntries()
+
+    return () => {
+      cancelled = true
+    }
+  }, [month, year, branchFilter, entriesReloadNonce])
 
   useEffect(() => {
     if (editCell && inputRef.current) {
@@ -323,7 +360,7 @@ function Entries() {
           <div style={{ textAlign: 'center', padding: '80px 0', color: 'var(--text-muted)' }}>
             <div style={{ fontSize: 48, marginBottom: 16 }}>📝</div>
             <h3 style={{ fontSize: 20, color: 'var(--text-primary)', marginBottom: 8, fontWeight: 600 }}>No register data submitted</h3>
-            <p style={{ margin: '0 0 24px', fontSize: 14 }}>There are no entries for {MONTHS[month-1]} {year} yet.<br />If the shop is open today, click '+ New Entry' to start the daily sheet.</p>
+            <p style={{ margin: '0 0 24px', fontSize: 14 }}>There are no entries for {MONTHS[month-1]} {year} yet.<br />If the shop is open today, click &apos;+ New Entry&apos; to start the daily sheet.</p>
             <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
               <Link href="/entries/new" className="btn btn-primary" style={{ minWidth: 160 }}>+ New Entry</Link>
               <Link href="/import" className="btn btn-secondary" style={{ minWidth: 160 }}>Import Excel</Link>
@@ -511,7 +548,7 @@ function Entries() {
           onClose={() => setActiveViewEntry(null)} 
           onDeleted={() => {
             setActiveViewEntry(null)
-            fetchEntries()
+            setEntriesReloadNonce((value) => value + 1)
           }}
         />
       )}

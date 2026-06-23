@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { Branch } from '@/lib/types'
-import { formatCurrency, formatDate } from '@/lib/utils'
 import { toPng, toJpeg } from 'html-to-image'
 import toast from 'react-hot-toast'
 import { Download } from 'lucide-react'
@@ -30,26 +29,40 @@ export default function DailyReportPage() {
   }, [])
 
   useEffect(() => {
-    if (selectedBranchId && selectedDate) {
-      fetchReport()
+    if (!selectedBranchId || !selectedDate) {
+      return
+    }
+
+    let cancelled = false
+
+    const fetchReport = async () => {
+      setLoading(true)
+      setHasSearched(true)
+      try {
+        const res = await fetch(`/api/reports/daily?branchId=${selectedBranchId}&date=${selectedDate}`)
+        if (!res.ok) throw new Error('Failed to fetch report')
+        const data = await res.json()
+        if (!cancelled) {
+          setEntryData(data)
+        }
+      } catch (error: unknown) {
+        if (!cancelled) {
+          toast.error(error instanceof Error ? error.message : 'Failed to fetch report')
+          setEntryData(null)
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false)
+        }
+      }
+    }
+
+    void fetchReport()
+
+    return () => {
+      cancelled = true
     }
   }, [selectedBranchId, selectedDate])
-
-  const fetchReport = async () => {
-    setLoading(true)
-    setHasSearched(true)
-    try {
-      const res = await fetch(`/api/reports/daily?branchId=${selectedBranchId}&date=${selectedDate}`)
-      if (!res.ok) throw new Error('Failed to fetch report')
-      const data = await res.json()
-      setEntryData(data)
-    } catch (e: any) {
-      toast.error(e.message)
-      setEntryData(null)
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const exportAsImage = async (type: 'png' | 'jpeg') => {
     if (!reportRef.current) return

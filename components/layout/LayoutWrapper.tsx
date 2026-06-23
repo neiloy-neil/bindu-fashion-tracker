@@ -2,19 +2,22 @@
 
 import { usePathname } from 'next/navigation'
 import { Sidebar } from '@/components/layout/Sidebar'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Menu, X } from 'lucide-react'
 import Image from 'next/image'
 
 export function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const isLoginPage = pathname === '/login'
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [mobileMenuState, setMobileMenuState] = useState({ open: false, path: pathname })
+  const mobileMenuOpen = mobileMenuState.open && mobileMenuState.path === pathname
 
-  // Close mobile menu on route change
-  useEffect(() => {
-    setMobileMenuOpen(false)
-  }, [pathname])
+  const setMobileMenuOpen = (open: boolean) => {
+    setMobileMenuState({
+      open,
+      path: open ? pathname : mobileMenuState.path,
+    })
+  }
 
   if (isLoginPage) {
     return <div className="min-h-screen bg-[var(--bg-primary)]">{children}</div>

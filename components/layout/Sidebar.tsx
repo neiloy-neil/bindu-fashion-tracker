@@ -17,28 +17,46 @@ export function Sidebar({ isOpen, setIsOpen }: { isOpen?: boolean, setIsOpen?: (
   const [pendingCheques, setPendingCheques] = useState(0)
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const savedTheme = localStorage.getItem('theme')
-      if (savedTheme === 'light') {
-        setIsLightMode(true)
-        document.documentElement.classList.add('light')
+    let cancelled = false
+
+    const loadSidebarData = async () => {
+      try {
+        const savedTheme = typeof window !== 'undefined' ? localStorage.getItem('theme') : null
+        const lightMode = savedTheme === 'light'
+        document.documentElement.classList.toggle('light', lightMode)
+
+        const [sessionRes, transferRes, chequeRes] = await Promise.all([
+          fetch('/api/auth/session'),
+          fetch('/api/transfers/pending-count'),
+          fetch('/api/cheques?status=PENDING'),
+        ])
+
+        const session = await sessionRes.json()
+        const transferData = await transferRes.json()
+        const chequeData: unknown = await chequeRes.json()
+
+        if (!cancelled) {
+          setIsLightMode(lightMode)
+          if (session?.user) {
+            setRole(session.user.role)
+          }
+          if (transferData && typeof transferData.count === 'number') {
+            setPendingTransfers(transferData.count)
+          }
+          if (Array.isArray(chequeData)) {
+            setPendingCheques(chequeData.length)
+          }
+        }
+      } catch (error) {
+        console.error(error)
       }
     }
-    
-    fetch('/api/auth/session')
-      .then((r) => r.json())
-      .then((session) => {
-        if (session?.user) setRole(session.user.role)
-      })
 
-    fetch('/api/transfers/pending-count')
-      .then((r) => r.json())
-      .then((data) => {
-        if (data && typeof data.count === 'number') setPendingTransfers(data.count)
-      })
-      .catch(console.error)
-      
-    // Assuming we have an endpoint or we just check if it's needed. For now just set 0.
+    void loadSidebarData()
+
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   const handleLogout = async () => {

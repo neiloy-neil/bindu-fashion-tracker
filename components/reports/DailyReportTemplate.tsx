@@ -1,7 +1,65 @@
+import Image from 'next/image'
 import { formatCurrency, formatDate } from '@/lib/utils'
 
-export default function DailyReportTemplate({ entryData }: { entryData: any }) {
-  const incomeItems = entryData?.items?.filter((i: any) => i.amount > 0) || []
+type ReportReceivedTransfer = {
+  amount: number
+  note?: string | null
+  dailyEntry?: {
+    branch?: { name: string } | null
+  } | null
+}
+
+type ReportEntryItem = {
+  amount: number
+  note?: string | null
+  partyName?: string | null
+  category?: { name: string; type: 'INCOME' | 'EXPENSE' } | null
+}
+
+type ReportTransfer = {
+  amount: number
+  note?: string | null
+  account?: { name: string } | null
+}
+
+type ReportPayment = {
+  method: string
+  amount: number
+  note?: string | null
+  party?: { name: string } | null
+  cheque?: { status?: string | null } | null
+  attachmentUrl?: string | null
+}
+
+type ReportExpenseEntry = {
+  amount: number
+  note?: string | null
+  category?: { name: string } | null
+}
+
+type ReportAdvanceSalary = {
+  type: string
+  amount?: number | null
+  note?: string | null
+  productDescription?: string | null
+  employee?: { name: string } | null
+}
+
+type ReportEntryData = {
+  date: string
+  openingTime?: string | null
+  closingTime?: string | null
+  branch?: { name: string } | null
+  items?: ReportEntryItem[]
+  receivedTransfers?: ReportReceivedTransfer[]
+  expenseEntries?: ReportExpenseEntry[]
+  transfers?: ReportTransfer[]
+  payments?: ReportPayment[]
+  advanceSalaries?: ReportAdvanceSalary[]
+}
+
+export default function DailyReportTemplate({ entryData }: { entryData: ReportEntryData | null }) {
+  const incomeItems = entryData?.items?.filter((item) => item.amount > 0) || []
   const receivedTransfers = entryData?.receivedTransfers || []
   const expenseEntries = entryData?.expenseEntries || []
   const transfers = entryData?.transfers || []
@@ -13,7 +71,7 @@ export default function DailyReportTemplate({ entryData }: { entryData: any }) {
   return (
     <div className="bg-[var(--bg-card)] p-8 rounded-xl border border-[var(--border)] shadow-xl text-foreground">
       <div className="text-center mb-8 border-b border-[var(--border)] pb-6">
-        <img src="/bindu-logo.webp" alt="Bindu Premium" className="h-16 mx-auto mb-4 object-contain" />
+        <Image src="/bindu-logo.webp" alt="Bindu Premium" width={192} height={64} className="h-16 w-auto mx-auto mb-4 object-contain" />
         <h1 className="text-3xl font-bold mb-2" style={{ fontFamily: 'var(--font-display)', color: 'var(--accent)' }}>Bindu Premium - Daily Report</h1>
         <div className="flex justify-center gap-8 text-[var(--text-secondary)]">
           <span>Branch: <strong className="text-foreground">{entryData.branch?.name}</strong></span>
@@ -49,7 +107,7 @@ export default function DailyReportTemplate({ entryData }: { entryData: any }) {
               </tr>
             </thead>
             <tbody>
-              {incomeItems.map((item: any, i: number) => (
+              {incomeItems.map((item, i: number) => (
                 <tr key={i} className="border-b border-[var(--border)] last:border-0 bg-[var(--bg-card)]">
                   <td className="px-4 py-3 font-medium text-foreground">{item.category?.name || '-'}</td>
                   <td className="px-4 py-3 text-[var(--text-secondary)]">{item.note || '-'}{item.partyName ? ` — ${item.partyName}` : ''}</td>
@@ -74,7 +132,7 @@ export default function DailyReportTemplate({ entryData }: { entryData: any }) {
                 </tr>
               </thead>
               <tbody>
-                {receivedTransfers.map((item: any, i: number) => (
+                {receivedTransfers.map((item, i: number) => (
                   <tr key={`rt-${i}`} className="border-b border-[var(--border)] last:border-0 bg-[var(--bg-card)]">
                     <td className="px-4 py-3 font-medium text-foreground">{item.dailyEntry?.branch?.name || '-'}</td>
                     <td className="px-4 py-3 text-[var(--text-secondary)]">{item.note || '-'}</td>
@@ -100,7 +158,7 @@ export default function DailyReportTemplate({ entryData }: { entryData: any }) {
               </tr>
             </thead>
             <tbody>
-              {expenseEntries.map((item: any, i: number) => (
+              {expenseEntries.map((item, i: number) => (
                 <tr key={i} className="border-b border-[var(--border)] last:border-0 bg-[var(--bg-card)]">
                   <td className="px-4 py-3 font-medium text-foreground">{item.category?.name || '-'}</td>
                   <td className="px-4 py-3 text-[var(--text-secondary)]">{item.note || '-'}</td>
@@ -127,7 +185,7 @@ export default function DailyReportTemplate({ entryData }: { entryData: any }) {
               </tr>
             </thead>
             <tbody>
-              {transfers.map((item: any, i: number) => (
+              {transfers.map((item, i: number) => (
                 <tr key={i} className="border-b border-[var(--border)] last:border-0 bg-[var(--bg-card)]">
                   <td className="px-4 py-3 font-medium text-foreground">{item.account?.name || '-'}</td>
                   <td className="px-4 py-3 text-[var(--text-secondary)]">{item.note || '-'}</td>
@@ -156,7 +214,7 @@ export default function DailyReportTemplate({ entryData }: { entryData: any }) {
               </tr>
             </thead>
             <tbody>
-              {payments.map((item: any, i: number) => (
+              {payments.map((item, i: number) => (
                 <tr key={i} className="border-b border-[var(--border)] last:border-0 bg-[var(--bg-card)]">
                   <td className="px-4 py-3 font-medium text-foreground">{item.party?.name || '-'}</td>
                   <td className="px-4 py-3 text-[var(--text-secondary)]">
@@ -199,13 +257,13 @@ export default function DailyReportTemplate({ entryData }: { entryData: any }) {
               </tr>
             </thead>
             <tbody>
-              {advanceSalaries.map((item: any, i: number) => (
+              {advanceSalaries.map((item, i: number) => (
                 <tr key={i} className="border-b border-[var(--border)] last:border-0 bg-[var(--bg-card)]">
                   <td className="px-4 py-3 font-medium text-foreground">{item.employee?.name || '-'}</td>
                   <td className="px-4 py-3 text-[var(--text-secondary)]">{item.type}</td>
                   <td className="px-4 py-3 text-foreground">{item.type === 'PRODUCT' ? item.productDescription : '-'}</td>
                   <td className="px-4 py-3 text-[var(--text-secondary)]">{item.note || '-'}</td>
-                  <td className="px-4 py-3 text-right font-bold tabular-nums font-mono text-[var(--accent)]">{item.type === 'CASH' ? `৳${formatCurrency(item.amount)}` : '-'}</td>
+                   <td className="px-4 py-3 text-right font-bold tabular-nums font-mono text-[var(--accent)]">{item.type === 'CASH' ? `৳${formatCurrency(item.amount ?? 0)}` : '-'}</td>
                 </tr>
               ))}
             </tbody>

@@ -1,8 +1,8 @@
 'use client'
 
 import { useEffect, useState, useMemo, Suspense } from 'react'
-import { useSearchParams, useRouter } from 'next/navigation'
-import type { SalaryUploadLog, Employee, SalaryRecord } from '@prisma/client'
+import { useSearchParams } from 'next/navigation'
+import type { SalaryUploadLog, Employee } from '@prisma/client'
 import { calcSalary } from '@/lib/hr/calculations'
 import { Users, FileSpreadsheet, ChevronRight, Clock, CheckCircle2, Circle } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -52,66 +52,75 @@ function FeedContent() {
   const [totalEmployees, setTotalEmployees] = useState(0)
   const [statusFilter, setStatusFilter] = useState('all')
 
-  async function load() {
-    setLoading(true)
-    try {
-      const [logsRes, recsRes, empsRes] = await Promise.all([
-        fetch(`/api/hr/upload-log?year=${year}`),
-        fetch(`/api/hr/salary-records?year=${year}`), // NOTE: modified backend route in our implementation just returns month matching if supplied, let's fetch all or loop
-        fetch('/api/hr/employees?active=true')
-      ])
+  useEffect(() => {
+    let cancelled = false
 
-      const logs: SalaryUploadLog[] = logsRes.ok ? await logsRes.json() : []
-      const emps: Employee[] = empsRes.ok ? await empsRes.json() : []
-      
-      // Since fetching all records for a year might be not supported natively by the GET route if it requires month (we didn't change GET /api/hr/salary-records to make month optional).
-      // Let's actually fetch per month to be safe since the API might enforce month.
-      const monthPromises = []
-      for (let m = 1; m <= 12; m++) {
-        monthPromises.push(fetch(`/api/hr/salary-records?month=${m}&year=${year}`).then(res => res.ok ? res.json() : []))
-      }
-      const allRecs = await Promise.all(monthPromises)
+    const load = async () => {
+      setLoading(true)
+      try {
+        const [logsRes, empsRes] = await Promise.all([
+          fetch(`/api/hr/upload-log?year=${year}`),
+          fetch('/api/hr/employees?active=true')
+        ])
 
-      setTotalEmployees(emps.length)
-
-      const logMap = new Map((logs ?? []).map(l => [l.month, l]))
-      const empMap = new Map((emps ?? []).map(e => [e.id, e]))
-
-      const monthData: MonthData[] = []
-      for (let m = 1; m <= 12; m++) {
-        const log = logMap.get(m) ?? null
-        const recs = allRecs[m - 1]
+        const logs: SalaryUploadLog[] = logsRes.ok ? await logsRes.json() : []
+        const emps: Employee[] = empsRes.ok ? await empsRes.json() : []
         
-        let totalPayable = 0
-        let recordsCount = 0
+        const monthPromises = []
+        for (let m = 1; m <= 12; m++) {
+          monthPromises.push(fetch(`/api/hr/salary-records?month=${m}&year=${year}`).then(res => res.ok ? res.json() : []))
+        }
+        const allRecs = await Promise.all(monthPromises)
 
-        for (const r of recs) {
-          const emp = empMap.get(r.employeeId)
-          if (emp) {
-            const calc = calcSalary(emp, r)
-            totalPayable += calc.netPayable
-            recordsCount++
+        if (cancelled) return
+
+        setTotalEmployees(emps.length)
+
+        const logMap = new Map((logs ?? []).map(l => [l.month, l]))
+        const empMap = new Map((emps ?? []).map(e => [e.id, e]))
+
+        const monthData: MonthData[] = []
+        for (let m = 1; m <= 12; m++) {
+          const log = logMap.get(m) ?? null
+          const recs = allRecs[m - 1]
+          
+          let totalPayable = 0
+          let recordsCount = 0
+
+          for (const r of recs) {
+            const emp = empMap.get(r.employeeId)
+            if (emp) {
+              const calc = calcSalary(emp, r)
+              totalPayable += calc.netPayable
+              recordsCount++
+            }
           }
+
+          const completion = emps.length > 0 ? Math.round((recordsCount / emps.length) * 100) : 0
+
+          let status: 'processed' | 'manual' | 'pending' = 'pending'
+          if (log && recordsCount > 0) status = 'processed'
+          else if (recordsCount > 0) status = 'manual'
+
+          monthData.push({ month: m, year, records: recordsCount, totalPayable, log, status, completion })
         }
 
-        const completion = emps.length > 0 ? Math.round((recordsCount / emps.length) * 100) : 0
-
-        let status: 'processed' | 'manual' | 'pending' = 'pending'
-        if (log && recordsCount > 0) status = 'processed'
-        else if (recordsCount > 0) status = 'manual'
-
-        monthData.push({ month: m, year, records: recordsCount, totalPayable, log, status, completion })
+        setMonths(monthData)
+      } catch (e) {
+        console.error(e)
+      } finally {
+        if (!cancelled) {
+          setLoading(false)
+        }
       }
-
-      setMonths(monthData)
-    } catch (e) {
-      console.error(e)
-    } finally {
-      setLoading(false)
     }
-  }
 
-  useEffect(() => { load() }, [year])
+    void load()
+
+    return () => {
+      cancelled = true
+    }
+  }, [year])
 
   const filtered = useMemo(() => {
     if (statusFilter === 'all') return months

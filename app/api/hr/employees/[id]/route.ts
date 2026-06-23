@@ -1,33 +1,114 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
+const employeeFullSelect = {
+  id: true,
+  employeeId: true,
+  name: true,
+  designation: true,
+  basicSalary: true,
+  conveyance: true,
+  yearlyLeaveAllowance: true,
+  mobileNumber: true,
+  dateOfBirth: true,
+  joiningDate: true,
+  address: true,
+  emergencyContact: true,
+  bloodGroup: true,
+  nidNumber: true,
+  oldIdCard: true,
+  photoUrl: true,
+  isActive: true,
+  branchId: true,
+  branch: { select: { name: true } },
+} as const
+
+const employeeLimitedSelect = {
+  id: true,
+  employeeId: true,
+  name: true,
+  designation: true,
+  photoUrl: true,
+  joiningDate: true,
+  isActive: true,
+  branchId: true,
+  branch: { select: { name: true } },
+} as const
+
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+  const { id } = await params
+  const employeeId = parseInt(id)
   const role = req.headers.get('x-user-role')
+  const userBranchId = req.headers.get('x-user-branch-id')
+  const managedBranchIds = req.headers.get('x-user-managed-branches')
   if (!role) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
   }
+  if (Number.isNaN(employeeId)) {
+    return NextResponse.json({ error: 'Invalid employee id' }, { status: 400 })
+  }
 
   try {
-    const employee = await prisma.employee.findUnique({
-      where: { id: parseInt(id) },
-      include: {
-        branch: { select: { name: true } }
+    if (role === 'ADMIN' || role === 'HR_ADMIN' || role === 'AUDITOR') {
+      const employee = await prisma.employee.findUnique({
+        where: { id: employeeId },
+        select: employeeFullSelect,
+      })
+      
+      if (!employee) {
+        return NextResponse.json({ error: 'Not Found' }, { status: 404 })
       }
-    })
-    
-    if (!employee) {
-      return NextResponse.json({ error: 'Not Found' }, { status: 404 })
+      
+      return NextResponse.json(employee)
     }
-    
-    return NextResponse.json(employee)
+
+    if (role === 'BRANCH') {
+      if (!userBranchId) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
+
+      const employee = await prisma.employee.findFirst({
+        where: { id: employeeId, branchId: parseInt(userBranchId) },
+        select: employeeLimitedSelect,
+      })
+
+      if (!employee) {
+        return NextResponse.json({ error: 'Not Found' }, { status: 404 })
+      }
+
+      return NextResponse.json(employee)
+    }
+
+    if (role === 'AREA_MANAGER') {
+      const allowedBranchIds = managedBranchIds
+        ?.split(',')
+        .map(value => parseInt(value))
+        .filter(value => !Number.isNaN(value)) ?? []
+
+      if (allowedBranchIds.length === 0) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
+
+      const employee = await prisma.employee.findFirst({
+        where: { id: employeeId, branchId: { in: allowedBranchIds } },
+        select: employeeLimitedSelect,
+      })
+
+      if (!employee) {
+        return NextResponse.json({ error: 'Not Found' }, { status: 404 })
+      }
+
+      return NextResponse.json(employee)
+    }
+
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+  const { id } = await params
   const role = req.headers.get('x-user-role')
   if (!role || (role !== 'ADMIN' && role !== 'HR_ADMIN')) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -64,7 +145,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+  const { id } = await params
   const role = req.headers.get('x-user-role')
   if (!role || (role !== 'ADMIN' && role !== 'HR_ADMIN')) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })

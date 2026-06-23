@@ -73,7 +73,7 @@ export function AddPartyModal({ isOpen, onClose, onSuccess }: AddPartyModalProps
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-card w-full max-w-xl rounded-xl shadow-xl overflow-hidden border border-border animate-in fade-in zoom-in-95 duration-200">
+      <div className="bg-card w-full max-w-xl max-h-[90dvh] flex flex-col rounded-xl shadow-xl overflow-hidden border border-border animate-in fade-in zoom-in-95 duration-200">
         <div className="flex justify-between items-center p-6 border-b border-border bg-muted/20">
           <h2 className="text-xl font-bold flex items-center gap-2">
             <Building2 className="text-primary" />
@@ -87,7 +87,8 @@ export function AddPartyModal({ isOpen, onClose, onSuccess }: AddPartyModalProps
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+        <form onSubmit={handleSubmit} className="flex flex-col min-h-0 flex-1">
+          <div className="p-6 space-y-4 overflow-y-auto min-h-0 flex-1">
           {error && (
             <div className="p-3 bg-destructive/10 border border-destructive/20 text-destructive rounded-lg text-sm">
               {error}
@@ -202,8 +203,9 @@ export function AddPartyModal({ isOpen, onClose, onSuccess }: AddPartyModalProps
               </div>
             </div>
           </div>
+          </div>
 
-          <div className="mt-8 flex justify-end gap-3 pt-4 border-t border-border">
+          <div className="p-6 flex justify-end gap-3 border-t border-border bg-card shrink-0">
             <button
               type="button"
               onClick={onClose}

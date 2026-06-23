@@ -14,11 +14,12 @@ export function EODChecklistModal({ control, register, setShowChecklistModal, on
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50" role="presentation">
-      <div role="dialog" aria-modal="true" aria-labelledby="checklist-title" className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl shadow-2xl max-w-md max-h-[90vh] overflow-y-auto w-full p-6 animate-in slide-in-from-bottom-4 relative overflow-hidden">
+      <div role="dialog" aria-modal="true" aria-labelledby="checklist-title" className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl shadow-2xl max-w-md max-h-[90dvh] w-full animate-in slide-in-from-bottom-4 relative overflow-hidden flex flex-col">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.03] pointer-events-none z-0">
           <img src="/bindu-logo.webp" alt="" className="w-64 h-64 object-contain" />
         </div>
-        <div className="relative z-10">
+        <div className="relative z-10 flex flex-col h-full">
+          <div className="p-6 pb-0 shrink-0">
         <h3 id="checklist-title" className="text-xl font-bold mb-4 flex items-center gap-2">
           <Lock className="text-[var(--accent)]" /> Final Checklist
         </h3>
@@ -26,7 +27,8 @@ export function EODChecklistModal({ control, register, setShowChecklistModal, on
           Please confirm the following closing procedures have been completed before final submission.
         </p>
         
-        <div className="space-y-4 mb-8">
+        </div>
+          <div className="space-y-4 p-6 overflow-y-auto flex-1 min-h-0">
           {([
             { id: 'safeLocked', label: 'Safe & registers locked' },
             { id: 'acOff', label: 'A/C and main lights turned off' },
@@ -45,7 +47,8 @@ export function EODChecklistModal({ control, register, setShowChecklistModal, on
           ))}
         </div>
 
-        <div className="flex gap-3">
+        </div>
+        <div className="flex gap-3 p-6 pt-0 shrink-0">
           <button 
             type="button" 
             className="btn btn-secondary flex-1 py-4" 
@@ -65,7 +68,6 @@ export function EODChecklistModal({ control, register, setShowChecklistModal, on
           </button>
         </div>
       </div>
-        </div>
     </div>
   )
 }

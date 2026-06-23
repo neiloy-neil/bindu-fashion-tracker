@@ -223,8 +223,8 @@ function EidContent() {
       {pageLoading ? (
         <div className="mt-4 p-8 text-center text-gray-500">Loading...</div>
       ) : (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden mt-4">
-          <div className="overflow-x-auto" style={{ maxHeight: '70vh' }}>
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden mt-4 flex-1 min-h-0 flex flex-col">
+          <div className="overflow-auto flex-1 min-h-0">
             <table className="w-full text-sm border-collapse">
               <thead className="sticky top-0 z-10">
                 <tr className="bg-gray-50/95 backdrop-blur border-b-2 border-gray-200 text-xs uppercase tracking-wide">

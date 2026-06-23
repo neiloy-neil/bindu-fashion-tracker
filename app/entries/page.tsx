@@ -362,7 +362,7 @@ function Entries() {
         </div>
       </div>
 
-      <div className="page-body" style={{ padding: '16px 20px' }}>
+      <div className="page-body flex-1 min-h-0 flex flex-col" style={{ padding: '16px 20px' }}>
         {loading || categories.length === 0 ? (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '300px', gap: 12 }}>
             <BrandSpinner />

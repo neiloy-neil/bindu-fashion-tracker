@@ -27,8 +27,7 @@ export default function LoginPage() {
         toast.error('Invalid username or password')
       } else {
         toast.success('Logged in successfully!')
-        router.push('/')
-        router.refresh()
+        window.location.href = '/'
       }
     } catch (err) {
       toast.error('An error occurred. Please try again.')

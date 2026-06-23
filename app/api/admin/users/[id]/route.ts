@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
+import { z } from 'zod'
+
+const userUpdateSchema = z.object({
+  role: z.enum(['ADMIN', 'BRANCH', 'AUDITOR', 'AREA_MANAGER', 'HR_ADMIN']).optional(),
+  branchId: z.union([z.string(), z.number()]).transform(v => Number(v)).optional().nullable(),
+  isActive: z.boolean().optional(),
+  password: z.string().min(6).optional().nullable(),
+  managedBranchIds: z.array(z.number()).optional()
+})
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const userRole = req.headers.get('x-user-role')
@@ -10,13 +19,20 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
   const resolvedParams = await params
   const userId = parseInt(resolvedParams.id)
-  const { role, branchId, isActive, password, managedBranchIds } = await req.json()
+  const rawBody = await req.json()
+  const parsed = userUpdateSchema.safeParse(rawBody)
+  if (!parsed.success) {
+    return NextResponse.json({ error: 'Invalid input', details: parsed.error.flatten() }, { status: 400 })
+  }
+  const { role, branchId, isActive, password, managedBranchIds } = parsed.data
 
   const dataToUpdate: any = {}
   if (role !== undefined) dataToUpdate.role = role
-  if (branchId !== undefined) {
-    if (branchId && (role === 'BRANCH' || (!role && dataToUpdate.role === 'BRANCH'))) dataToUpdate.branch = { connect: { id: parseInt(branchId) } }
+  if (branchId !== undefined && branchId !== null) {
+    if (role === 'BRANCH' || (!role && dataToUpdate.role === 'BRANCH')) dataToUpdate.branch = { connect: { id: branchId } }
     else dataToUpdate.branch = { disconnect: true }
+  } else if (branchId === null) {
+    dataToUpdate.branch = { disconnect: true }
   }
   
   if (managedBranchIds !== undefined) {
@@ -47,7 +63,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     })
     return NextResponse.json(user)
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    console.error('Failed to update user:', error)
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }
 
@@ -68,6 +85,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     })
     return NextResponse.json(user)
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    console.error('Failed to delete user:', error)
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }

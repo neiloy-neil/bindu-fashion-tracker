@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { logAudit } from '@/lib/audit'
 
 export async function POST(req: NextRequest) {
   const role = req.headers.get('x-user-role')
@@ -48,6 +49,15 @@ export async function POST(req: NextRequest) {
         lockedAt: new Date(),
         lockedById: user.id
       }
+    })
+
+    await logAudit({
+      userId: user.id,
+      action: 'UPDATE',
+      entityType: 'SalaryRecord_Lock',
+      entityId: m, // Using month as entityId since it locks the whole month
+      newValues: { month: m, year: y, count: result.count },
+      reason: 'Locked payroll for month'
     })
 
     return NextResponse.json({ success: true, count: result.count }, { status: 200 })

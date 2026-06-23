@@ -51,13 +51,16 @@ export async function GET(req: NextRequest) {
   const [entries, branches] = await Promise.all([
     prisma.dailyEntry.findMany({
       where,
-      include: {
-        items: { include: { category: true } },
-        transfers: { include: { account: true } },
-        receivedTransfers: { include: { dailyEntry: { include: { branch: true } } } },
-        payments: { include: { party: true, cheque: true } },
-        expenseEntries: { include: { category: true } },
-        advanceSalaries: { include: { employee: true } }
+      select: {
+        id: true,
+        date: true,
+        branchId: true,
+        items: { select: { amount: true, category: { select: { name: true, type: true } } } },
+        transfers: { select: { amount: true } },
+        receivedTransfers: { select: { amount: true } },
+        payments: { select: { amount: true, method: true, cheque: { select: { status: true } } } },
+        expenseEntries: { select: { amount: true, category: { select: { name: true } } } },
+        advanceSalaries: { select: { type: true, amount: true } }
       }
     }),
     prisma.branch.findMany({ select: { id: true, name: true } })

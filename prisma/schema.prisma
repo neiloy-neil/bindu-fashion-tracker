@@ -45,8 +45,8 @@ model User {
   acknowledgedTransfers Transfer[]      @relation("TransferAcknowledger")
   salaryRecords         SalaryRecord[]
 
-  employeeId            Int?            @unique
-  employee              Employee?       @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+  employeeId Int?      @unique
+  employee   Employee? @relation(fields: [employeeId], references: [id], onDelete: SetNull)
 }
 
 model DailyEntry {
@@ -103,6 +103,7 @@ model EntryItem {
   receiptUrls String[] // Can store multiple receipt URLs for an item
 
   @@unique([entryId, categoryId])
+  @@index([categoryId])
 }
 
 model EditRequest {
@@ -118,6 +119,9 @@ model EditRequest {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([entryId])
+  @@index([requestedById])
 }
 
 model Comment {
@@ -128,6 +132,9 @@ model Comment {
   user      User       @relation(fields: [userId], references: [id])
   message   String     @db.Text
   createdAt DateTime   @default(now())
+
+  @@index([entryId])
+  @@index([userId])
 }
 
 model Account {
@@ -217,6 +224,7 @@ model Transfer {
   @@index([dailyEntryId])
   @@index([accountId, status])
   @@index([receivingEntryId])
+  @@index([acknowledgedById])
 }
 
 model Party {
@@ -245,6 +253,8 @@ model PartyBankInfo {
   createdAt  DateTime @default(now())
 
   party Party @relation(fields: [partyId], references: [id], onDelete: Cascade)
+
+  @@index([partyId])
 }
 
 model Purchase {
@@ -259,6 +269,8 @@ model Purchase {
   createdAt     DateTime @default(now())
 
   party Party @relation(fields: [partyId], references: [id], onDelete: Cascade)
+
+  @@index([partyId])
 }
 
 model Payment {
@@ -313,6 +325,9 @@ model ExpenseEntry {
 
   dailyEntry DailyEntry      @relation(fields: [dailyEntryId], references: [id])
   category   ExpenseCategory @relation(fields: [categoryId], references: [id])
+
+  @@index([dailyEntryId])
+  @@index([categoryId])
 }
 
 model Employee {
@@ -342,7 +357,9 @@ model Employee {
   salaryRecords   SalaryRecord[]
   eidRecords      EidRecord[]
 
-  user            User?
+  user User?
+
+  @@index([branchId])
 }
 
 model AdvanceSalary {
@@ -360,6 +377,7 @@ model AdvanceSalary {
   employee   Employee   @relation(fields: [employeeId], references: [id])
 
   @@index([employeeId, createdAt])
+  @@index([dailyEntryId])
 }
 
 model AuditLog {
@@ -374,6 +392,9 @@ model AuditLog {
   createdAt  DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([entityId, entityType])
 }
 
 model SalaryRecord {
@@ -401,17 +422,17 @@ model SalaryRecord {
 }
 
 model EidRecord {
-  id               Int      @id @default(autoincrement())
-  employeeId       Int
-  employee         Employee @relation(fields: [employeeId], references: [id])
-  title            String   @default("Eid Bonus")
-  year             Int
-  salaryPaymentPct Float    @default(50)
-  trackerAdvanceTotal Float  @default(0)
-  hrAdvanceDeducted   Float  @default(0)
-  advanceDeducted  Float    @default(0) // Kept for backward compatibility
-  eidBonusPct      Float    @default(50)
-  createdAt        DateTime @default(now())
+  id                  Int      @id @default(autoincrement())
+  employeeId          Int
+  employee            Employee @relation(fields: [employeeId], references: [id])
+  title               String   @default("Eid Bonus")
+  year                Int
+  salaryPaymentPct    Float    @default(50)
+  trackerAdvanceTotal Float    @default(0)
+  hrAdvanceDeducted   Float    @default(0)
+  advanceDeducted     Float    @default(0) // Kept for backward compatibility
+  eidBonusPct         Float    @default(50)
+  createdAt           DateTime @default(now())
 
   @@unique([employeeId, year, title])
 }

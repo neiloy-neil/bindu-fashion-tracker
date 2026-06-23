@@ -185,21 +185,23 @@ export async function POST(req: NextRequest) {
       const host = req.headers.get('host') || 'localhost:3000'
       const proto = req.headers.get('x-forwarded-proto') || 'http'
       const appUrl = process.env.NEXT_PUBLIC_APP_URL || `${proto}://${host}`
-      fetch(`${appUrl}/api/hr/sync/advance`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          month: entryDate.getMonth() + 1,
-          year: entryDate.getFullYear(),
+      try {
+        await fetch(`${appUrl}/api/hr/sync/advance`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            month: entryDate.getMonth() + 1,
+            year: entryDate.getFullYear(),
+          })
         })
-      }).catch((error) => {
+      } catch (error) {
         logger.error('entry.advance_sync_background_failed', error, {
           entryId: entry.id,
           branchId: finalBranchId,
           month: entryDate.getMonth() + 1,
           year: entryDate.getFullYear(),
         })
-      })
+      }
     }
 
     return NextResponse.json(entry, { status: 201 })

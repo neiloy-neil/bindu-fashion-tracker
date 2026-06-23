@@ -23,7 +23,7 @@ const generateId = () => Math.random().toString(36).substring(2, 9)
 
 function ErrorMsg({ error }: { error?: { message?: string } }) {
   if (!error?.message) return null
-  return <span className="text-xs text-destructive mt-1 block">{error.message}</span>
+  return <span className="text-xs text-destructive mt-1 block" role="alert" aria-live="polite">{error.message}</span>
 }
 
 interface Props {
@@ -92,8 +92,6 @@ export function NewEntryForm({ initialData, userId }: Props) {
   const advanceTypes = useWatch({ control, name: advanceFields.map((_, i) => `advanceSalaries.${i}.type` as const) })
   
   const payments = useWatch({ control, name: 'payments' })
-  const draftValues = useWatch({ control })
-
   const hasInvalidPayments = payments?.some(p => (p.method === 'BANK' || p.method === 'CHEQUE') && !p.attachmentKey)
 
   const totals = useMemo(() => {
@@ -108,11 +106,18 @@ export function NewEntryForm({ initialData, userId }: Props) {
   }, [incomeAmounts, incomeCategories, expenseAmounts, transferAmounts, paymentAmounts, paymentMethods, advanceAmounts, advanceTypes, categories])
 
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      localStorage.setItem(draftKey, JSON.stringify(draftValues))
-    }, 1000)
-    return () => clearTimeout(timeoutId)
-  }, [draftKey, draftValues])
+    let timeoutId: NodeJS.Timeout
+    const subscription = form.watch((value) => {
+      clearTimeout(timeoutId)
+      timeoutId = setTimeout(() => {
+        localStorage.setItem(draftKey, JSON.stringify(value))
+      }, 1000)
+    })
+    return () => {
+      clearTimeout(timeoutId)
+      subscription.unsubscribe()
+    }
+  }, [form.watch, draftKey])
 
   useEffect(() => {
     const draft = localStorage.getItem(draftKey)
@@ -386,8 +391,9 @@ export function NewEntryForm({ initialData, userId }: Props) {
             </div>
 
             <div className="w-full sm:w-64">
-              <label className="form-label text-xs text-primary">Actual Physical Cash *</label>
+              <label htmlFor="actualPhysicalCash" className="form-label text-xs text-primary">Actual Physical Cash *</label>
               <input 
+                id="actualPhysicalCash"
                 type="number" 
                 className="form-input w-full h-12 text-lg font-mono focus:ring-2 focus:ring-primary border-primary/50 bg-card/80"
                 placeholder="Enter exact cash amount"

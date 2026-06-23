@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { z } from 'zod'
+import { logAudit } from '@/lib/audit'
 
 export async function GET(req: NextRequest) {
   const role = req.headers.get('x-user-role')
@@ -75,28 +77,46 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const role = req.headers.get('x-user-role')
+  const userId = req.headers.get('x-user-id')
+  
   if (!role || (role !== 'ADMIN' && role !== 'HR_ADMIN')) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
   try {
-    const { month, year, records } = await req.json()
+    const rawBody = await req.json()
     
-    if (!month || !year || !Array.isArray(records)) {
-      return NextResponse.json({ error: 'Invalid payload. month, year, and records array required.' }, { status: 400 })
+    const salaryPayloadSchema = z.object({
+      month: z.union([z.string(), z.number()]).transform(v => Number(v)).refine(v => v >= 1 && v <= 12, 'Invalid month'),
+      year: z.union([z.string(), z.number()]).transform(v => Number(v)),
+      records: z.array(z.object({
+        employeeId: z.number(),
+        hrAdvanceDeducted: z.number().nonnegative().optional(),
+        leaveDaysTaken: z.number().nonnegative().optional(),
+        leaveAdjustment: z.number().optional(),
+        lateDays: z.number().nonnegative().optional(),
+        otDays: z.number().nonnegative().optional(),
+        attendanceBonus: z.number().nonnegative().optional(),
+        conveyanceOverride: z.number().optional().nullable(),
+        notes: z.string().optional()
+      }))
+    })
+
+    const parsed = salaryPayloadSchema.safeParse(rawBody)
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Invalid payload', details: parsed.error.flatten() }, { status: 400 })
     }
+
+    const { month: m, year: y, records } = parsed.data
 
     // Check if the month is locked
     const existingLock = await prisma.salaryRecord.findFirst({
-      where: { month: parseInt(month), year: parseInt(year), lockedAt: { not: null } }
+      where: { month: m, year: y, lockedAt: { not: null } }
     })
 
     if (existingLock) {
       return NextResponse.json({ error: 'This month\'s payroll has been finalized.' }, { status: 423 })
     }
-
-    const m = parseInt(month)
-    const y = parseInt(year)
 
     const result = await prisma.$transaction(
       records.map((r: any) => 
@@ -135,6 +155,17 @@ export async function POST(req: NextRequest) {
         })
       )
     )
+
+    if (userId) {
+      await logAudit({
+        userId: parseInt(userId),
+        action: 'UPDATE',
+        entityType: 'SalaryRecord_Batch',
+        entityId: m, // Using month as identifier for the batch update
+        newValues: { month: m, year: y, recordsModified: records.length },
+        reason: 'Bulk payroll adjustments by HR/Admin'
+      })
+    }
 
     return NextResponse.json(result, { status: 200 })
   } catch (error: any) {

@@ -34,13 +34,17 @@ export async function GET(request: Request) {
           lt: nextDay
         }
       },
-      include: {
-        branch: true,
-        items: { include: { category: true } },
-        transfers: true,
-        payments: { include: { cheque: true } },
-        expenseEntries: { include: { category: true } },
-        advanceSalaries: true
+      select: {
+        id: true,
+        date: true,
+        branchId: true,
+        actualPhysicalCash: true,
+        branch: { select: { name: true } },
+        items: { select: { amount: true, category: { select: { name: true, type: true } } } },
+        transfers: { select: { amount: true } },
+        payments: { select: { amount: true, method: true, cheque: { select: { status: true } } } },
+        expenseEntries: { select: { amount: true, category: { select: { name: true } } } },
+        advanceSalaries: { select: { type: true, amount: true } }
       },
       orderBy: { date: 'asc' }
     })

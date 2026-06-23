@@ -8,39 +8,28 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    // Fetch discrepancies: where actualPhysicalCash != expectedNetBalance OR cashDifferenceNote is not null
-    const discrepancies = await prisma.dailyEntry.findMany({
-      where: {
-        OR: [
-          { cashDifferenceNote: { not: null } },
-          { 
-            AND: [
-              { actualPhysicalCash: { not: null } },
-              { expectedNetBalance: { not: null } },
-              // Prisma doesn't directly support comparing two columns in `where` easily without raw queries,
-              // but we can fetch them all and filter, or use Prisma's field comparison if enabled.
-              // Since we just added expectedNetBalance, we'll fetch entries that have cashDifferenceNote 
-              // or we'll compute the difference in JS for now.
-            ]
-          }
-        ]
-      },
-      include: {
-        branch: true
-      },
-      orderBy: {
-        date: 'desc'
-      },
-      take: 100
-    })
+    // Use raw query to compare columns directly so pagination (LIMIT) works correctly
+    const flagged = await prisma.$queryRaw<any[]>`
+      SELECT d.*, b.name as "branchName", b.code as "branchCode"
+      FROM "DailyEntry" d
+      JOIN "Branch" b ON d."branchId" = b.id
+      WHERE d."cashDifferenceNote" IS NOT NULL
+         OR (d."actualPhysicalCash" IS NOT NULL AND d."expectedNetBalance" IS NOT NULL AND d."actualPhysicalCash" != d."expectedNetBalance")
+      ORDER BY d."date" DESC
+      LIMIT 100
+    `
 
-    // Filter in memory for column comparison since raw query is complex with relations
-    const flagged = discrepancies.filter(entry => 
-      entry.cashDifferenceNote || 
-      (entry.actualPhysicalCash !== null && entry.expectedNetBalance !== null && entry.actualPhysicalCash !== entry.expectedNetBalance)
-    )
+    // Map to match the expected frontend structure (which expects a nested branch object)
+    const mapped = flagged.map(entry => ({
+      ...entry,
+      branch: {
+        id: entry.branchId,
+        name: entry.branchName,
+        code: entry.branchCode
+      }
+    }))
 
-    return NextResponse.json(flagged)
+    return NextResponse.json(mapped)
   } catch (error: any) {
     console.error('Failed to load discrepancies:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })

@@ -1,22 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { directPaymentSchema } from '@/lib/schemas'
 
 export async function POST(req: NextRequest) {
   const userRole = req.headers.get('x-user-role')
   const userBranchId = req.headers.get('x-user-branch-id')
 
   if (!userRole) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   try {
-    const { dailyEntryId, partyId, method, amount, note, issueDate, withdrawDate, attachmentUrl } = await req.json()
-
-    if ((method === 'BANK' || method === 'CHEQUE') && !attachmentUrl) {
-      return NextResponse.json({ error: 'A payslip attachment is required for bank transfer and cheque payments.' }, { status: 400 })
+    const parsed = directPaymentSchema.safeParse(await req.json())
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Invalid input', details: parsed.error.format() }, { status: 400 })
     }
+    const { dailyEntryId, partyId, method, amount, note, issueDate, withdrawDate, attachmentUrl } = parsed.data
 
-    let parsedDailyEntryId = dailyEntryId ? parseInt(dailyEntryId) : null
+    const parsedDailyEntryId = dailyEntryId ?? null
 
     // If dailyEntryId is provided, verify branch ownership
     if (parsedDailyEntryId) {
@@ -37,9 +38,9 @@ export async function POST(req: NextRequest) {
       const payment = await tx.payment.create({
         data: {
           dailyEntryId: parsedDailyEntryId,
-          partyId: parseInt(partyId),
+          partyId,
           method,
-          amount: parseFloat(amount),
+          amount,
           note: note || null,
           attachmentUrl: attachmentUrl || null,
         }
@@ -51,16 +52,16 @@ export async function POST(req: NextRequest) {
         await tx.cheque.create({
           data: {
             paymentId: payment.id,
-            issueDate: new Date(issueDate),
-            withdrawDate: new Date(withdrawDate),
+            issueDate: new Date(issueDate!),
+            withdrawDate: new Date(withdrawDate!),
             status: 'PENDING'
           }
         })
       } else {
         // Immediately decrement party balance for CASH/BANK (because payment reduces our debt to them)
         await tx.party.update({
-          where: { id: parseInt(partyId) },
-          data: { balance: { decrement: parseFloat(amount) } }
+          where: { id: partyId },
+          data: { balance: { decrement: amount } }
         })
       }
 

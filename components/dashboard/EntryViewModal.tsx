@@ -40,6 +40,14 @@ export default function EntryViewModal({ entry, changesStr, onClose, onDeleted }
   const simulatedEntry = { ...entry }
   if (simulatedEntry.items) {
     simulatedEntry.items = simulatedEntry.items.map((i: any) => {
+      const itemChange = Array.isArray(changes.items)
+        ? changes.items.find((changed: { categoryId: number; amount: number }) => changed.categoryId === i.categoryId)
+        : null
+
+      if (itemChange) {
+        return { ...i, amount: itemChange.amount }
+      }
+
       if (i.category?.name in changes) {
         return { ...i, amount: changes[i.category.name] }
       }
@@ -59,8 +67,12 @@ export default function EntryViewModal({ entry, changesStr, onClose, onDeleted }
           {cats.map(c => {
             const item = entry.items?.find((i: any) => i.categoryId === c.id)
             const oldVal = item?.amount || 0
-            const isChanged = c.name in changes
-            const newVal = isChanged ? changes[c.name] : oldVal
+            const itemChange = Array.isArray(changes.items)
+              ? changes.items.find((changed: { categoryId: number; amount: number }) => changed.categoryId === c.id)
+              : null
+            const legacyChanged = c.name in changes
+            const isChanged = Boolean(itemChange) || legacyChanged
+            const newVal = itemChange ? itemChange.amount : legacyChanged ? changes[c.name] : oldVal
             
             if (oldVal === 0 && !isChanged) return null // Hide zero values unless they are changed
 

@@ -44,6 +44,20 @@ export default function AdminEditRequests() {
 
   if (loading || requests.length === 0) return null
 
+  const describeChanges = (changesStr: string) => {
+    try {
+      const changes = JSON.parse(changesStr)
+      if (Array.isArray(changes.items) && changes.items.length > 0) {
+        return 'Items changed'
+      }
+
+      const keys = Object.keys(changes)
+      return keys.length > 0 ? `${keys.join(', ')} changed` : 'Pending field changes'
+    } catch {
+      return 'Pending field changes'
+    }
+  }
+
   return (
     <div className="card" style={{ marginBottom: 20, borderLeft: '4px solid var(--warning)' }}>
       <div style={{ marginBottom: 12, fontWeight: 700, fontSize: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -60,9 +74,7 @@ export default function AdminEditRequests() {
                 Reason: <span style={{ fontStyle: 'italic' }}>{req.reason || 'No reason provided'}</span>
               </div>
               <div style={{ color: 'var(--warning)', fontSize: 12, marginTop: 4, fontWeight: 500 }}>
-                {Object.keys(JSON.parse(req.changes)).includes('items') 
-                  ? 'Items changed'
-                  : Object.keys(JSON.parse(req.changes)).join(', ') + ' changed'}
+                {describeChanges(req.changes)}
               </div>
             </div>
             <div className="flex gap-2 items-center">

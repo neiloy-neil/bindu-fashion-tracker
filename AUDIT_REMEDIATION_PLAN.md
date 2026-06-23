@@ -18,8 +18,8 @@ This document turns the audit findings into an execution plan we can follow phas
 ### High
 
 - [x] Fix employee PII exposure in `app/api/hr/employees/[id]/route.ts`
-- [ ] Fix edit request spoofing and arbitrary change application in `app/api/edit-requests/route.ts`
-- [ ] Add strict validation to legacy financial mutation routes
+- [x] Fix edit request spoofing and arbitrary change application in `app/api/edit-requests/route.ts`
+- [x] Add strict validation to legacy financial mutation routes
 - [ ] Replace or isolate vulnerable `xlsx` usage
 
 ### Medium
@@ -84,28 +84,28 @@ Remove the older loose mutation paths that can still write bad or spoofed data.
 
 ### Tasks
 
-- [ ] Stop accepting `requestedById` from the client for edit requests
-- [ ] Derive requester identity from authenticated server headers or session only
-- [ ] Add branch ownership verification before creating edit requests
-- [ ] Replace free-form `changes` payloads with a whitelist schema
-- [ ] Prevent edit approval from spreading arbitrary fields into `DailyEntry.update`
-- [ ] Add strict Zod schemas for legacy financial routes
-- [ ] Reject invalid IDs, negative amounts, invalid methods, missing cheque dates, and malformed payloads
-- [ ] Standardize error responses for validation failures
+- [x] Stop accepting `requestedById` from the client for edit requests
+- [x] Derive requester identity from authenticated server headers or session only
+- [x] Add branch ownership verification before creating edit requests
+- [x] Replace free-form `changes` payloads with a whitelist schema
+- [x] Prevent edit approval from spreading arbitrary fields into `DailyEntry.update`
+- [x] Add strict Zod schemas for legacy financial routes
+- [x] Reject invalid IDs, negative amounts, invalid methods, missing cheque dates, and malformed payloads
+- [x] Standardize error responses for validation failures
 
 ### Success Criteria
 
-- Edit requests cannot impersonate another user
-- Edit approvals only apply explicit, allowed fields
-- Legacy payment, transfer, and advance routes are as strict as the newer entry flow
+- [x] Edit requests cannot impersonate another user
+- [x] Edit approvals only apply explicit, allowed fields
+- [x] Legacy payment, transfer, and advance routes are as strict as the newer entry flow
 
 ### Verification
 
-- [ ] Add focused tests for edit request validation and authorization
-- [ ] Add focused tests for payment, transfer, and advance payload validation
-- [ ] `npm test`
-- [ ] `npx tsc --noEmit`
-- [ ] `npm run build`
+- [x] Add focused tests for edit request validation and authorization
+- [x] Add focused tests for payment, transfer, and advance payload validation
+- [x] `npm test`
+- [x] `npx tsc --noEmit`
+- [x] `npm run build`
 
 ## Phase 3: Financial Integrity And Concurrency
 

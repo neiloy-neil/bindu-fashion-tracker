@@ -1,6 +1,10 @@
 import { z } from 'zod'
 
 const numericStringOrNumber = z.union([z.string(), z.number()]).transform(val => typeof val === 'string' ? parseFloat(val) : val).refine(val => !isNaN(val) && val >= 0, { message: "Must be a non-negative number" }).optional()
+const idSchema = z.union([z.string(), z.number()]).transform(val => typeof val === 'string' ? parseInt(val, 10) : val).refine(val => Number.isInteger(val) && val > 0, { message: 'Must be a valid id' })
+const nonNegativeNumberSchema = z.union([z.string(), z.number()]).transform(val => typeof val === 'string' ? parseFloat(val) : val).refine(val => Number.isFinite(val) && val >= 0, { message: 'Must be a non-negative number' })
+const positiveNumberSchema = z.union([z.string(), z.number()]).transform(val => typeof val === 'string' ? parseFloat(val) : val).refine(val => Number.isFinite(val) && val > 0, { message: 'Must be greater than zero' })
+const finiteNumberSchema = z.union([z.string(), z.number()]).transform(val => typeof val === 'string' ? parseFloat(val) : val).refine(val => Number.isFinite(val), { message: 'Must be a valid number' })
 
 export const entryItemSchema = z.object({
   categoryId: z.union([z.string(), z.number()]).transform(val => typeof val === 'string' ? parseInt(val) : val),
@@ -50,10 +54,26 @@ export const branchRequestSchema = z.object({
 })
 
 export const editRequestSchema = z.object({
-  entryId: z.union([z.string(), z.number()]),
-  requestedById: z.union([z.string(), z.number()]),
-  changes: z.record(z.string(), z.any()),
+  entryId: idSchema,
+  changes: z.object({
+    items: z.array(z.object({
+      categoryId: idSchema,
+      amount: nonNegativeNumberSchema,
+    })).max(20).optional(),
+    actualPhysicalCash: finiteNumberSchema.optional(),
+    expectedNetBalance: finiteNumberSchema.optional(),
+    notes: z.string().trim().max(2000).optional(),
+    cashDifferenceNote: z.string().trim().max(2000).optional(),
+  }).strict().refine(
+    changes => Boolean(changes.items?.length) || changes.actualPhysicalCash !== undefined || changes.expectedNetBalance !== undefined || changes.notes !== undefined || changes.cashDifferenceNote !== undefined,
+    { message: 'At least one allowed change is required' }
+  ),
   reason: z.string().optional().nullable()
+})
+
+export const editRequestActionSchema = z.object({
+  requestId: idSchema,
+  status: z.enum(['APPROVED', 'REJECTED']),
 })
 
 
@@ -146,11 +166,47 @@ export const partyUpdateSchema = z.object({
 })
 
 export const directPaymentSchema = z.object({
+  dailyEntryId: idSchema.optional().nullable(),
   partyId: z.union([z.string(), z.number()]).transform(v => Number(v)),
-  method: z.string().min(1, 'Payment method is required'),
-  amount: z.union([z.string(), z.number()]).transform(v => Number(v)),
+  method: z.enum(['CASH', 'BANK', 'CHEQUE']),
+  amount: positiveNumberSchema,
   note: z.string().optional().nullable(),
   attachmentUrl: z.string().optional().nullable(),
   issueDate: z.string().optional().nullable(),
   withdrawDate: z.string().optional().nullable(),
-})
+}).superRefine((value, context) => {
+  if ((value.method === 'BANK' || value.method === 'CHEQUE') && !value.attachmentUrl) {
+    context.addIssue({ code: 'custom', path: ['attachmentUrl'], message: 'Attachment is required for bank and cheque payments' })
+  }
+  if (value.method === 'CHEQUE') {
+    if (!value.issueDate) {
+      context.addIssue({ code: 'custom', path: ['issueDate'], message: 'Issue date is required for cheque payments' })
+    }
+    if (!value.withdrawDate) {
+      context.addIssue({ code: 'custom', path: ['withdrawDate'], message: 'Withdraw date is required for cheque payments' })
+    }
+  }
+}).strict()
+
+export const transferMutationSchema = z.object({
+  dailyEntryId: idSchema,
+  accountId: idSchema,
+  amount: positiveNumberSchema,
+  note: z.string().trim().max(2000).optional().nullable(),
+}).strict()
+
+export const advanceSalaryMutationSchema = z.object({
+  dailyEntryId: idSchema,
+  employeeId: idSchema,
+  type: z.enum(['CASH', 'PRODUCT']),
+  amount: nonNegativeNumberSchema.optional(),
+  productDescription: z.string().trim().max(2000).optional().nullable(),
+  note: z.string().trim().max(2000).optional().nullable(),
+}).superRefine((value, context) => {
+  if (value.type === 'CASH' && value.amount === undefined) {
+    context.addIssue({ code: 'custom', path: ['amount'], message: 'Amount is required for cash advances' })
+  }
+  if (value.type === 'PRODUCT' && !value.productDescription) {
+    context.addIssue({ code: 'custom', path: ['productDescription'], message: 'Product description is required for product advances' })
+  }
+}).strict()

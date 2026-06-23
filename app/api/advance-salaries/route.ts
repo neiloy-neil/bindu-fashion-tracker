@@ -1,19 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { advanceSalaryMutationSchema } from '@/lib/schemas'
 
 export async function POST(req: NextRequest) {
   const userRole = req.headers.get('x-user-role')
   const userBranchId = req.headers.get('x-user-branch-id')
 
   if (!userRole) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   try {
-    const { dailyEntryId, employeeId, type, amount, productDescription, note } = await req.json()
+    const parsed = advanceSalaryMutationSchema.safeParse(await req.json())
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Invalid input', details: parsed.error.format() }, { status: 400 })
+    }
+    const { dailyEntryId, employeeId, type, amount, productDescription, note } = parsed.data
 
     // Verify branch ownership
-    const entry = await prisma.dailyEntry.findUnique({ where: { id: parseInt(dailyEntryId) } })
+    const entry = await prisma.dailyEntry.findUnique({ where: { id: dailyEntryId } })
     if (!entry) return NextResponse.json({ error: 'Entry not found' }, { status: 404 })
 
     if (userRole === 'BRANCH' && String(entry.branchId) !== String(userBranchId)) {
@@ -22,12 +27,12 @@ export async function POST(req: NextRequest) {
 
     const advanceSalary = await prisma.advanceSalary.create({
       data: {
-        dailyEntryId: parseInt(dailyEntryId),
-        employeeId: parseInt(employeeId),
+        dailyEntryId,
+        employeeId,
         type,
-        amount: type === 'CASH' ? parseFloat(amount) : null,
-        productDescription: type === 'PRODUCT' ? productDescription : null,
-        note,
+        amount: type === 'CASH' ? amount ?? null : null,
+        productDescription: type === 'PRODUCT' ? productDescription || null : null,
+        note: note || null,
       }
     })
 

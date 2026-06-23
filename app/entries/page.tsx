@@ -517,14 +517,14 @@ function Entries() {
       )}
 
       {/* Edit Request Modal */}
-      {requestEditData && userId && (
+      {requestEditData && (
         <EditRequestModal
           entryId={requestEditData.id}
           branchName={requestEditData.branchName}
           date={requestEditData.date}
-          field={requestEditData.categoryName} // We pass category name to "field" string prop
+          categoryId={requestEditData.categoryId}
+          categoryName={requestEditData.categoryName}
           oldValue={requestEditData.oldValue}
-          userId={userId}
           onClose={() => setRequestEditData(null)}
         />
       )}

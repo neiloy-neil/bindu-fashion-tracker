@@ -9,11 +9,10 @@ type EditRequestModalProps = {
   categoryName?: string
   field?: string
   oldValue: number
-  userId: number
   onClose: () => void
 }
 
-export default function EditRequestModal({ entryId, branchName, date, categoryId, categoryName, field, oldValue, userId, onClose }: EditRequestModalProps) {
+export default function EditRequestModal({ entryId, branchName, date, categoryId, categoryName, field, oldValue, onClose }: EditRequestModalProps) {
   const [newValue, setNewValue] = useState(String(oldValue))
   const [reason, setReason] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -39,7 +38,6 @@ export default function EditRequestModal({ entryId, branchName, date, categoryId
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           entryId,
-          requestedById: userId,
           changes,
           reason
         })

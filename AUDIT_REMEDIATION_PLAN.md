@@ -20,15 +20,15 @@ This document turns the audit findings into an execution plan we can follow phas
 - [x] Fix employee PII exposure in `app/api/hr/employees/[id]/route.ts`
 - [x] Fix edit request spoofing and arbitrary change application in `app/api/edit-requests/route.ts`
 - [x] Add strict validation to legacy financial mutation routes
-- [ ] Replace or isolate vulnerable `xlsx` usage
+- [x] Replace or isolate vulnerable `xlsx` usage
 
 ### Medium
 
-- [ ] Fix transfer acknowledge race conditions
-- [ ] Add missing database indexes for reporting and ledger queries
-- [ ] Rename `middleware.ts` to `proxy.ts` for Next.js 16
-- [ ] Make lint usable as a real gate
-- [ ] Improve logging and observability
+- [x] Fix transfer acknowledge race conditions
+- [x] Add missing database indexes for reporting and ledger queries
+- [x] Rename `middleware.ts` to `proxy.ts` for Next.js 16
+- [x] Make lint usable as a real gate
+- [x] Improve logging and observability
 
 ## Phase 1: Critical Security Hotfixes
 
@@ -250,27 +250,60 @@ Finish with confidence and avoid shipping partial hardening.
 
 ### Tasks
 
-- [ ] Re-run full verification:
+- [x] Re-run full verification:
 - `npm test`
 - `npx tsc --noEmit`
 - `npm run lint`
 - `npm run build`
-- [ ] Manually test:
+- [x] Manually test:
 - login and role-based navigation
 - New Entry flow
 - direct payments and transfers
 - edit request submission and approval
 - HR employee access rules
 - cheque approval and rejection
-- [ ] Update `README.md` or operational docs if workflow or env requirements changed
-- [ ] Capture any remaining deferred items in a short backlog section
+- [x] Update `README.md` or operational docs if workflow or env requirements changed
+- [x] Capture any remaining deferred items in a short backlog section
 
 ### Exit Criteria
 
-- No open critical findings
-- No open high findings
-- Lint is either green or reduced to explicitly accepted leftovers
-- Build, tests, and typecheck are green
+- [x] No open critical findings
+- [x] No open high findings
+- [x] Lint is either green or reduced to explicitly accepted leftovers
+- [x] Build, tests, and typecheck are green
+
+### Phase 6 Notes
+
+- Full verification passed:
+- `npm test` -> 23 tests passed
+- `npx tsc --noEmit` -> passed
+- `npm run lint` -> passed with warning-only debt
+- `npm run build` -> passed
+- Manual QA against the built app on `127.0.0.1` confirmed:
+- admin can access `/admin`
+- branch users are redirected from `/admin` to `/entries/new`
+- HR Admin is redirected away from `/entries/new` to `/entries`
+- branch access to `/api/hr/employees` is denied with `403`
+- HR Admin access to `/api/hr/employees` succeeds
+- branch new entry creation works with direct cash payments and branch transfers
+- receiving-branch transfer acknowledgement completes and marks the transfer `ACKNOWLEDGED`
+- past branch entries cannot be edited directly and must go through edit requests
+- admin approval applies edit requests successfully
+- cheque approval decrements party balance and marks the cheque `APPROVED`
+- cheque rejection leaves the cheque `REJECTED` without an additional party-balance decrement
+
+## Deferred Backlog
+
+- Burn down the remaining lint warnings, especially `no-explicit-any`, unused vars, and the last `no-img-element` surfaces in:
+- `app/admin/requests/page.tsx`
+- `app/admin/settings/page.tsx`
+- `app/entries/page.tsx`
+- `app/hr/*`
+- `components/entries/*`
+- `components/dashboard/*`
+- `lib/exportPdf.ts`, `lib/utils.ts`, and `lib/types.ts`
+- Replace remaining ad hoc `console.error` usage in routes that were outside the scoped Phase 5 logging touchpoints, including cheque approve/reject and transfer pending-count handlers.
+- Reassess the remaining moderate `npm audit` advisories after upstream releases for `next`, `next-auth`, `exceljs`, and the Prisma dev toolchain.
 
 ## Recommended Execution Order
 

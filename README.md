@@ -2,6 +2,11 @@
 
 Daily cash-flow entry & reconciliation tracker for Bindu's branches. Includes income/expense ledger, edit-request workflows, admin dashboards, and Excel/PDF exports.
 
+## Operational Notes
+- Route protection and header injection are enforced through `proxy.ts`.
+- Spreadsheet import and export flows are `.xlsx` only.
+- `npm run lint` is expected to pass with warning-only debt until the remaining typing and image cleanup backlog is burned down.
+
 ## Prerequisites
 - Node.js 18+
 - PostgreSQL database
@@ -42,6 +47,10 @@ Daily cash-flow entry & reconciliation tracker for Bindu's branches. Includes in
    npm run dev
    ```
    Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+
+## Import / Export
+- HR spreadsheet import accepts `.xlsx` files only.
+- The legacy `xlsx` package has been removed from the app runtime; workbook import/export now runs through `exceljs`.
 
 ## Testing
 Run the test suite using vitest:

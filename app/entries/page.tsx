@@ -1,16 +1,16 @@
 // TODO (Phase 5): When building the entries-list detail panel, add a "View Payslip" link next to any Bank/Cheque payment row that has an attachmentUrl.
 'use client'
 
-import { useEffect, useState, useCallback, useRef, Suspense } from 'react'
+import { useEffect, useState, useRef, Suspense } from 'react'
 import { formatCurrency, computeTotals } from '@/lib/utils'
 import { DailyEntry, Branch, Category } from '@/lib/types'
 import Link from 'next/link'
-import * as XLSX from 'xlsx'
 import toast from 'react-hot-toast'
 import { MessageCircle, CheckSquare, X, Eye } from 'lucide-react'
 import CommentThread from '@/components/CommentThread'
 import EditRequestModal from '@/components/EditRequestModal'
 import EntryViewModal from '@/components/dashboard/EntryViewModal'
+import { downloadWorkbook } from '@/lib/excel-export'
 
 import { useSearchParams } from 'next/navigation'
 import { BrandSpinner } from '@/components/ui/BrandSpinner'
@@ -177,12 +177,12 @@ function Entries() {
   const incomeCategories = categories.filter(c => c.type === 'INCOME')
   const expenseCategories = categories.filter(c => c.type === 'EXPENSE')
 
-  const exportToExcel = () => {
+  const exportToExcel = async () => {
     const rows = entries.map((e) => {
       const totals = computeTotals(e as any)
-      const row: any = {
-        Date: new Date(e.date).toLocaleDateString(),
-        Branch: e.branch?.name || '',
+      const row: Record<string, string | number> = {
+        date: new Date(e.date).toLocaleDateString(),
+        branch: e.branch?.name || '',
       }
       
       incomeCategories.forEach(c => {
@@ -190,23 +190,35 @@ function Entries() {
         row[c.name] = item?.amount || 0
       })
       
-      row['Total Sale'] = totals.totalSale
-      row['Total Amount'] = totals.totalAmount
+      row.totalSale = totals.totalSale
+      row.totalAmount = totals.totalAmount
       
       expenseCategories.forEach(c => {
         const item = (e.items || []).find((i: any) => i.categoryId === c.id)
         row[c.name] = item?.amount || 0
       })
       
-      row['Total Expense'] = totals.totalExpense
-      row['Net Balance'] = totals.netBalance
+      row.totalExpense = totals.totalExpense
+      row.netBalance = totals.netBalance
       return row
     })
-    
-    const ws = XLSX.utils.json_to_sheet(rows)
-    const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, 'Sheet1')
-    XLSX.writeFile(wb, `bindu-fashion-${year}-${String(month).padStart(2, '0')}.xlsx`)
+
+    await downloadWorkbook(`bindu-fashion-${year}-${String(month).padStart(2, '0')}.xlsx`, [
+      {
+        name: 'Entries',
+        columns: [
+          { header: 'Date', key: 'date', width: 14 },
+          { header: 'Branch', key: 'branch', width: 22 },
+          ...incomeCategories.map((category) => ({ header: category.name, key: category.name, width: 14 })),
+          { header: 'Total Sale', key: 'totalSale', width: 14 },
+          { header: 'Total Amount', key: 'totalAmount', width: 14 },
+          ...expenseCategories.map((category) => ({ header: category.name, key: category.name, width: 14 })),
+          { header: 'Total Expense', key: 'totalExpense', width: 14 },
+          { header: 'Net Balance', key: 'netBalance', width: 14 },
+        ],
+        rows,
+      },
+    ])
   }
 
   const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
@@ -336,7 +348,7 @@ function Entries() {
               ))}
             </select>
           )}
-          <button className="btn btn-secondary btn-sm" onClick={exportToExcel}>
+          <button className="btn btn-secondary btn-sm" onClick={() => { void exportToExcel() }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
               <polyline points="7 10 12 15 17 10" />

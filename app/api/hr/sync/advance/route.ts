@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { startOfMonth, endOfMonth } from 'date-fns'
+import { endOfMonth } from 'date-fns'
+import { logger } from '@/lib/logger'
 
 export async function POST(req: NextRequest) {
   const role = (req as any).headers?.get
     ? (req as any).headers.get('x-user-role')
     : null
+  let requestMonth: number | null = null
+  let requestYear: number | null = null
+  let requestEmployeeId: number | null = null
+
   if (!role || (role !== 'ADMIN' && role !== 'HR_ADMIN')) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
@@ -13,6 +18,10 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
     const { month, year, employeeId } = body
+    requestMonth = Number(month)
+    requestYear = Number(year)
+    requestEmployeeId = employeeId ? parseInt(employeeId) : null
+    let syncedEmployees = 0
 
     if (!month || !year) {
       return NextResponse.json({ error: 'Month and year are required' }, { status: 400 })
@@ -58,6 +67,7 @@ export async function POST(req: NextRequest) {
 
       // For each employee, sync to their SalaryRecord
       for (const [empId, total] of employeeTotals.entries()) {
+        syncedEmployees++
         const record = await tx.salaryRecord.findUnique({
           where: {
             employeeId_month_year: {
@@ -129,9 +139,20 @@ export async function POST(req: NextRequest) {
       }
     })
 
+    logger.info('hr.advance_sync_completed', {
+      month,
+      year,
+      employeeId: requestEmployeeId,
+      syncedEmployees,
+    })
+
     return NextResponse.json({ success: true })
   } catch (error: any) {
-    console.error('Advance sync error:', error)
+    logger.error('hr.advance_sync_failed', error, {
+      month: requestMonth,
+      year: requestYear,
+      employeeId: requestEmployeeId,
+    })
     if (error.message === 'LOCKED') {
       return NextResponse.json({ error: 'Salary record is locked for this month' }, { status: 423 })
     }

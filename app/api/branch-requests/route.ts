@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { branchRequestSchema } from '@/lib/schemas'
+import { logger } from '@/lib/logger'
 
 export async function GET(req: NextRequest) {
   const userRole = req.headers.get('x-user-role')
@@ -25,7 +26,10 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ requests })
   } catch (error: any) {
-    console.error('[BranchRequest GET Error]:', error)
+    logger.error('branch_requests.fetch_failed', error, {
+      userRole,
+      branchId: userBranchId ? parseInt(userBranchId) : null,
+    })
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
@@ -59,9 +63,19 @@ export async function POST(req: NextRequest) {
       }
     })
 
+    logger.info('branch_request.created', {
+      requestId: newRequest.id,
+      branchId: newRequest.branchId,
+      requestedById: newRequest.requestedById,
+      type: newRequest.type,
+      priority: newRequest.priority,
+    })
+
     return NextResponse.json(newRequest, { status: 201 })
   } catch (error: any) {
-    console.error('[BranchRequest POST Error]:', error)
+    logger.error('branch_request.create_failed', error, {
+      branchId: userBranchId ? parseInt(userBranchId) : null,
+    })
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
@@ -81,8 +95,15 @@ export async function PATCH(req: NextRequest) {
       data: { status, adminComment, priority }
     })
 
+    logger.info('branch_request.updated', {
+      requestId: updated.id,
+      status: updated.status,
+      priority: updated.priority,
+    })
+
     return NextResponse.json(updated)
   } catch (error: any) {
+    logger.error('branch_request.update_failed', error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get('authorization')
@@ -69,8 +70,13 @@ export async function GET(req: NextRequest) {
   // TODO: Send email or WhatsApp here.
   // Example with Resend:
   // await resend.emails.send({ ... })
-  console.log('--- DAILY CRON SUMMARY ---')
-  console.log(JSON.stringify(summary, null, 2))
+  logger.info('cron.daily_summary_generated', {
+    date: summary.date,
+    totalSales,
+    totalExpenses,
+    netBalance: summary.netBalance,
+    branchCount: branchSummaries.length,
+  })
 
   return NextResponse.json(summary)
 }

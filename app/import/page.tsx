@@ -12,7 +12,7 @@ export default function ImportPage() {
   const inputRef = useRef<HTMLInputElement>(null)
 
   const handleFile = (f: File) => {
-    if (!f.name.endsWith('.xlsx') && !f.name.endsWith('.xls')) {
+    if (!f.name.toLowerCase().endsWith('.xlsx')) {
       setError('Please upload an Excel (.xlsx) file')
       return
     }
@@ -69,7 +69,7 @@ export default function ImportPage() {
             <input
               ref={inputRef}
               type="file"
-              accept=".xlsx,.xls"
+              accept=".xlsx"
               style={{ display: 'none' }}
               onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
             />

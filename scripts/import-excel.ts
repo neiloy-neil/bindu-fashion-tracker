@@ -2,13 +2,10 @@
  * Direct Excel import script - bypasses HTTP upload
  * Run with: npx ts-node scripts/import-excel.ts
  */
+import ExcelJS from 'exceljs'
 import { PrismaClient } from '@prisma/client'
 import { PrismaLibSql } from '@prisma/adapter-libsql'
-import { createRequire } from 'module'
 import * as fs from 'fs'
-
-const require = createRequire(import.meta.url)
-const XLSX = require('xlsx') as typeof import('xlsx')
 
 const adapter = new PrismaLibSql({ url: 'file:./prisma/dev.db' })
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -70,6 +67,32 @@ const COL_MAP: Record<number, string> = {
   51: 'bossGift',
 }
 
+function getCellValue(cell: ExcelJS.Cell['value']) {
+  if (cell == null) return null
+  if (typeof cell === 'object') {
+    if ('result' in cell && cell.result != null) return cell.result
+    if ('text' in cell && typeof cell.text === 'string') return cell.text
+  }
+  return cell
+}
+
+function getNumericValue(cell: ExcelJS.Cell['value']) {
+  const value = getCellValue(cell)
+  return typeof value === 'number' ? value : 0
+}
+
+function getDateValue(cell: ExcelJS.Cell['value']) {
+  const value = getCellValue(cell)
+  if (value instanceof Date) return value
+  if (typeof value === 'string' && value.trim()) {
+    const parsed = new Date(value)
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed
+    }
+  }
+  return null
+}
+
 async function main() {
   const filePath = process.argv[2] || 'C:\\Users\\USER\\Downloads\\Monthly Sales, Expenses & Payments Sheet 2026.xlsx'
 
@@ -78,44 +101,48 @@ async function main() {
     process.exit(1)
   }
 
-  console.log(`📂 Reading: ${filePath}`)
-  const wb = XLSX.readFile(filePath, { cellDates: true })
-  const ws = wb.Sheets[wb.SheetNames[0]]
-  const rows = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, defval: null })
+  console.log(`Reading: ${filePath}`)
+  const workbook = new ExcelJS.Workbook()
+  await workbook.xlsx.readFile(filePath)
+  const worksheet = workbook.worksheets[0]
+
+  if (!worksheet) {
+    throw new Error('No worksheet found in workbook')
+  }
 
   const branches = await prisma.branch.findMany()
-  const branchMap = new Map(branches.map((b) => [b.name, b.id]))
+  const branchMap = new Map(branches.map((branch) => [branch.name, branch.id]))
 
   let currentDate: Date | null = null
   let imported = 0
   let skipped = 0
 
-  for (let i = 6; i < rows.length; i++) {
-    const row = rows[i] as (Date | string | number | null)[]
-    if (!row || row.every((c) => c === null)) continue
-
-    if (row[0] instanceof Date) {
-      currentDate = row[0]
-    } else if (typeof row[0] === 'string' && row[0].trim()) {
-      const parsed = new Date(row[0])
-      if (!isNaN(parsed.getTime())) currentDate = parsed
+  for (let rowIndex = 7; rowIndex <= worksheet.rowCount; rowIndex++) {
+    const row = worksheet.getRow(rowIndex)
+    const firstCellDate = getDateValue(row.getCell(1).value)
+    if (firstCellDate) {
+      currentDate = firstCellDate
     }
 
-    if (!currentDate) continue
+    if (!currentDate) {
+      continue
+    }
 
-    const branchName = (row[1] as string)?.trim()
-    if (!branchName || !BRANCH_NAMES.includes(branchName)) continue
+    const branchName = String(getCellValue(row.getCell(2).value) ?? '').trim()
+    if (!branchName || !BRANCH_NAMES.includes(branchName)) {
+      continue
+    }
 
     const branchId = branchMap.get(branchName)
-    if (!branchId) continue
-
-    const fields: Record<string, number> = {}
-    for (const [colIdx, fieldName] of Object.entries(COL_MAP)) {
-      const val = row[parseInt(colIdx)]
-      fields[fieldName] = typeof val === 'number' ? val : 0
+    if (!branchId) {
+      continue
     }
 
-    // Normalize date to midnight UTC
+    const fields: Record<string, number> = {}
+    for (const [colIndex, fieldName] of Object.entries(COL_MAP)) {
+      fields[fieldName] = getNumericValue(row.getCell(Number(colIndex)).value)
+    }
+
     const entryDate = new Date(currentDate)
     entryDate.setHours(0, 0, 0, 0)
 
@@ -126,14 +153,18 @@ async function main() {
         update: fields,
       })
       imported++
-      if (imported % 50 === 0) process.stdout.write(`  ✓ ${imported} rows imported...\r`)
-    } catch (e) {
+      if (imported % 50 === 0) {
+        process.stdout.write(`  imported ${imported} rows...\r`)
+      }
+    } catch (error) {
       skipped++
-      if (skipped <= 5) console.error(`  ✗ Row ${i + 1} ${branchName}: ${(e as Error).message}`)
+      if (skipped <= 5) {
+        console.error(`  Row ${rowIndex} ${branchName}: ${(error as Error).message}`)
+      }
     }
   }
 
-  console.log(`\n✅ Done! Imported: ${imported}, Skipped: ${skipped}`)
+  console.log(`Done. Imported: ${imported}, Skipped: ${skipped}`)
 }
 
 main()

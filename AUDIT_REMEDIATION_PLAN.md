@@ -212,24 +212,35 @@ Reduce supply-chain risk and modernize runtime/platform edges.
 
 ### Tasks
 
-- [ ] Replace `xlsx` with a maintained alternative, or isolate it behind strict constraints until replacement is complete
-- [ ] Review `npm audit` findings and separate runtime risk from dev-only risk
-- [ ] Rename `middleware.ts` to `proxy.ts`
-- [ ] Update docs and code comments that still refer to middleware if needed
-- [ ] Introduce structured logging for key mutations and background flows
-- [ ] Remove low-signal `console.log` calls from production paths
+- [x] Replace `xlsx` with a maintained alternative, or isolate it behind strict constraints until replacement is complete
+- [x] Review `npm audit` findings and separate runtime risk from dev-only risk
+- [x] Rename `middleware.ts` to `proxy.ts`
+- [x] Update docs and code comments that still refer to middleware if needed
+- [x] Introduce structured logging for key mutations and background flows
+- [x] Remove low-signal `console.log` calls from production paths
 
 ### Success Criteria
 
-- Known high-risk dependency usage is removed or contained
-- Next.js 16 deprecation warning for middleware is resolved
-- Logs are structured enough to debug auth, entries, transfers, and payroll flows
+- [x] Known high-risk dependency usage is removed or contained
+- [x] Next.js 16 deprecation warning for middleware is resolved
+- [x] Logs are structured enough to debug auth, entries, transfers, and payroll flows
 
 ### Verification
 
-- [ ] `npm audit --json`
-- [ ] `npm run build`
-- [ ] Manual check that proxy behavior still protects routes
+- [x] `npm audit --json`
+- [x] `npm run lint`
+- [x] `npx tsc --noEmit`
+- [x] `npm run build`
+- [x] Manual check that proxy behavior still protects routes
+
+### Phase 5 Notes
+
+- Spreadsheet import/export runtime no longer depends on `xlsx`; the app now uses `exceljs`, and import paths are narrowed to `.xlsx` only with file-size and row-count guards.
+- `npm audit` no longer reports the prior high-severity `xlsx` findings. Remaining advisories are moderate and split into:
+- runtime/transitive app stack: `next` -> `postcss`, `next-auth`/`uuid`, `exceljs`/`uuid`
+- tooling/dev-path: `prisma` -> `@prisma/dev` -> `@hono/node-server`
+- low-confidence transitive frontend utility path: `dompurify`
+- Structured JSON logging now covers entry creation, branch requests, cheque fetch failures, audit-log write failures, payroll advance sync, and the daily cron summary.
 
 ## Phase 6: Final Verification And Release Readiness
 

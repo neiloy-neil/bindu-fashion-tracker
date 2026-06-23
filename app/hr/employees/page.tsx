@@ -119,7 +119,7 @@ export default function EmployeesPage() {
   }
 
   const handleExport = () => {
-    downloadEmployeeTemplate(filteredEmployees, branches)
+    void downloadEmployeeTemplate(filteredEmployees, branches)
   }
 
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -182,7 +182,7 @@ export default function EmployeesPage() {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold font-display text-[var(--brand-blue)]">Employees</h1>
         <div className="flex gap-2">
-          <input type="file" ref={fileInputRef} className="hidden" accept=".xlsx,.xls,.csv" onChange={handleImport} />
+          <input type="file" ref={fileInputRef} className="hidden" accept=".xlsx" onChange={handleImport} />
           <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
             <Upload size={14} className="mr-2" /> Import
           </Button>

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 
 export async function GET(req: NextRequest) {
   const userRole = req.headers.get('x-user-role')
@@ -34,7 +35,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(cheques)
   } catch (error) {
-    console.error('Failed to fetch cheques:', error)
+    logger.error('cheques.fetch_failed', error, { status: status ?? 'all' })
     return NextResponse.json({ error: 'Failed to fetch cheques' }, { status: 500 })
   }
 }

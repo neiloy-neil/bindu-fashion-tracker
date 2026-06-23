@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 import { dateOnlyToUtc, newEntryPayloadSchema } from '@/lib/new-entry'
 import { logAudit } from '@/lib/audit'
+import { logger } from '@/lib/logger'
 import { signEntryAttachments } from '@/lib/storage'
 
 export async function GET(req: NextRequest) {
@@ -12,8 +13,6 @@ export async function GET(req: NextRequest) {
   const branchId = searchParams.get('branchId')
   const page = parseInt(searchParams.get('page') || '1')
   const limit = parseInt(searchParams.get('limit') || '50')
-
-  console.log(`API /entries called: month=${month}, year=${year}, branchId=${branchId}, page=${page}`)
 
   const userRole = req.headers.get('x-user-role')
   const userBranchId = req.headers.get('x-user-branch-id')
@@ -171,6 +170,15 @@ export async function POST(req: NextRequest) {
       })
     }
 
+    logger.info('entry.created', {
+      entryId: entry.id,
+      branchId: finalBranchId,
+      userId: userId || null,
+      transferCount: body.transfers.length,
+      paymentCount: body.payments.length,
+      advanceCount: body.advanceSalaries.length,
+    })
+
     // Trigger async advance salary sync
     if (body.advanceSalaries && body.advanceSalaries.length > 0) {
       const entryDate = new Date(body.date)
@@ -184,11 +192,22 @@ export async function POST(req: NextRequest) {
           month: entryDate.getMonth() + 1,
           year: entryDate.getFullYear(),
         })
-      }).catch(e => console.error('Advance sync failed in background:', e))
+      }).catch((error) => {
+        logger.error('entry.advance_sync_background_failed', error, {
+          entryId: entry.id,
+          branchId: finalBranchId,
+          month: entryDate.getMonth() + 1,
+          year: entryDate.getFullYear(),
+        })
+      })
     }
 
     return NextResponse.json(entry, { status: 201 })
   } catch (error) {
+    logger.error('entry.create_failed', error, {
+      branchId: finalBranchId,
+      userRole,
+    })
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
       return NextResponse.json({ error: 'DUPLICATE_ENTRY', message: 'An entry already exists for this branch and date' }, { status: 409 })
     }

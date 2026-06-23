@@ -1,4 +1,5 @@
 import { prisma } from './prisma'
+import { logger } from './logger'
 
 export async function logAudit(params: {
   userId: number;
@@ -22,7 +23,12 @@ export async function logAudit(params: {
       }
     });
   } catch (err) {
-    console.error('Failed to write audit log:', err);
+    logger.error('audit.write_failed', err, {
+      userId: params.userId,
+      action: params.action,
+      entityType: params.entityType,
+      entityId: params.entityId,
+    })
     // We intentionally don't throw here to avoid failing the main transaction if logging fails, 
     // though in strict financial systems you might want to fail the transaction.
   }

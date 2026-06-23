@@ -213,6 +213,10 @@ model Transfer {
 
   receivingEntryId Int?
   receivingEntry   DailyEntry? @relation("ReceivedTransfers", fields: [receivingEntryId], references: [id])
+
+  @@index([dailyEntryId])
+  @@index([accountId, status])
+  @@index([receivingEntryId])
 }
 
 model Party {
@@ -270,6 +274,9 @@ model Payment {
   dailyEntry DailyEntry? @relation(fields: [dailyEntryId], references: [id])
   party      Party       @relation(fields: [partyId], references: [id], onDelete: Cascade)
   cheque     Cheque?
+
+  @@index([partyId])
+  @@index([dailyEntryId])
 }
 
 model Cheque {
@@ -351,6 +358,8 @@ model AdvanceSalary {
 
   dailyEntry DailyEntry @relation(fields: [dailyEntryId], references: [id])
   employee   Employee   @relation(fields: [employeeId], references: [id])
+
+  @@index([employeeId, createdAt])
 }
 
 model AuditLog {

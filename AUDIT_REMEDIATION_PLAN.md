@@ -123,30 +123,31 @@ Make ledger-affecting workflows safe under retries, races, and reporting load.
 
 ### Tasks
 
-- [ ] Make transfer acknowledgement atomic with `updateMany` or equivalent status-guarded claim logic
-- [ ] Ensure a transfer cannot be acknowledged twice during concurrent requests
-- [ ] Review entry creation and related side effects for duplicate-write safety
-- [ ] Add indexes for hot paths:
+- [x] Make transfer acknowledgement atomic with `updateMany` or equivalent status-guarded claim logic
+- [x] Ensure a transfer cannot be acknowledged twice during concurrent requests
+- [x] Review entry creation and related side effects for duplicate-write safety
+- [x] Add indexes for hot paths:
 - `Transfer.dailyEntryId`
 - `Transfer.accountId + status`
 - `Transfer.receivingEntryId`
 - `Payment.partyId`
 - `Payment.dailyEntryId`
 - `AdvanceSalary.employeeId + createdAt`
-- [ ] Review summary and report queries after indexes are added
+- [x] Review summary and report queries after indexes are added
 
 ### Success Criteria
 
-- Double acknowledgement is prevented at the database write level
-- Reporting and ledger queries have matching indexes for their main filters and joins
+- [x] Double acknowledgement is prevented at the database write level
+- [x] Reporting and ledger queries have matching indexes for their main filters and joins
 
 ### Verification
 
-- [ ] Add migration for new indexes
-- [ ] `npx prisma validate`
-- [ ] `npx prisma migrate dev --name add_audit_indexes`
-- [ ] `npm test`
-- [ ] `npm run build`
+- [x] Add migration for new indexes
+- [x] `npx prisma validate`
+- [x] `npx prisma migrate deploy`
+- [x] `npm test`
+- [x] `npx tsc --noEmit`
+- [x] `npm run build`
 
 ## Phase 4: Frontend Stability, Lint Debt, And A11y
 

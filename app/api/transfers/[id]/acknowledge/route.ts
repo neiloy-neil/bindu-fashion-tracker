@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
+import { dateOnlyToUtc, dhakaDateString } from '@/lib/new-entry'
 
 export async function PATCH(
   request: Request,
@@ -43,10 +44,6 @@ export async function PATCH(
       return NextResponse.json({ error: 'Transfer not found' }, { status: 404 })
     }
 
-    if (transfer.status !== 'PENDING') {
-      return NextResponse.json({ error: 'Transfer is already ' + transfer.status }, { status: 409 })
-    }
-
     // Verify ownership
     if (role !== 'ADMIN') {
       if (transfer.account.type !== 'BRANCH' || transfer.account.branchId !== userBranchId) {
@@ -55,15 +52,25 @@ export async function PATCH(
     }
 
     if (action === 'REJECT') {
-      const updated = await prisma.transfer.update({
-        where: { id: transferId },
-        data: {
-          status: 'REJECTED',
-          rejectionReason,
-          acknowledgedById: Number(userId),
-          acknowledgedAt: new Date()
+      const updated = await prisma.$transaction(async (tx) => {
+        const result = await tx.transfer.updateMany({
+          where: { id: transferId, status: 'PENDING' },
+          data: {
+            status: 'REJECTED',
+            rejectionReason,
+            acknowledgedById: Number(userId),
+            acknowledgedAt: new Date()
+          }
+        })
+
+        if (result.count !== 1) {
+          const latest = await tx.transfer.findUnique({ where: { id: transferId } })
+          throw new Error(`Transfer is already ${latest?.status ?? 'UNKNOWN'}`)
         }
+
+        return tx.transfer.findUniqueOrThrow({ where: { id: transferId } })
       })
+
       return NextResponse.json(updated)
     }
 
@@ -72,31 +79,25 @@ export async function PATCH(
       return NextResponse.json({ error: 'Transfer account is not linked to a branch' }, { status: 400 })
     }
 
-    // To find today's entry, we align with the timezone. Assuming local server timezone.
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
+    const today = dateOnlyToUtc(dhakaDateString())
     
     const updated = await prisma.$transaction(async (tx) => {
-      let dailyEntry = await tx.dailyEntry.findUnique({
+      const dailyEntry = await tx.dailyEntry.upsert({
         where: {
           date_branchId: {
             date: today,
             branchId: transfer.account.branchId!
           }
+        },
+        update: {},
+        create: {
+          date: today,
+          branchId: transfer.account.branchId!
         }
       })
 
-      if (!dailyEntry) {
-        dailyEntry = await tx.dailyEntry.create({
-          data: {
-            date: today,
-            branchId: transfer.account.branchId!
-          }
-        })
-      }
-
-      const updatedTransfer = await tx.transfer.update({
-        where: { id: transferId },
+      const result = await tx.transfer.updateMany({
+        where: { id: transferId, status: 'PENDING' },
         data: {
           status: 'ACKNOWLEDGED',
           acknowledgedById: Number(userId),
@@ -105,12 +106,19 @@ export async function PATCH(
         }
       })
 
-      return updatedTransfer
+      if (result.count !== 1) {
+        const latest = await tx.transfer.findUnique({ where: { id: transferId } })
+        throw new Error(`Transfer is already ${latest?.status ?? 'UNKNOWN'}`)
+      }
+
+      return tx.transfer.findUniqueOrThrow({ where: { id: transferId } })
     })
 
     return NextResponse.json(updated)
   } catch (error) {
-    console.error('Failed to acknowledge transfer:', error)
+    if (error instanceof Error && error.message.startsWith('Transfer is already ')) {
+      return NextResponse.json({ error: error.message }, { status: 409 })
+    }
     return NextResponse.json({ error: 'Failed to acknowledge transfer' }, { status: 500 })
   }
 }

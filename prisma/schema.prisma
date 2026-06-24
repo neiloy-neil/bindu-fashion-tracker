@@ -44,6 +44,7 @@ model User {
   createdAt             DateTime        @default(now())
   acknowledgedTransfers Transfer[]      @relation("TransferAcknowledger")
   salaryRecords         SalaryRecord[]
+  approvedLeaves        LeaveRecord[]   @relation("LeaveApprover")
 
   employeeId Int?      @unique
   employee   Employee? @relation(fields: [employeeId], references: [id], onDelete: SetNull)
@@ -356,6 +357,7 @@ model Employee {
   advanceSalaries AdvanceSalary[]
   salaryRecords   SalaryRecord[]
   eidRecords      EidRecord[]
+  leaveRecords    LeaveRecord[]
 
   user User?
 
@@ -448,6 +450,24 @@ model SalaryUploadLog {
   uploadedAt      DateTime @default(now())
 
   @@unique([month, year])
+}
+
+model LeaveRecord {
+  id           Int      @id @default(autoincrement())
+  employeeId   Int
+  employee     Employee @relation(fields: [employeeId], references: [id])
+  startDate    DateTime
+  endDate      DateTime
+  type         String   // SICK, CASUAL, UNPAID, ANNUAL
+  status       String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  reason       String?  @db.Text
+  approvedById Int?
+  approvedBy   User?    @relation("LeaveApprover", fields: [approvedById], references: [id])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([employeeId])
+  @@index([status])
 }
 
 model SystemSettings {

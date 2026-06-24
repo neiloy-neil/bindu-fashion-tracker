@@ -2,6 +2,7 @@ import 'dotenv/config'
 import { prisma } from './lib/prisma'
 import * as bcrypt from 'bcryptjs'
 import crypto from 'crypto'
+import { faker } from '@faker-js/faker'
 
 const BRANCHES = [
   { name: 'Aziz 1',       code: 'AZIZ1' },
@@ -36,17 +37,17 @@ const DEFAULT_EXPENSE_CATEGORIES = [
 ]
 
 async function main() {
-  console.log('Seeding data...')
+  console.log('Seeding massive data with Faker.js...')
 
   // Seed Categories
-  const categoryMap = new Map<string, number>()
+  const categoryIds = { income: [] as number[], expense: [] as number[] }
   for (const name of DEFAULT_INCOME_CATEGORIES) {
     const cat = await prisma.category.upsert({
       where: { name },
       update: {},
       create: { name, type: 'INCOME', isDefault: true, isActive: true }
     })
-    categoryMap.set(name, cat.id)
+    categoryIds.income.push(cat.id)
   }
   for (const name of DEFAULT_EXPENSE_CATEGORIES) {
     const cat = await prisma.category.upsert({
@@ -54,7 +55,7 @@ async function main() {
       update: {},
       create: { name, type: 'EXPENSE', isDefault: true, isActive: true }
     })
-    categoryMap.set(name, cat.id)
+    categoryIds.expense.push(cat.id)
   }
   console.log('✅ Categories seeded.')
 
@@ -69,141 +70,149 @@ async function main() {
   }
 
   // Create Users
-  const adminPasswordPlain = crypto.randomBytes(6).toString('hex')
-  const branchPasswordPlain = crypto.randomBytes(6).toString('hex')
-  
+  const adminPasswordPlain = 'admin123'
+  const branchPasswordPlain = 'branch123'
   const adminPasswordHash = await bcrypt.hash(adminPasswordPlain, 10)
   const branchPasswordHash = await bcrypt.hash(branchPasswordPlain, 10)
 
   // Admin User
-  const existingAdmin = await prisma.user.findUnique({ where: { username: 'admin' } })
-  if (!existingAdmin) {
-    await prisma.user.create({
-      data: {
-        username: 'admin',
-        passwordHash: adminPasswordHash,
-        role: 'ADMIN'
-      }
-    })
-    console.log(`✅ Admin user seeded! Username: admin | Password: ${adminPasswordPlain} (Change this immediately!)`)
-  } else {
-    console.log(`✅ Admin user already exists.`)
-  }
-
-  // HR Admin User
-  const hrAdminPasswordPlain = 'ChangeMe123!'
-  const hrAdminPasswordHash = await bcrypt.hash(hrAdminPasswordPlain, 10)
-  const existingHrAdmin = await prisma.user.findUnique({ where: { username: 'hr_admin' } })
-  if (!existingHrAdmin) {
-    await prisma.user.create({
-      data: {
-        username: 'hr_admin',
-        passwordHash: hrAdminPasswordHash,
-        role: 'HR_ADMIN'
-      }
-    })
-    console.log(`✅ HR Admin user seeded! Username: hr_admin | Password: ${hrAdminPasswordPlain}`)
-  } else {
-    console.log(`✅ HR Admin user already exists.`)
-  }
+  await prisma.user.upsert({
+    where: { username: 'admin' },
+    update: {},
+    create: { username: 'admin', passwordHash: adminPasswordHash, role: 'ADMIN' }
+  })
+  
+  await prisma.user.upsert({
+    where: { username: 'hr_admin' },
+    update: {},
+    create: { username: 'hr_admin', passwordHash: adminPasswordHash, role: 'HR_ADMIN' }
+  })
 
   for (const branch of branchRecords) {
     const username = `${branch.code.toLowerCase()}_branch`
-    const existingBranchUser = await prisma.user.findUnique({ where: { username } })
-    if (!existingBranchUser) {
-      await prisma.user.create({
+    await prisma.user.upsert({
+      where: { username },
+      update: {},
+      create: { username, passwordHash: branchPasswordHash, role: 'BRANCH', branchId: branch.id }
+    })
+  }
+  console.log(`✅ Users seeded.`)
+
+  // Employees (3 to 8 per branch)
+  const allEmployees = []
+  for (const branch of branchRecords) {
+    const numEmployees = faker.number.int({ min: 3, max: 8 })
+    for (let i = 0; i < numEmployees; i++) {
+      const emp = await prisma.employee.create({
         data: {
-          username,
-          passwordHash: branchPasswordHash,
-          role: 'BRANCH',
-          branchId: branch.id
+          name: faker.person.fullName(),
+          designation: faker.helpers.arrayElement(['Manager', 'Sales Associate', 'Cashier', 'Staff']),
+          basicSalary: faker.number.int({ min: 12000, max: 35000 }),
+          branchId: branch.id,
+          joiningDate: faker.date.past({ years: 3 }).toISOString().split('T')[0],
+          isActive: true
         }
       })
+      allEmployees.push(emp)
     }
   }
-  console.log(`✅ Branch users seeded. Default new user password: ${branchPasswordPlain} (Change this immediately!)`)
+  console.log(`✅ ${allEmployees.length} Employees seeded.`)
 
-  // Current month
+  // Generate 90 days of daily entries
   const now = new Date()
-  const year = now.getFullYear()
-  const month = now.getMonth()
+  
+  let entryCount = 0
+  let itemCount = 0
 
-  // Generate a few random entries for the current month for the first two branches
-  for (let i = 1; i <= 5; i++) {
-    const date = new Date(year, month, i)
+  // 90 days loop
+  for (let d = 90; d >= 0; d--) {
+    const date = new Date(now)
+    date.setDate(date.getDate() - d)
+    date.setHours(0, 0, 0, 0)
     
-    for (const branch of branchRecords.slice(0, 2)) {
-      // Create Entry
-      const entry = await prisma.dailyEntry.upsert({
-        where: {
-          date_branchId: {
-            date: date,
-            branchId: branch.id
-          }
-        },
-        update: {},
-        create: {
-          date: date,
-          branchId: branch.id,
+    // Create entries for each branch
+    for (const branch of branchRecords) {
+      // 10% chance a branch is closed
+      if (faker.number.int({ min: 1, max: 100 }) <= 10) continue
+
+      const incomeItems = []
+      let totalIncome = 0
+      
+      // Random incomes (Cash Sales, POS, etc.)
+      const numIncomes = faker.number.int({ min: 2, max: 8 })
+      for (let i = 0; i < numIncomes; i++) {
+        const amount = faker.number.int({ min: 1000, max: 50000 })
+        incomeItems.push({
+          categoryId: faker.helpers.arrayElement(categoryIds.income),
+          amount,
+          note: faker.lorem.words(2)
+        })
+        totalIncome += amount
+      }
+
+      const expenseItems = []
+      let totalExpense = 0
+      
+      // Random expenses
+      const numExpenses = faker.number.int({ min: 1, max: 5 })
+      for (let i = 0; i < numExpenses; i++) {
+        const amount = faker.number.int({ min: 500, max: 15000 })
+        expenseItems.push({
+          categoryId: faker.helpers.arrayElement(categoryIds.expense),
+          amount,
+          note: faker.lorem.words(3)
+        })
+        totalExpense += amount
+      }
+
+      // Expected Cash
+      const expectedNetBalance = totalIncome - totalExpense
+      
+      // 5% chance of discrepancy
+      let actualPhysicalCash = expectedNetBalance
+      let cashDifferenceNote = null
+      if (faker.number.int({ min: 1, max: 100 }) <= 5) {
+        const difference = faker.number.int({ min: -5000, max: 5000 })
+        if (difference !== 0) {
+          actualPhysicalCash = expectedNetBalance + difference
+          cashDifferenceNote = faker.lorem.sentence()
         }
-      })
+      }
 
-      // Random sales data
-      const itemsData = [
-        { categoryId: categoryMap.get('Opening Balance')!, amount: 5000 },
-        { categoryId: categoryMap.get('Cash Sale')!, amount: Math.floor(Math.random() * 50000) + 10000 },
-        { categoryId: categoryMap.get('bKash Income')!, amount: Math.floor(Math.random() * 20000) },
-        { categoryId: categoryMap.get('Due Received')!, amount: Math.floor(Math.random() * 5000) },
-        { categoryId: categoryMap.get('Lunch')!, amount: Math.floor(Math.random() * 500) + 200 },
-        { categoryId: categoryMap.get('Conveyance')!, amount: Math.floor(Math.random() * 300) + 100 },
-        { categoryId: categoryMap.get('Bank Deposit')!, amount: Math.floor(Math.random() * 30000) },
-      ]
-
-      for (const item of itemsData) {
-        await prisma.entryItem.upsert({
+      try {
+        const entry = await prisma.dailyEntry.upsert({
           where: {
-            entryId_categoryId: {
-              entryId: entry.id,
-              categoryId: item.categoryId
-            }
+            date_branchId: { date, branchId: branch.id }
           },
-          update: { amount: item.amount },
+          update: {},
           create: {
-            entryId: entry.id,
-            categoryId: item.categoryId,
-            amount: item.amount
+            date,
+            branchId: branch.id,
+            actualPhysicalCash,
+            expectedNetBalance,
+            cashDifferenceNote,
+            openingTime: "10:00",
+            closingTime: "22:00",
+            notes: faker.number.int({ min: 1, max: 100 }) <= 20 ? faker.lorem.sentence() : null,
+            items: {
+              create: [...incomeItems, ...expenseItems]
+            }
           }
         })
+        entryCount++
+        itemCount += incomeItems.length + expenseItems.length
+      } catch (e: any) {
+        // Skip if exists
       }
     }
   }
 
-  // Seed SystemSettings
-  const existingSettings = await prisma.systemSettings.findFirst()
-  if (!existingSettings) {
-    await prisma.systemSettings.create({
-      data: {
-        companyName: 'Bindu Premium',
-        generatedBy: 'Nahid'
-      }
-    })
-    console.log('✅ SystemSettings seeded.')
-  } else {
-    await prisma.systemSettings.update({
-      where: { id: existingSettings.id },
-      data: {
-        companyName: 'Bindu Premium',
-        generatedBy: 'Nahid'
-      }
-    })
-    console.log('✅ SystemSettings updated.')
-  }
-
-  console.log('✅ Seeding completed!')
+  console.log(`✅ Seeded ${entryCount} Daily Entries with ${itemCount} Items over 90 days.`)
+  console.log('Seeding complete! Enjoy your massive dataset.')
 }
 
 main()
-  .catch((e) => {
+  .catch(e => {
     console.error(e)
     process.exit(1)
   })

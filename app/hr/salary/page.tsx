@@ -64,7 +64,9 @@ function SalaryContent() {
         ])
 
         const emps = empsRes.ok ? await empsRes.json() : []
-        const recs = recsRes.ok ? await recsRes.json() : []
+        const data = recsRes.ok ? await recsRes.json() : { records: [], calculatedLeaves: {} }
+        const recs = data.records || []
+        const calcLeaves = data.calculatedLeaves || {}
 
         if (cancelled) return
 
@@ -79,7 +81,7 @@ function SalaryContent() {
           record: recMap.get(emp.id) ?? {
             employeeId: emp.id, month, year,
             trackerAdvanceTotal: 0, hrAdvanceDeducted: 0,
-            leaveDaysTaken: 0, leaveAdjustment: 0,
+            leaveDaysTaken: calcLeaves[emp.id] ?? 0, leaveAdjustment: 0,
             lateDays: 0, otDays: 0, attendanceBonus: 0,
             conveyanceOverride: emp.conveyance,
             notes: '',

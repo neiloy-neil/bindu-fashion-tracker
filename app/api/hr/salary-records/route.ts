@@ -47,6 +47,28 @@ export async function GET(req: NextRequest) {
       }
     })
 
+    // Fetch approved unpaid leaves to calculate auto deductions
+    const leaves = await prisma.leaveRecord.findMany({
+      where: {
+        status: 'APPROVED',
+        type: 'UNPAID',
+        startDate: { lte: endOfMonth },
+        endDate: { gte: startOfMonth },
+        ...(branchId ? { employee: { branchId: parseInt(branchId) } } : {})
+      }
+    })
+
+    const calculatedLeaves: Record<number, number> = {}
+    leaves.forEach(l => {
+      const overlapStart = l.startDate < startOfMonth ? startOfMonth : l.startDate
+      const overlapEnd = l.endDate > endOfMonth ? endOfMonth : l.endDate
+      if (overlapStart <= overlapEnd) {
+        const diffTime = overlapEnd.getTime() - overlapStart.getTime()
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1
+        calculatedLeaves[l.employeeId] = (calculatedLeaves[l.employeeId] || 0) + diffDays
+      }
+    })
+
     // Fetch BRANCH users to map branchId -> username
     const branchUsers = await prisma.user.findMany({
       where: { role: 'BRANCH' },
@@ -69,7 +91,7 @@ export async function GET(req: NextRequest) {
       return { ...r, advances: empAdvances }
     })
 
-    return NextResponse.json(recordsWithAdvances)
+    return NextResponse.json({ records: recordsWithAdvances, calculatedLeaves })
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }

@@ -4,9 +4,10 @@ import { useEffect, useState, Suspense, useMemo } from 'react'
 import { useSearchParams } from 'next/navigation'
 import type { Employee, Branch, SalaryRecord } from '@prisma/client'
 import { calcSalary } from '@/lib/hr/calculations'
-// import { downloadCSV } from '@/lib/hr/csv' // we'll skip CSV export for now or stub it
+import { downloadCSV } from '@/lib/hr/csv'
 import { toast } from 'sonner'
-import { Save, Users, AlertCircle, Lock, RefreshCw } from 'lucide-react'
+import { Save, Users, AlertCircle, Lock, RefreshCw, Trash2 } from 'lucide-react'
+import { useSession } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -42,6 +43,11 @@ function SalaryContent() {
   const [year, setYear] = useState(+(params.get('year') ?? currentYear))
   const [rows, setRows] = useState<Row[]>([])
   const [saving, setSaving] = useState(false)
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null)
+  const [confirmClearMonth, setConfirmClearMonth] = useState(false)
+  
+  const { data: session } = useSession()
+  const isAdmin = session?.user?.role === 'ADMIN'
   const [filterBranch, setFilterBranch] = useState('all')
   const [branches, setBranches] = useState<Branch[]>([])
   const [pageLoading, setPageLoading] = useState(true)
@@ -186,6 +192,49 @@ function SalaryContent() {
     }
   }
 
+  async function deleteRecord(row: Row) {
+    if (!row.record.id) {
+      setRows(prev => prev.filter(r => r.employee.id !== row.employee.id))
+      setConfirmDeleteId(null)
+      return
+    }
+    try {
+      const res = await fetch(`/api/hr/salary-records/${row.record.id}`, { method: 'DELETE' })
+      if (!res.ok) {
+        if (res.status === 423) toast.error('This month is locked — cannot delete records')
+        else toast.error('Failed to delete record')
+        return
+      }
+      toast.success('Record deleted')
+      setReloadNonce(n => n + 1)
+    } catch (e) {
+      toast.error('Error deleting record')
+    } finally {
+      setConfirmDeleteId(null)
+    }
+  }
+
+  async function clearMonth() {
+    const savedRecords = rows.filter(r => r.record.id)
+    if (!savedRecords.length) return
+    setSaving(true)
+    let deletedCount = 0
+    try {
+      for (const row of savedRecords) {
+        const res = await fetch(`/api/hr/salary-records/${row.record.id}`, { method: 'DELETE' })
+        if (res.ok) deletedCount++
+        else if (res.status === 423) throw new Error('Month is locked')
+      }
+      toast.success(`Month cleared — ${deletedCount} records removed`)
+      setReloadNonce(n => n + 1)
+    } catch (e: any) {
+      toast.error(e.message || 'Error clearing month')
+    } finally {
+      setSaving(false)
+      setConfirmClearMonth(false)
+    }
+  }
+
   const dirtyCount = rows.filter(r => r.dirty).length
 
   const displayed = useMemo(() => {
@@ -240,6 +289,33 @@ function SalaryContent() {
     ))
   }
 
+  function exportCSV() {
+    const headers = [
+      'Employee ID', 'Name', 'Branch', 'Basic Salary', 'Tracker Advance', 'HR Advance',
+      'Leave Days', 'Leave Adj', 'Late Days', 'OT Days', 'Attendance Bonus', 'Conveyance', 'Net Payable', 'Notes'
+    ]
+    const dataRows = displayed.map(row => {
+      const calc = calcSalary(row.employee, row.record as SalaryRecord)
+      return [
+        row.employee.employeeId || '',
+        row.employee.name,
+        (row.employee.branch as any)?.name || '',
+        row.employee.basicSalary,
+        row.record.trackerAdvanceTotal || 0,
+        row.record.hrAdvanceDeducted || 0,
+        row.record.leaveDaysTaken || 0,
+        row.record.leaveAdjustment || 0,
+        row.record.lateDays || 0,
+        row.record.otDays || 0,
+        row.record.attendanceBonus || 0,
+        calc.conveyance,
+        calc.netPayable,
+        row.record.notes || ''
+      ]
+    })
+    downloadCSV(headers, dataRows, `Salary_${MONTHS[month - 1]}_${year}`)
+  }
+
   const yearOptions = [currentYear - 1, currentYear, currentYear + 1]
 
   return (
@@ -283,6 +359,11 @@ function SalaryContent() {
           <Button onClick={lockMonth} disabled={isLocked} variant="outline" size="sm" className="gap-1.5 bg-white border-gray-300 text-gray-900 hover:bg-gray-50">
             <Lock size={14} /> Lock Month
           </Button>
+          {isAdmin && (
+            <Button onClick={() => setConfirmClearMonth(true)} disabled={isLocked || !rows.some(r => r.record.id)} variant="outline" size="sm" className="gap-1.5 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700">
+              <Trash2 size={14} /> Clear Month
+            </Button>
+          )}
         </div>
       </div>
 
@@ -290,6 +371,17 @@ function SalaryContent() {
         <div className="mb-3 bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 flex items-center gap-3 text-sm">
           <Lock size={15} className="text-gray-500 shrink-0" />
           <span className="text-gray-800 font-medium">This month is locked and cannot be edited.</span>
+        </div>
+      )}
+
+      {confirmClearMonth && (
+        <div className="mb-3 bg-red-50 border border-red-200 rounded-lg px-4 py-3 flex items-center gap-3 text-sm flex-wrap">
+          <Trash2 size={15} className="text-red-500 shrink-0" />
+          <span className="text-red-800 font-medium">This will delete all {rows.filter(r => r.record.id).length} records for {MONTHS[month - 1]} {year}. Confirm?</span>
+          <div className="ml-auto flex items-center gap-2">
+            <Button size="sm" variant="outline" onClick={() => setConfirmClearMonth(false)} className="h-7 text-xs bg-white text-gray-700">Cancel</Button>
+            <Button size="sm" variant="destructive" onClick={clearMonth} disabled={saving} className="h-7 text-xs">Yes, Clear</Button>
+          </div>
         </div>
       )}
 
@@ -316,8 +408,8 @@ function SalaryContent() {
         onSortChange={setSortValue}
         resultCount={displayed.length}
         resultLabel="employees"
-        onExportCSV={() => {}}
-        exportLabel="Export CSV"
+        onExportCSV={exportCSV}
+        exportLabel={`Export CSV (${displayed.length})`}
       />
 
       {pageLoading ? (
@@ -360,6 +452,7 @@ function SalaryContent() {
                   </th>
                   <th className="text-left px-3 py-2.5 font-semibold text-gray-500" style={{ minWidth: 160 }}>Notes</th>
                   <th className="text-right px-3 py-2.5 font-semibold text-gray-700 bg-blue-50/80">Net Payable</th>
+                  <th className="w-10"></th>
                 </tr>
               </thead>
 
@@ -414,6 +507,26 @@ function SalaryContent() {
                       </td>
                       <td className="px-3 py-2 text-right font-semibold text-blue-700 bg-blue-50/40 whitespace-nowrap text-sm">
                         {formatTaka(calc.netPayable)}
+                      </td>
+                      <td className="px-2 py-2 text-right">
+                        {confirmDeleteId === rec.id && rec.id ? (
+                          <div className="flex items-center justify-end gap-1">
+                            <span className="text-xs text-red-600 font-medium mr-1">Delete?</span>
+                            <Button size="sm" variant="destructive" className="h-6 px-2 text-[10px]" onClick={() => deleteRecord(row)}>Yes</Button>
+                            <Button size="sm" variant="outline" className="h-6 px-2 text-[10px]" onClick={() => setConfirmDeleteId(null)}>No</Button>
+                          </div>
+                        ) : (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-gray-400 hover:text-red-600 hover:bg-red-50"
+                            disabled={isLocked}
+                            onClick={() => rec.id ? setConfirmDeleteId(rec.id) : deleteRecord(row)}
+                            title="Delete record"
+                          >
+                            <Trash2 size={14} />
+                          </Button>
+                        )}
                       </td>
                     </tr>
                   )

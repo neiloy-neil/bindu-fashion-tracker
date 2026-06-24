@@ -15,13 +15,22 @@ export async function POST(request: NextRequest) {
   if (!ALLOWED_TYPES.has(file.type)) return NextResponse.json({ error: 'INVALID_FILE_TYPE' }, { status: 400 })
   if (file.size > MAX_FILE_SIZE) return NextResponse.json({ error: 'FILE_TOO_LARGE' }, { status: 400 })
 
+  const bucket = request.nextUrl.searchParams.get('bucket') || 'private_receipts'
+  if (!['private_receipts', 'receipts', 'employees'].includes(bucket)) {
+    return NextResponse.json({ error: 'INVALID_BUCKET' }, { status: 400 })
+  }
+
   const extension = file.name.split('.').pop()?.replace(/[^a-zA-Z0-9]/g, '').toLowerCase() || 'bin'
   const key = `${session.user.id}/${new Date().getUTCFullYear()}/${randomUUID()}.${extension}`
-  const { error } = await storageAdmin().storage.from('receipts').upload(key, await file.arrayBuffer(), {
+  
+  const { error } = await storageAdmin().storage.from(bucket).upload(key, await file.arrayBuffer(), {
     contentType: file.type, upsert: false,
   })
   if (error) return NextResponse.json({ error: 'UPLOAD_FAILED', message: error.message }, { status: 500 })
-  return NextResponse.json({ key }, { status: 201 })
+  
+  const { data: { publicUrl } } = storageAdmin().storage.from(bucket).getPublicUrl(key)
+  
+  return NextResponse.json({ key, url: publicUrl }, { status: 201 })
 }
 
 export async function DELETE(request: NextRequest) {

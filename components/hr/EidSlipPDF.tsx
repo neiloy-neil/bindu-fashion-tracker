@@ -125,21 +125,15 @@ function Slip({ calc, generatedBy, paymentBy }: {
         </View>
 
         <View style={s.tRow}>
-          <Cell style={s.tDesc}>Branch Advance</Cell>
+          <Cell style={s.tDesc}>Advance Deducted</Cell>
           <Cell style={s.tOp}>(-)</Cell>
-          <Cell style={s.tAmt}>{fmt((record as any).trackerAdvanceTotal ?? 0)}</Cell>
-        </View>
-
-        <View style={s.tRow}>
-          <Cell style={s.tDesc}>HR Advance</Cell>
-          <Cell style={s.tOp}>(-)</Cell>
-          <Cell style={s.tAmt}>{fmt((record as any).hrAdvanceDeducted ?? 0)}</Cell>
+          <Cell style={s.tAmt}>{fmt(advanceDeducted)}</Cell>
         </View>
 
         <View style={s.tRow}>
           <View style={s.tPayableDesc}><Text>Payable Amount</Text></View>
           <View style={{ width: 22, borderLeft: `1 solid ${BORDER}` }} />
-          <View style={s.tPayableAmt}><Text>{fmt(netPayable)}</Text></View>
+          <View style={s.tPayableAmt}><Text>{fmt(Math.round(netPayable / 10) * 10)}</Text></View>
         </View>
       </View>
 

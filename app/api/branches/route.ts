@@ -9,6 +9,7 @@ export async function GET(req: NextRequest) {
 
   const branches = await prisma.branch.findMany({
     where,
+    include: { _count: { select: { employees: true } } },
     orderBy: { name: 'asc' },
   })
   return NextResponse.json(branches)

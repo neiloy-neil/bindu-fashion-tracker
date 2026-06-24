@@ -5,6 +5,7 @@ import { Sidebar } from '@/components/layout/Sidebar'
 import { useState } from 'react'
 import { Menu, X } from 'lucide-react'
 import Image from 'next/image'
+import { CommandPalette } from '@/components/shared/CommandPalette'
 
 export function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
@@ -18,6 +19,19 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
       path: open ? pathname : mobileMenuState.path,
     })
   }
+
+  const [cmdOpen, setCmdOpen] = useState(false)
+
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault()
+        setCmdOpen(prev => !prev)
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   if (isLoginPage) {
     return <div className="min-h-screen bg-[var(--bg-primary)]">{children}</div>
@@ -51,6 +65,8 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
           onClick={() => setMobileMenuOpen(false)}
         />
       )}
+
+      <CommandPalette open={cmdOpen} onOpenChange={setCmdOpen} />
     </div>
   )
 }

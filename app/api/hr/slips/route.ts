@@ -59,7 +59,25 @@ export async function GET(req: NextRequest) {
       orderBy: { employee: { id: 'asc' } }
     })
 
-    const slips = records.map(record => calcSalary(record.employee, record, 0))
+    const yearRecords = await prisma.salaryRecord.findMany({
+      where: {
+        year: parseInt(year),
+        employee: {
+          ...(branchId ? { branchId: parseInt(branchId) } : {}),
+          ...(effectiveEmployeeId ? { id: parseInt(effectiveEmployeeId) } : {})
+        }
+      },
+      select: { employeeId: true, leaveDaysTaken: true }
+    })
+
+    const yearlyLeaveMap = new Map<number, number>()
+    for (const r of yearRecords) {
+      yearlyLeaveMap.set(r.employeeId, (yearlyLeaveMap.get(r.employeeId) ?? 0) + r.leaveDaysTaken)
+    }
+
+    const slips = records.map(record =>
+      calcSalary(record.employee, record, yearlyLeaveMap.get(record.employeeId) ?? 0)
+    )
 
     return NextResponse.json(slips)
   } catch (error: any) {

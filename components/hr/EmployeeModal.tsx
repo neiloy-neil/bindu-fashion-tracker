@@ -8,7 +8,6 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
 import { toast } from 'sonner'
-import { supabase } from '@/lib/supabase'
 
 type EditableEmployee = {
   id: number
@@ -139,15 +138,21 @@ function EmployeeModalForm({
 
       // Handle photo upload
       if (photoFile) {
-        const filePath = `${savedEmp.id}/photo_${Date.now()}`
-        const { error: uploadError } = await supabase.storage
-          .from('employees')
-          .upload(filePath, photoFile, { upsert: true })
+        const formData = new FormData()
+        formData.append('file', photoFile)
 
-        if (uploadError) throw new Error(`Photo upload failed: ${uploadError.message}`)
+        const uploadRes = await fetch('/api/upload?bucket=employees', {
+          method: 'POST',
+          body: formData
+        })
 
-        const { data: publicData } = supabase.storage.from('employees').getPublicUrl(filePath)
-        photoUrl = publicData.publicUrl
+        if (!uploadRes.ok) {
+          const err = await uploadRes.json()
+          throw new Error(`Photo upload failed: ${err.message || err.error}`)
+        }
+
+        const { url } = await uploadRes.json()
+        photoUrl = url
 
         // update employee with photo url
         await fetch(`/api/hr/employees/${savedEmp.id}`, {

@@ -7,7 +7,7 @@ const statusSchema = z.object({
   status: z.enum(['APPROVED', 'REJECTED'])
 })
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   const role = req.headers.get('x-user-role')
   const userId = req.headers.get('x-user-id')
 
@@ -15,7 +15,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  const id = parseInt(params.id)
+  const { id: paramId } = await context.params
+  const id = parseInt(paramId)
   if (isNaN(id)) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 })
 
   try {

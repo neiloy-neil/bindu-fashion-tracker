@@ -99,11 +99,18 @@ export async function proxy(req: NextRequest) {
 
     requestHeaders.set('x-user-id', String(token.id))
     requestHeaders.set('x-user-role', role)
+    if (token.username) {
+      requestHeaders.set('x-user-username', String(token.username))
+    }
+    if (token.employeeId) {
+      requestHeaders.set('x-user-employee-id', String(token.employeeId))
+    }
     if (token.branchId) {
       requestHeaders.set('x-user-branch-id', String(token.branchId))
     }
     if (token.managedBranchIds && Array.isArray(token.managedBranchIds)) {
       requestHeaders.set('x-user-managed-branches', token.managedBranchIds.join(','))
+      requestHeaders.set('x-user-managed-branch-ids', JSON.stringify(token.managedBranchIds))
     }
 
     return NextResponse.next({

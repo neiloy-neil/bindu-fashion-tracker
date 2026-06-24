@@ -53,7 +53,7 @@ export async function GET(req: NextRequest) {
         totalExpense += entry.expenseEntries.reduce((sum, exp) => sum + exp.amount, 0)
         totalTransfers += entry.transfers.reduce((sum, tr) => sum + tr.amount, 0)
         totalPayments += entry.payments.reduce((sum, p) => sum + p.amount, 0)
-        totalAdvances += entry.advanceSalaries.filter(a => a.type === 'CASH').reduce((sum, a) => sum + a.amount, 0)
+        totalAdvances += entry.advanceSalaries.filter(a => a.type === 'CASH').reduce((sum, a) => sum + (a.amount ?? 0), 0)
       })
 
       return {

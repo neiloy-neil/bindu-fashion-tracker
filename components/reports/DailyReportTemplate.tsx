@@ -48,8 +48,6 @@ type ReportEntryData = {
   date: string
   openingTime?: string | null
   closingTime?: string | null
-  actualPhysicalCash?: number | null
-  expectedNetBalance?: number | null
   branch?: { name: string } | null
   items?: ReportEntryItem[]
   receivedTransfers?: ReportReceivedTransfer[]
@@ -103,12 +101,34 @@ export default function DailyReportTemplate({ entryData }: { entryData: ReportEn
   return (
     <div className="bg-[var(--bg-card)] p-8 rounded-xl border border-[var(--border)] shadow-xl text-foreground">
       {/* Header */}
-      <div className="text-center mb-8 border-b border-[var(--border)] pb-6">
+      <div className="text-center mb-6 border-b border-[var(--border)] pb-6">
         <Image src="/bindu-logo.webp" alt="Bindu Premium" width={192} height={64} className="h-16 w-auto mx-auto mb-4 object-contain" />
         <h1 className="text-3xl font-bold mb-2" style={{ fontFamily: 'var(--font-display)', color: 'var(--accent)' }}>Bindu Premium — Daily Report</h1>
-        <div className="flex justify-center gap-8 text-[var(--text-secondary)]">
+        <div className="flex justify-center gap-8 text-[var(--text-secondary)] mb-6">
           <span>Branch: <strong className="text-foreground">{entryData.branch?.name}</strong></span>
           <span>Date: <strong className="text-foreground">{formatDate(entryData.date)}</strong></span>
+        </div>
+
+        {/* Summary cards — visible at a glance before reading sections */}
+        <div className="grid grid-cols-3 gap-4 mt-2">
+          <div className="bg-[var(--success)]/10 border border-[var(--success)]/30 rounded-xl p-4 text-center">
+            <div className="text-xs uppercase tracking-wider text-[var(--text-secondary)] mb-1">Total Sale</div>
+            <div className="text-2xl font-bold font-mono text-[var(--success)]">৳{formatCurrency(totalIncome)}</div>
+          </div>
+          <div className="bg-[var(--danger)]/10 border border-[var(--danger)]/30 rounded-xl p-4 text-center">
+            <div className="text-xs uppercase tracking-wider text-[var(--text-secondary)] mb-1">Total Expenses</div>
+            <div className="text-2xl font-bold font-mono" style={{ color: 'var(--danger)' }}>৳{formatCurrency(grandTotalExpenses)}</div>
+            <div className="text-[10px] text-[var(--text-muted)] mt-1">
+              Exp ৳{formatCurrency(totalExpenses)} · Transfers ৳{formatCurrency(totalTransfers)} · Payments ৳{formatCurrency(totalPayments)} · Advance ৳{formatCurrency(totalAdvanceCash)}
+            </div>
+          </div>
+          <div className="bg-[var(--accent)]/10 border border-[var(--accent)]/30 rounded-xl p-4 text-center">
+            <div className="text-xs uppercase tracking-wider text-[var(--text-secondary)] mb-1">Total Cash in Hand</div>
+            <div className={`text-2xl font-bold font-mono ${totalIncome - grandTotalExpenses >= 0 ? 'text-[var(--accent)]' : 'text-[var(--danger)]'}`}>
+              ৳{formatCurrency(totalIncome - grandTotalExpenses)}
+            </div>
+            <div className="text-[10px] text-[var(--text-muted)] mt-1">Sale − Expenses</div>
+          </div>
         </div>
       </div>
 
@@ -315,37 +335,6 @@ export default function DailyReportTemplate({ entryData }: { entryData: ReportEn
         ) : emptyRow('No advance salary recorded.')}
       </div>
 
-      {/* Summary Footer */}
-      <div className="border-t-2 border-[var(--accent)]/40 pt-6 mt-2">
-        {sectionHeader('Daily Summary')}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="bg-[var(--success)]/10 border border-[var(--success)]/30 rounded-xl p-4 text-center">
-            <div className="text-xs uppercase tracking-wider text-[var(--text-secondary)] mb-1">Total Sale</div>
-            <div className="text-2xl font-bold font-mono text-[var(--success)]">৳{formatCurrency(totalIncome)}</div>
-          </div>
-          <div className="bg-[var(--danger)]/10 border border-[var(--danger)]/30 rounded-xl p-4 text-center">
-            <div className="text-xs uppercase tracking-wider text-[var(--text-secondary)] mb-1">Total Expenses</div>
-            <div className="text-2xl font-bold font-mono" style={{ color: 'var(--danger)' }}>৳{formatCurrency(grandTotalExpenses)}</div>
-            <div className="text-[10px] text-[var(--text-muted)] mt-1">
-              Exp ৳{formatCurrency(totalExpenses)} · Transfers ৳{formatCurrency(totalTransfers)} · Payments ৳{formatCurrency(totalPayments)} · Advance ৳{formatCurrency(totalAdvanceCash)}
-            </div>
-          </div>
-          <div className="bg-[var(--accent)]/10 border border-[var(--accent)]/30 rounded-xl p-4 text-center">
-            <div className="text-xs uppercase tracking-wider text-[var(--text-secondary)] mb-1">Total Cash in Hand</div>
-            <div className="text-2xl font-bold font-mono text-[var(--accent)]">
-              {entryData.actualPhysicalCash != null
-                ? `৳${formatCurrency(entryData.actualPhysicalCash)}`
-                : '—'}
-            </div>
-            {entryData.expectedNetBalance != null && entryData.actualPhysicalCash != null && (
-              <div className={`text-[10px] mt-1 font-semibold ${Math.abs(entryData.actualPhysicalCash - entryData.expectedNetBalance) < 1 ? 'text-[var(--success)]' : 'text-[var(--danger)]'}`}>
-                Expected ৳{formatCurrency(entryData.expectedNetBalance)}
-                {Math.abs(entryData.actualPhysicalCash - entryData.expectedNetBalance) >= 1 && ` · Diff ৳${formatCurrency(Math.abs(entryData.actualPhysicalCash - entryData.expectedNetBalance))}`}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
     </div>
   )
 }

@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
         ...(active !== null ? { isActive: active === 'true' } : {}),
       },
       include: {
-        branch: { select: { name: true } }
+        branch: { select: { id: true, name: true } }
       },
       orderBy: { id: 'asc' }
     })

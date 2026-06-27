@@ -2,7 +2,7 @@
 
 import { usePathname } from 'next/navigation'
 import { Sidebar } from '@/components/layout/Sidebar'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Menu, X } from 'lucide-react'
 import Image from 'next/image'
 import { CommandPalette } from '@/components/shared/CommandPalette'

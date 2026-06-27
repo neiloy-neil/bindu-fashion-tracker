@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Plus_Jakarta_Sans, Fraunces } from 'next/font/google'
 import './globals.css'
 import { LayoutWrapper } from '@/components/layout/LayoutWrapper'
+import { Providers } from '@/components/Providers'
 import { Toaster } from 'react-hot-toast'
 
 const jakarta = Plus_Jakarta_Sans({
@@ -29,10 +30,12 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${jakarta.variable} ${fraunces.variable}`}>
       <body className="transition-colors duration-300 font-sans antialiased text-[var(--text-primary)] bg-[var(--bg-primary)]">
-        <Toaster position="top-right" toastOptions={{ className: 'dark-toast' }} />
-        <LayoutWrapper>
-          {children}
-        </LayoutWrapper>
+        <Providers>
+          <Toaster position="top-right" toastOptions={{ className: 'dark-toast' }} />
+          <LayoutWrapper>
+            {children}
+          </LayoutWrapper>
+        </Providers>
       </body>
     </html>
   )

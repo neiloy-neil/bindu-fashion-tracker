@@ -85,13 +85,15 @@ model DailyEntry {
 }
 
 model Category {
-  id        Int         @id @default(autoincrement())
-  name      String      @unique
-  type      String // "INCOME" or "EXPENSE"
-  isActive  Boolean     @default(true)
-  isDefault Boolean     @default(false) // Whether it's a default system category
-  createdAt DateTime    @default(now())
-  items     EntryItem[]
+  id             Int            @id @default(autoincrement())
+  name           String         @unique
+  type           String // "INCOME" or "EXPENSE"
+  isActive       Boolean        @default(true)
+  isDefault      Boolean        @default(false)
+  frequency      String?        // DAILY | WEEKLY | MONTHLY | AS_NEEDED — only relevant for EXPENSE type
+  createdAt      DateTime       @default(now())
+  items          EntryItem[]
+  expenseEntries ExpenseEntry[]
 }
 
 model EntryItem {
@@ -309,15 +311,6 @@ model Cheque {
   approvedBy User?   @relation("ChequeApprover", fields: [approvedById], references: [id])
 }
 
-model ExpenseCategory {
-  id        Int            @id @default(autoincrement())
-  name      String         @unique
-  frequency String
-  isActive  Boolean        @default(true)
-  createdAt DateTime       @default(now())
-  entries   ExpenseEntry[]
-}
-
 model ExpenseEntry {
   id            Int      @id @default(autoincrement())
   dailyEntryId  Int
@@ -327,8 +320,8 @@ model ExpenseEntry {
   attachmentUrl String?
   createdAt     DateTime @default(now())
 
-  dailyEntry DailyEntry      @relation(fields: [dailyEntryId], references: [id])
-  category   ExpenseCategory @relation(fields: [categoryId], references: [id])
+  dailyEntry DailyEntry @relation(fields: [dailyEntryId], references: [id])
+  category   Category   @relation(fields: [categoryId], references: [id])
 
   @@index([dailyEntryId])
   @@index([categoryId])

@@ -5,7 +5,7 @@ import toast from 'react-hot-toast'
 import { Plus, Edit2, Trash2 } from 'lucide-react'
 import { BrandSpinner } from '@/components/ui/BrandSpinner'
 
-type Tab = 'BRANCHES' | 'PARTIES' | 'ACCOUNTS' | 'EXPENSE_CATEGORIES' | 'EMPLOYEES'
+type Tab = 'BRANCHES' | 'PARTIES' | 'ACCOUNTS' | 'EMPLOYEES'
 
 export default function AdminSettings() {
   const [activeTab, setActiveTab] = useState<Tab>('BRANCHES')
@@ -37,9 +37,6 @@ export default function AdminSettings() {
         } else if (activeTab === 'ACCOUNTS') {
           const res = await fetch('/api/accounts?includeInactive=true')
           if (res.ok && !cancelled) setAccounts(await res.json())
-        } else if (activeTab === 'EXPENSE_CATEGORIES') {
-          const res = await fetch('/api/expense-categories?includeInactive=true')
-          if (res.ok && !cancelled) setCategories(await res.json())
         } else if (activeTab === 'EMPLOYEES') {
           const res = await fetch('/api/employees?includeInactive=true')
           if (res.ok && !cancelled) setEmployees(await res.json())
@@ -73,7 +70,6 @@ export default function AdminSettings() {
     let url = ''
     if (activeTab === 'PARTIES') url = `/api/parties/${id}`
     else if (activeTab === 'ACCOUNTS') url = `/api/accounts/${id}`
-    else if (activeTab === 'EXPENSE_CATEGORIES') url = `/api/expense-categories/${id}`
     else if (activeTab === 'EMPLOYEES') url = `/api/employees/${id}`
 
     try {
@@ -101,7 +97,6 @@ export default function AdminSettings() {
     if (activeTab === 'BRANCHES') url = '/api/branches'
     else if (activeTab === 'PARTIES') url = '/api/parties'
     else if (activeTab === 'ACCOUNTS') url = '/api/accounts'
-    else if (activeTab === 'EXPENSE_CATEGORIES') url = '/api/expense-categories'
     else if (activeTab === 'EMPLOYEES') url = '/api/employees'
 
     if (selectedItem) url += `/${selectedItem.id}`
@@ -125,7 +120,6 @@ export default function AdminSettings() {
     { id: 'BRANCHES', label: 'Branches Configuration' },
     { id: 'PARTIES', label: 'Parties' },
     { id: 'ACCOUNTS', label: 'Accounts' },
-    { id: 'EXPENSE_CATEGORIES', label: 'Expense Categories' },
     { id: 'EMPLOYEES', label: 'Employees' },
   ]
 
@@ -142,9 +136,6 @@ export default function AdminSettings() {
     } else if (activeTab === 'ACCOUNTS') {
       data = accounts
       columns = [{ key: 'name', label: 'Name' }, { key: 'type', label: 'Type' }, { key: 'status', label: 'Status' }]
-    } else if (activeTab === 'EXPENSE_CATEGORIES') {
-      data = categories
-      columns = [{ key: 'name', label: 'Name' }, { key: 'frequency', label: 'Frequency' }, { key: 'status', label: 'Status' }]
     } else if (activeTab === 'EMPLOYEES') {
       data = employees
       columns = [{ key: 'name', label: 'Name' }, { key: 'status', label: 'Status' }]
@@ -167,8 +158,6 @@ export default function AdminSettings() {
                 {activeTab === 'BRANCHES' && <td className="p-4 text-[var(--text-secondary)]">{item.code}</td>}
                 {activeTab === 'PARTIES' && <td className="p-4 text-[var(--text-secondary)]">৳{item.balance?.toFixed(2)}</td>}
                 {activeTab === 'ACCOUNTS' && <td className="p-4 text-[var(--text-secondary)]">{item.type}</td>}
-                {activeTab === 'EXPENSE_CATEGORIES' && <td className="p-4 text-[var(--text-secondary)] capitalize">{item.frequency.toLowerCase()}</td>}
-                
                 <td className="p-4">
                   <span className={`px-2 py-1 rounded text-xs font-bold ${item.isActive ? 'bg-[var(--success)]/20 text-[var(--success)]' : 'bg-[var(--danger)]/20 text-[var(--danger)]'}`}>
                     {item.isActive ? 'Active' : 'Inactive'}
@@ -220,16 +209,6 @@ export default function AdminSettings() {
               <option value="COMPANY">Company</option>
               <option value="ONLINE_DEPARTMENT">Online Department</option>
               <option value="OTHER">Other</option>
-            </select>
-          </div>
-        )}
-
-        {activeTab === 'EXPENSE_CATEGORIES' && (
-          <div>
-            <label className="text-sm text-[var(--text-secondary)] mb-1 block">Frequency</label>
-            <select name="frequency" defaultValue={selectedItem?.frequency || 'DAILY'} className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded p-2 text-white focus:outline-none focus:border-[var(--accent)]" required>
-              <option value="DAILY">Daily</option>
-              <option value="MONTHLY">Monthly</option>
             </select>
           </div>
         )}

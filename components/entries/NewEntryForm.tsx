@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useForm, useFieldArray, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod' // wait, the original used '@hookform/resolvers/zod'
 import { NewEntryFormValues, newEntryFormSchema } from '@/lib/schemas'
-import { Account, Branch, Category, Employee, ExpenseCategory, Party } from '@/lib/types'
+import { Account, Branch, Category, Employee, Party } from '@/lib/types'
 import { computeTotals, formatCurrency } from '@/lib/utils'
 import { dhakaDateString, NewEntryPayload } from '@/lib/new-entry'
 import toast from 'react-hot-toast'
@@ -32,7 +32,7 @@ interface Props {
     categories: Category[]
     accounts: Account[]
     parties: Party[]
-    expenseCategories: ExpenseCategory[]
+    expenseCategories: Category[]
     employees: Employee[]
   }
   userId: string

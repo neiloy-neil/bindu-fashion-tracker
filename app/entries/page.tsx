@@ -34,7 +34,7 @@ function Entries() {
   const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc'|'desc' } | null>(null)
   
   // Notice that editCell now uses categoryId since fields are dynamic
-  const [editCell, setEditCell] = useState<{ id: number; categoryId: number } | null>(null)
+  const [editCell, setEditCell] = useState<{ id: number; categoryId: number; cellType: 'income' | 'expense' } | null>(null)
   const [editValue, setEditValue] = useState('')
   const [saving, setSaving] = useState(false)
   const [activeChat, setActiveChat] = useState<{ id: number, branchName: string, date: string } | null>(null)
@@ -124,10 +124,10 @@ function Entries() {
     }
   }, [editCell])
 
-  const startEdit = (entry: DailyEntry, category: Category, value: number) => {
+  const startEdit = (entry: DailyEntry, category: Category, value: number, cellType: 'income' | 'expense' = 'income') => {
     const todayStr = new Date().toISOString().split('T')[0]
     const entryDateStr = new Date(entry.date).toISOString().split('T')[0]
-    
+
     if (userRole === 'BRANCH' && todayStr !== entryDateStr) {
       setRequestEditData({
         id: entry.id,
@@ -138,7 +138,7 @@ function Entries() {
         oldValue: value
       })
     } else {
-      setEditCell({ id: entry.id, categoryId: category.id })
+      setEditCell({ id: entry.id, categoryId: category.id, cellType })
       setEditValue(String(value || 0))
     }
   }
@@ -147,11 +147,13 @@ function Entries() {
     if (!editCell) return
     setSaving(true)
     try {
-      const itemsUpdate = [{ categoryId: editCell.categoryId, amount: parseFloat(editValue) || 0 }]
+      const payload = editCell.cellType === 'expense'
+        ? { expenseEntries: [{ categoryId: editCell.categoryId, amount: parseFloat(editValue) || 0 }] }
+        : { items: [{ categoryId: editCell.categoryId, amount: parseFloat(editValue) || 0 }] }
       const res = await fetch(`/api/entries/${editCell.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items: itemsUpdate }),
+        body: JSON.stringify(payload),
       })
       if (!res.ok) throw new Error()
       
@@ -194,8 +196,8 @@ function Entries() {
       row.totalAmount = totals.totalAmount
       
       expenseCategories.forEach(c => {
-        const item = (e.items || []).find((i: any) => i.categoryId === c.id)
-        row[c.name] = item?.amount || 0
+        const exp = ((e as any).expenseEntries || []).find((x: any) => x.categoryId === c.id)
+        row[c.name] = exp?.amount || 0
       })
       
       row.totalExpense = totals.totalExpense
@@ -243,8 +245,14 @@ function Entries() {
     
     if (sortConfig.key.startsWith('cat_')) {
       const catId = parseInt(sortConfig.key.replace('cat_', ''))
-      aVal = a.items?.find(i => i.categoryId === catId)?.amount || 0
-      bVal = b.items?.find(i => i.categoryId === catId)?.amount || 0
+      const cat = categories.find(c => c.id === catId)
+      if (cat?.type === 'EXPENSE') {
+        aVal = (a as any).expenseEntries?.find((e: any) => e.categoryId === catId)?.amount || 0
+        bVal = (b as any).expenseEntries?.find((e: any) => e.categoryId === catId)?.amount || 0
+      } else {
+        aVal = a.items?.find(i => i.categoryId === catId)?.amount || 0
+        bVal = b.items?.find(i => i.categoryId === catId)?.amount || 0
+      }
     }
     
     if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1
@@ -271,10 +279,11 @@ function Entries() {
     setSortConfig({ key, direction })
   }
 
-  const renderCell = (entry: DailyEntry, category: Category) => {
-    const item = entry.items?.find((i: any) => i.categoryId === category.id)
-    const value = item?.amount || 0
-    const isEditing = editCell?.id === entry.id && editCell?.categoryId === category.id
+  const renderCell = (entry: DailyEntry, category: Category, cellType: 'income' | 'expense' = 'income') => {
+    const value = cellType === 'expense'
+      ? (entry as any).expenseEntries?.find((e: any) => e.categoryId === category.id)?.amount || 0
+      : entry.items?.find((i: any) => i.categoryId === category.id)?.amount || 0
+    const isEditing = editCell?.id === entry.id && editCell?.categoryId === category.id && editCell?.cellType === cellType
 
     if (isEditing) {
       return (
@@ -293,7 +302,7 @@ function Entries() {
     return (
       <span
         className="editable-cell tabular-nums text-right font-mono hover:ring-2 hover:ring-[var(--accent)] hover:outline-none rounded px-1 transition-all"
-        onClick={() => startEdit(entry, category, value)}
+        onClick={() => startEdit(entry, category, value, cellType)}
         title="Click to edit"
         style={{ display: 'block', minWidth: 70, cursor: 'pointer' }}
       >
@@ -441,7 +450,7 @@ function Entries() {
                         </td>
                         {expenseCategories.map((c) => (
                           <td key={c.id} className="expense-cell">
-                            {renderCell(entry, c)}
+                            {renderCell(entry, c, 'expense')}
                           </td>
                         ))}
                         <td className="total-cell tabular-nums text-right font-mono" style={{ color: 'var(--danger-light)' }}>

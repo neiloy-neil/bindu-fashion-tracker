@@ -86,13 +86,12 @@ async function migrateData() {
         migratedCount++
       }
 
-      // Other Expenses
+      // Other Expenses — use unified Category model (type=EXPENSE)
       else if (item.category.type === 'EXPENSE') {
-        // Find or create an ExpenseCategory matching this old category
-        const expCat = await prisma.expenseCategory.upsert({
+        const expCat = await (prisma.category as any).upsert({
           where: { name: catName },
           update: {},
-          create: { name: catName, frequency: 'DAILY', isActive: true }
+          create: { name: catName, type: 'EXPENSE', frequency: 'DAILY', isActive: true, isDefault: false }
         })
 
         await prisma.expenseEntry.create({

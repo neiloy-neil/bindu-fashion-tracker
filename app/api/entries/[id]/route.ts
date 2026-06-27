@@ -15,7 +15,7 @@ export async function PUT(
   }
   const body = parsed.data
   // Add reason to body destructuring
-  const { date, branchId, items, reason, ...fields } = body as any
+  const { date, branchId, items, expenseEntries: expenseEntriesUpdate, reason, ...fields } = body as any
 
   const userRole = req.headers.get('x-user-role')
   if (userRole === 'AUDITOR' || userRole === 'AREA_MANAGER') {
@@ -57,33 +57,39 @@ export async function PUT(
       include: { branch: true },
     })
 
-    // Then upsert items if provided
+    // Upsert income items if provided
     if (items) {
       for (const item of items) {
         await prisma.entryItem.upsert({
-          where: {
-            entryId_categoryId: {
-              entryId: entryIdNum,
-              categoryId: item.categoryId
-            }
-          },
+          where: { entryId_categoryId: { entryId: entryIdNum, categoryId: item.categoryId } },
           update: { amount: item.amount, note: item.note || null, partyName: item.partyName || null, receiptUrls: item.receiptUrls || [] },
-          create: {
-            entryId: entryIdNum,
-            categoryId: item.categoryId,
-            amount: item.amount || 0,
-            note: item.note || null,
-            partyName: item.partyName || null,
-            receiptUrls: item.receiptUrls || []
-          }
+          create: { entryId: entryIdNum, categoryId: item.categoryId, amount: item.amount || 0, note: item.note || null, partyName: item.partyName || null, receiptUrls: item.receiptUrls || [] },
         })
+      }
+    }
+
+    // Upsert expense entries if provided
+    if (expenseEntriesUpdate) {
+      for (const exp of expenseEntriesUpdate) {
+        const existing = await prisma.expenseEntry.findFirst({
+          where: { dailyEntryId: entryIdNum, categoryId: exp.categoryId },
+        })
+        if (existing) {
+          await prisma.expenseEntry.update({ where: { id: existing.id }, data: { amount: exp.amount, note: exp.note || null } })
+        } else {
+          await prisma.expenseEntry.create({ data: { dailyEntryId: entryIdNum, categoryId: exp.categoryId, amount: exp.amount || 0, note: exp.note || null } })
+        }
       }
     }
 
     // Return the full updated entry
     const finalEntry = await prisma.dailyEntry.findUnique({
       where: { id: entryIdNum },
-      include: { branch: true, items: { include: { category: true } } }
+      include: {
+        branch: true,
+        items: { include: { category: true } },
+        expenseEntries: { include: { category: true } },
+      },
     })
 
     const userId = parseInt(req.headers.get('x-user-id') || '0')

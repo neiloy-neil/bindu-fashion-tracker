@@ -96,11 +96,16 @@ export async function POST(req: NextRequest) {
 
   try {
     const entry = await prisma.$transaction(async tx => {
-      const [categories, accounts] = await Promise.all([
-        tx.category.findMany({ where: { id: { in: body.items.map(item => item.categoryId) }, isActive: true } }),
+      const expenseCatIds = [...new Set(body.expenseEntries.map(e => e.categoryId))]
+      const [categories, expenseCategories, accounts] = await Promise.all([
+        tx.category.findMany({ where: { id: { in: body.items.map(item => item.categoryId) }, isActive: true, type: 'INCOME' } }),
+        expenseCatIds.length > 0
+          ? (tx.category as any).findMany({ where: { id: { in: expenseCatIds }, isActive: true, type: 'EXPENSE' } })
+          : Promise.resolve([]),
         tx.ledgerAccount.findMany({ where: { id: { in: body.transfers.map(transfer => transfer.accountId) } } }),
       ])
       if (categories.length !== body.items.length) throw new Error('One or more income categories are invalid')
+      if (expenseCategories.length !== expenseCatIds.length) throw new Error('One or more expense categories are invalid')
       if (new Set(accounts.map(account => account.id)).size !== new Set(body.transfers.map(transfer => transfer.accountId)).size) {
         throw new Error('One or more transfer accounts are invalid')
       }

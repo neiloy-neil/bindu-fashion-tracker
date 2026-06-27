@@ -11,6 +11,7 @@ export interface Category {
   type: 'INCOME' | 'EXPENSE'
   isActive: boolean
   isDefault: boolean
+  frequency?: string | null // DAILY | WEEKLY | MONTHLY | AS_NEEDED — only set for EXPENSE type
 }
 
 export interface EntryItem {
@@ -90,14 +91,6 @@ export interface Cheque {
   status: string
   approvedById?: number | null
   approvedAt?: string | Date | null
-  createdAt?: string | Date
-}
-
-export interface ExpenseCategory {
-  id: number
-  name: string
-  frequency: string
-  isActive: boolean
   createdAt?: string | Date
 }
 

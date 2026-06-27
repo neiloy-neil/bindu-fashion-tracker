@@ -301,43 +301,41 @@ function Entries() {
 
     return (
       <span
-        className="editable-cell tabular-nums text-right font-mono hover:ring-2 hover:ring-[var(--accent)] hover:outline-none rounded px-1 transition-all"
+        className="editable-cell block min-w-[70px] cursor-pointer tabular-nums text-right font-mono hover:ring-2 hover:ring-[var(--accent)] hover:outline-none rounded px-1 transition-all"
         onClick={() => startEdit(entry, category, value, cellType)}
         title="Click to edit"
-        style={{ display: 'block', minWidth: 70, cursor: 'pointer' }}
       >
-        {value > 0 ? formatCurrency(value) : <span style={{ color: 'var(--text-muted)', opacity: 0.4 }}>—</span>}
+        {value > 0 ? formatCurrency(value) : <span className="text-[var(--text-muted)] opacity-40">—</span>}
       </span>
     )
   }
 
   return (
     <>
-      <div className="page-header">
+  return (
+    <>
+      <div className="sticky top-0 z-20 flex flex-col lg:flex-row lg:items-center justify-between gap-4 px-6 py-4 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur supports-[backdrop-filter]:bg-[var(--surface)]/80">
         <div>
-          <h2 className="page-title">Sheet View</h2>
-          <p className="page-subtitle">{entries.length} entries • Click any cell to edit inline</p>
+          <h1 className="text-lg font-semibold text-[var(--text-primary)] leading-none">Sheet View</h1>
+          <p className="text-sm text-[var(--text-muted)] mt-1">{entries.length} entries • Click any cell to edit inline</p>
         </div>
-        <div className="filters-bar">
+        <div className="flex flex-wrap items-center gap-3">
           <input
             type="text"
-            className="form-input"
-            style={{ width: 150 }}
+            className="form-input w-[150px]"
             placeholder="Search entries..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
           <select
-            className="form-input form-select"
-            style={{ width: 130 }}
+            className="form-input form-select w-[130px]"
             value={month}
             onChange={(e) => setMonth(parseInt(e.target.value))}
           >
             {MONTHS.map((m, i) => <option key={i+1} value={i+1}>{m}</option>)}
           </select>
           <select
-            className="form-input form-select"
-            style={{ width: 95 }}
+            className="form-input form-select w-[95px]"
             value={year}
             onChange={(e) => setYear(parseInt(e.target.value))}
           >
@@ -347,7 +345,7 @@ function Entries() {
             <select
               value={branchFilter}
               onChange={(e) => setBranchFilter(e.target.value)}
-              className="bg-[var(--bg-card)] border border-[var(--border)] rounded-lg p-2 text-white focus:outline-none focus:border-[var(--accent)]"
+              className="bg-[var(--surface)] border border-[var(--border)] rounded-lg p-2 text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]"
             >
               <option value="">All Branches</option>
               {branches.map((b) => (
@@ -357,7 +355,7 @@ function Entries() {
               ))}
             </select>
           )}
-          <button className="btn btn-secondary btn-sm" onClick={() => { void exportToExcel() }}>
+          <button className="btn btn-secondary btn-sm flex items-center gap-2" onClick={() => { void exportToExcel() }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
               <polyline points="7 10 12 15 17 10" />
@@ -365,26 +363,26 @@ function Entries() {
             </svg>
             Export
           </button>
-          <Link href="/entries/new" className="btn btn-primary btn-sm">
+          <Link href="/entries/new" className="btn btn-primary btn-sm flex items-center gap-2">
             + New Entry
           </Link>
         </div>
       </div>
 
-      <div className="page-body flex-1 min-h-0 flex flex-col" style={{ padding: '16px 20px' }}>
+      <div className="flex-1 min-h-0 flex flex-col p-4 md:p-6 overflow-auto">
         {loading || categories.length === 0 ? (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '300px', gap: 12 }}>
+          <div className="flex items-center justify-center h-[300px] gap-3">
             <BrandSpinner />
-            <span style={{ color: 'var(--text-secondary)' }}>Loading register data...</span>
+            <span className="text-[var(--text-secondary)]">Loading register data...</span>
           </div>
         ) : entries.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '80px 0', color: 'var(--text-muted)' }}>
-            <div style={{ fontSize: 48, marginBottom: 16 }}>📝</div>
-            <h3 style={{ fontSize: 20, color: 'var(--text-primary)', marginBottom: 8, fontWeight: 600 }}>No register data submitted</h3>
-            <p style={{ margin: '0 0 24px', fontSize: 14 }}>There are no entries for {MONTHS[month-1]} {year} yet.<br />If the shop is open today, click &apos;+ New Entry&apos; to start the daily sheet.</p>
-            <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
-              <Link href="/entries/new" className="btn btn-primary" style={{ minWidth: 160 }}>+ New Entry</Link>
-              <Link href="/import" className="btn btn-secondary" style={{ minWidth: 160 }}>Import Excel</Link>
+          <div className="text-center py-20 text-[var(--text-muted)]">
+            <div className="text-5xl mb-4">📝</div>
+            <h3 className="text-xl text-[var(--text-primary)] mb-2 font-semibold">No register data submitted</h3>
+            <p className="mb-6 text-sm">There are no entries for {MONTHS[month-1]} {year} yet.<br />If the shop is open today, click &apos;+ New Entry&apos; to start the daily sheet.</p>
+            <div className="flex gap-3 justify-center">
+              <Link href="/entries/new" className="btn btn-primary min-w-[160px]">+ New Entry</Link>
+              <Link href="/import" className="btn btn-secondary min-w-[160px]">Import Excel</Link>
             </div>
           </div>
         ) : (
@@ -393,32 +391,32 @@ function Entries() {
               <thead>
                 {/* Group headers */}
                 <tr>
-                  <th className="col-sticky-0" rowSpan={2} style={{ textAlign: 'left', minWidth: 90 }}>Date</th>
-                  <th className="col-sticky-1" rowSpan={2} style={{ textAlign: 'left' }}>Branch</th>
+                  <th className="col-sticky-0 text-left min-w-[90px]" rowSpan={2}>Date</th>
+                  <th className="col-sticky-1 text-left" rowSpan={2}>Branch</th>
                   <th className="income-header" colSpan={incomeCategories.length}>Income</th>
-                  <th style={{ background: 'var(--bg-card)', color: 'var(--text-primary)', fontWeight: 700, padding: '8px 12px', fontSize: 10, textAlign: 'center' }} colSpan={2}>Summary</th>
+                  <th className="bg-[var(--surface)] text-[var(--text-primary)] font-bold py-2 px-3 text-[10px] text-center" colSpan={2}>Summary</th>
                   <th className="expense-header" colSpan={expenseCategories.length}>Expenses</th>
-                  <th style={{ background: 'var(--bg-card)', color: 'var(--text-primary)', fontWeight: 700, padding: '8px 12px', fontSize: 10, textAlign: 'center' }} colSpan={2}>Totals</th>
-                  <th className="col-sticky-right-3" rowSpan={2} style={{ textAlign: 'center', width: 60 }}>View</th>
-                  <th className="col-sticky-right-2" rowSpan={2} style={{ textAlign: 'center', width: 60 }}>EOD</th>
-                  <th className="col-sticky-right-1" rowSpan={2} style={{ textAlign: 'center', width: 60 }}>Chat</th>
+                  <th className="bg-[var(--surface)] text-[var(--text-primary)] font-bold py-2 px-3 text-[10px] text-center" colSpan={2}>Totals</th>
+                  <th className="col-sticky-right-3 text-center w-[60px]" rowSpan={2}>View</th>
+                  <th className="col-sticky-right-2 text-center w-[60px]" rowSpan={2}>EOD</th>
+                  <th className="col-sticky-right-1 text-center w-[60px]" rowSpan={2}>Chat</th>
                 </tr>
                 {/* Column headers */}
                 <tr>
                   {incomeCategories.map((c) => (
-                    <th key={c.id} style={{ minWidth: 90, background: 'rgba(16,185,129,0.06)', cursor: 'pointer' }} onClick={() => handleSort(`cat_${c.id}`)}>
+                    <th key={c.id} className="min-w-[90px] bg-emerald-500/5 cursor-pointer" onClick={() => handleSort(`cat_${c.id}`)}>
                       {c.name} {sortConfig?.key === `cat_${c.id}` ? (sortConfig.direction === 'asc' ? '▲' : '▼') : ''}
                     </th>
                   ))}
-                  <th style={{ minWidth: 90, color: 'var(--accent-light)' }}>Total Sale</th>
-                  <th style={{ minWidth: 90, color: 'var(--accent-light)' }}>Total Amt</th>
+                  <th className="min-w-[90px] text-[var(--info)]">Total Sale</th>
+                  <th className="min-w-[90px] text-[var(--info)]">Total Amt</th>
                   {expenseCategories.map((c) => (
-                    <th key={c.id} style={{ minWidth: 90, background: 'rgba(239,68,68,0.06)', cursor: 'pointer' }} onClick={() => handleSort(`cat_${c.id}`)}>
+                    <th key={c.id} className="min-w-[90px] bg-rose-500/5 cursor-pointer" onClick={() => handleSort(`cat_${c.id}`)}>
                       {c.name} {sortConfig?.key === `cat_${c.id}` ? (sortConfig.direction === 'asc' ? '▲' : '▼') : ''}
                     </th>
                   ))}
-                  <th style={{ minWidth: 90, color: 'var(--danger-light)' }}>Total Exp</th>
-                  <th style={{ minWidth: 90, color: 'var(--accent-light)' }}>Net Bal</th>
+                  <th className="min-w-[90px] text-[var(--danger-light)]">Total Exp</th>
+                  <th className="min-w-[90px] text-[var(--info)]">Net Bal</th>
                 </tr>
               </thead>
               <tbody>
@@ -431,10 +429,10 @@ function Entries() {
                         key={entry.id}
                         className={rowIdx === 0 ? 'first-of-date' : ''}
                       >
-                        <td className={`col-sticky-0 col-date`} style={{ background: 'var(--bg-secondary)' }}>
+                        <td className="col-sticky-0 col-date bg-[var(--surface-raised)]">
                           {rowIdx === 0 ? dayLabel : ''}
                         </td>
-                        <td className="col-sticky-1 col-meta" style={{ background: 'var(--bg-secondary)' }}>
+                        <td className="col-sticky-1 col-meta bg-[var(--surface-raised)]">
                           {entry.branch?.name}
                         </td>
                         {incomeCategories.map((c) => (
@@ -442,10 +440,10 @@ function Entries() {
                             {renderCell(entry, c)}
                           </td>
                         ))}
-                        <td className="total-cell tabular-nums text-right font-mono" style={{ color: 'var(--accent-light)' }}>
+                        <td className="total-cell tabular-nums text-right font-mono text-[var(--info)]">
                           {formatCurrency(totals.totalSale)}
                         </td>
-                        <td className="total-cell tabular-nums text-right font-mono" style={{ color: 'var(--accent-light)' }}>
+                        <td className="total-cell tabular-nums text-right font-mono text-[var(--info)]">
                           {formatCurrency(totals.totalAmount)}
                         </td>
                         {expenseCategories.map((c) => (
@@ -453,13 +451,13 @@ function Entries() {
                             {renderCell(entry, c, 'expense')}
                           </td>
                         ))}
-                        <td className="total-cell tabular-nums text-right font-mono" style={{ color: 'var(--danger-light)' }}>
+                        <td className="total-cell tabular-nums text-right font-mono text-[var(--danger-light)]">
                           {formatCurrency(totals.totalExpense)}
                         </td>
                         <td className={`tabular-nums text-right font-mono ${totals.netBalance >= 0 ? 'net-positive' : 'net-negative'}`}>
                           {formatCurrency(totals.netBalance)}
                         </td>
-                        <td className="col-sticky-right-3" style={{ textAlign: 'center', background: 'var(--bg-secondary)' }}>
+                        <td className="col-sticky-right-3 text-center bg-[var(--surface-raised)]">
                           <button 
                             onClick={() => setActiveViewEntry(entry)}
                             className="p-2 hover:bg-[var(--border)] rounded-full text-[var(--text-secondary)] hover:text-white transition-colors"
@@ -468,7 +466,7 @@ function Entries() {
                             <Eye size={18} />
                           </button>
                         </td>
-                        <td className="col-sticky-right-2" style={{ textAlign: 'center', background: 'var(--bg-secondary)' }}>
+                        <td className="col-sticky-right-2 text-center bg-[var(--surface-raised)]">
                           {(entry as any).eodChecklist ? (
                             <button 
                               onClick={() => setActiveChecklist((entry as any).eodChecklist)}
@@ -481,7 +479,7 @@ function Entries() {
                             <span className="text-[var(--text-secondary)] opacity-50">-</span>
                           )}
                         </td>
-                        <td className="col-sticky-right-1" style={{ textAlign: 'center', background: 'var(--bg-secondary)' }}>
+                        <td className="col-sticky-right-1 text-center bg-[var(--surface-raised)]">
                           <button 
                             onClick={() => setActiveChat({ id: entry.id, branchName: entry.branch?.name || 'Branch', date: entry.date })}
                             className="p-2 hover:bg-[var(--border)] rounded-full text-[var(--accent)] hover:text-[var(--accent)] opacity-80 hover:opacity-100 transition-colors"
@@ -502,8 +500,8 @@ function Entries() {
 
       {/* Toast */}
       {saving && (
-        <div style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 9999 }}>
-          <div className="toast toast-success" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div className="fixed bottom-6 right-6 z-[9999]">
+          <div className="toast toast-success flex items-center gap-2">
             <BrandSpinner size={16} />
             Saving…
           </div>
@@ -593,9 +591,9 @@ function Entries() {
 export default function EntriesPage() {
   return (
     <Suspense fallback={
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', gap: 12 }}>
+      <div className="flex items-center justify-center h-screen gap-3">
         <BrandSpinner />
-        <span style={{ color: 'var(--text-secondary)' }}>Loading Sheet…</span>
+        <span className="text-[var(--text-secondary)]">Loading Sheet…</span>
       </div>
     }>
       <Entries />

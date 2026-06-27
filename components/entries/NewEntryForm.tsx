@@ -279,16 +279,19 @@ export function NewEntryForm({ initialData, userId }: Props) {
   const selectClass = "form-input form-select h-10 w-full text-sm bg-card border-border"
 
   return (
-    <div className="page-body min-w-0">
-      <div className="p-4 sm:p-8 max-w-5xl mx-auto pb-32">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          📝 Daily Entry
-        </h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          Submit the end-of-day financial report for your branch.
-        </p>
+    <>
+      <div className="sticky top-0 z-10 flex items-center justify-between gap-4 px-6 py-4 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur supports-[backdrop-filter]:bg-[var(--surface)]/80">
+        <div>
+          <h1 className="text-lg font-semibold text-[var(--text-primary)] leading-none flex items-center gap-2">
+            📝 Daily Entry
+          </h1>
+          <p className="text-sm text-[var(--text-muted)] mt-1">
+            Submit the end-of-day financial report for your branch.
+          </p>
+        </div>
       </div>
+      <div className="flex-1 p-6 space-y-6 min-h-0 flex flex-col overflow-auto">
+        <div className="max-w-5xl mx-auto w-full pb-32">
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         
@@ -449,7 +452,8 @@ export function NewEntryForm({ initialData, userId }: Props) {
           onSubmitFinal={onSubmitFinal} 
         />
       )}
+        </div>
       </div>
-    </div>
+    </>
   )
 }

@@ -92,6 +92,35 @@ export default function DailyReportPage() {
 
   const exportAsPdf = async () => {
     if (!entryData) return
+
+  const exportAsImage = async (type: 'png' | 'jpeg') => {
+    if (!reportRef.current) return
+    const el = reportRef.current
+    
+    // add some padding or white background if needed
+    const oldBg = el.style.background
+    el.style.background = 'var(--bg-card)' // match dark theme
+    
+    try {
+      const dataUrl = type === 'png' 
+        ? await toPng(el, { quality: 1, backgroundColor: 'var(--bg-card)', pixelRatio: 2 })
+        : await toJpeg(el, { quality: 1, backgroundColor: 'var(--bg-card)', pixelRatio: 2 })
+      
+      const link = document.createElement('a')
+      const branchName = branches.find(b => b.id === parseInt(selectedBranchId))?.name || 'Branch'
+      link.download = `DailyReport_${branchName.replace(/\s+/g, '_')}_${selectedDate}.${type}`
+      link.href = dataUrl
+      link.click()
+    } catch (err) {
+      console.error('Export failed', err)
+      toast.error('Failed to export image')
+    } finally {
+      el.style.background = oldBg
+    }
+  }
+
+  const exportAsPdf = async () => {
+    if (!entryData) return
     const branchName = branches.find(b => b.id === parseInt(selectedBranchId))?.name || 'Branch'
     const { exportReportAsPdf } = await import('@/lib/exportPdf')
     await exportReportAsPdf(entryData, branchName, selectedDate)
@@ -100,14 +129,13 @@ export default function DailyReportPage() {
           
   return (
     <>
-      <div className="page-header">
+      <div className="sticky top-0 z-10 flex items-center justify-between gap-4 px-6 py-4 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur supports-[backdrop-filter]:bg-[var(--surface)]/80">
         <div>
-          <h2 className="page-title">Daily Report</h2>
-          <p className="page-subtitle">View and export branch daily summaries</p>
+          <h1 className="text-lg font-semibold text-[var(--text-primary)] leading-none">Daily Report</h1>
+          <p className="text-sm text-[var(--text-muted)] mt-1">View and export branch daily summaries</p>
         </div>
       </div>
-
-      <div className="page-body">
+      <div className="flex-1 p-6 space-y-6 min-h-0 flex flex-col overflow-auto">
         <div className="card mb-6">
           <div className="flex flex-col md:flex-row gap-4 items-end">
             <div className="flex-1">

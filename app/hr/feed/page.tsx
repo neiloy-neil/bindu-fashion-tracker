@@ -133,40 +133,41 @@ function FeedContent() {
   const totalPayable = months.reduce((s, m) => s + m.totalPayable, 0)
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 gap-3">
+    <>
+      <div className="sticky top-0 z-10 flex items-center justify-between gap-4 px-6 py-4 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur supports-[backdrop-filter]:bg-[var(--surface)]/80">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Monthly Salary Feed</h1>
-          <p className="text-gray-500 text-sm mt-0.5">
+          <h1 className="text-lg font-semibold text-[var(--text-primary)] leading-none">Monthly Salary Feed</h1>
+          <p className="text-sm text-[var(--text-muted)] mt-1">
             {processedCount}/12 months processed · {totalRecords} records · {formatTaka(Math.round(totalPayable))} total in {year}
           </p>
         </div>
         <div className="flex items-center gap-3">
           <Select value={String(year)} onValueChange={v => setYear(+(v ?? year))}>
-            <SelectTrigger className="w-28 bg-white"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
             <SelectContent>
               {yearOptions.map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
       </div>
+      <div className="flex-1 p-6 space-y-6 min-h-0 flex flex-col overflow-auto">
 
       <div className="grid grid-cols-4 gap-3 mb-4">
-        <div className="bg-white rounded-xl border border-gray-200 p-3 text-center">
-          <p className="text-xl font-bold text-gray-900">{processedCount}</p>
-          <p className="text-xs text-gray-500 mt-0.5">Done</p>
+        <div className="bg-[var(--surface)] rounded-xl border border-[var(--border)] p-3 text-center">
+          <p className="text-xl font-bold text-[var(--text-primary)]">{processedCount}</p>
+          <p className="text-xs text-[var(--text-muted)] mt-0.5">Done</p>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-3 text-center">
-          <p className="text-xl font-bold text-gray-900">{12 - processedCount}</p>
-          <p className="text-xs text-gray-500 mt-0.5">Remaining</p>
+        <div className="bg-[var(--surface)] rounded-xl border border-[var(--border)] p-3 text-center">
+          <p className="text-xl font-bold text-[var(--text-primary)]">{12 - processedCount}</p>
+          <p className="text-xs text-[var(--text-muted)] mt-0.5">Remaining</p>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-3 text-center">
-          <p className="text-xl font-bold text-gray-900">{totalEmployees}</p>
-          <p className="text-xs text-gray-500 mt-0.5">Staff</p>
+        <div className="bg-[var(--surface)] rounded-xl border border-[var(--border)] p-3 text-center">
+          <p className="text-xl font-bold text-[var(--text-primary)]">{totalEmployees}</p>
+          <p className="text-xs text-[var(--text-muted)] mt-0.5">Staff</p>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-3 text-center">
-          <p className="text-lg font-bold text-blue-700">{formatTaka(Math.round(totalPayable / 1000))}k</p>
-          <p className="text-xs text-gray-500 mt-0.5">Total</p>
+        <div className="bg-[var(--surface)] rounded-xl border border-[var(--border)] p-3 text-center">
+          <p className="text-lg font-bold text-[var(--info)]">{formatTaka(Math.round(totalPayable / 1000))}k</p>
+          <p className="text-xs text-[var(--text-muted)] mt-0.5">Total</p>
         </div>
       </div>
 
@@ -207,44 +208,44 @@ function FeedContent() {
             const isCurrentMonth = m.month === currentMonth && m.year === currentYear
             return (
               <Link key={m.month} href={`/hr/salary?month=${m.month}&year=${m.year}`} className="block group">
-                <div className={`bg-white rounded-xl border p-4 sm:p-5 flex items-center gap-3 sm:gap-4 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 ${
-                  isCurrentMonth ? 'border-brand-orange/40 ring-1 ring-brand-orange/10' : 'border-gray-200'
+                <div className={`bg-[var(--surface)] rounded-xl border p-4 sm:p-5 flex items-center gap-3 sm:gap-4 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 ${
+                  isCurrentMonth ? 'border-[var(--warning)]/40 ring-1 ring-[var(--warning)]/10' : 'border-[var(--border)]'
                 }`}>
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
-                    m.status === 'processed' ? 'bg-emerald-50' : m.status === 'manual' ? 'bg-blue-50' : 'bg-gray-100'
+                    m.status === 'processed' ? 'bg-[var(--success-subtle)]/20' : m.status === 'manual' ? 'bg-[var(--info-subtle)]/20' : 'bg-[var(--border)]/30'
                   }`}>
-                    {m.status === 'processed' ? <CheckCircle2 size={20} className="text-emerald-500" /> :
-                     m.status === 'manual' ? <Circle size={20} className="text-blue-400" /> :
-                     <Circle size={20} className="text-gray-300" />}
+                    {m.status === 'processed' ? <CheckCircle2 size={20} className="text-[var(--success)]" /> :
+                     m.status === 'manual' ? <Circle size={20} className="text-[var(--info)]" /> :
+                     <Circle size={20} className="text-[var(--text-muted)] opacity-50" />}
                   </div>
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-semibold text-gray-900 text-sm sm:text-base">{MONTHS[m.month - 1]}</p>
-                      {isCurrentMonth && <span className="text-[10px] font-bold uppercase tracking-wider bg-orange-100 text-brand-orange px-2 py-0.5 rounded-full">Current</span>}
-                      {m.status === 'processed' && <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full hidden sm:inline">Uploaded</span>}
-                      {m.status === 'manual' && <span className="text-[10px] font-bold uppercase tracking-wider bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full hidden sm:inline">Manual</span>}
+                      <p className="font-semibold text-[var(--text-primary)] text-sm sm:text-base">{MONTHS[m.month - 1]}</p>
+                      {isCurrentMonth && <span className="text-[10px] font-bold uppercase tracking-wider bg-[var(--warning-subtle)]/30 text-[var(--warning)] px-2 py-0.5 rounded-full">Current</span>}
+                      {m.status === 'processed' && <span className="text-[10px] font-bold uppercase tracking-wider bg-[var(--success-subtle)]/30 text-[var(--success)] px-2 py-0.5 rounded-full hidden sm:inline">Uploaded</span>}
+                      {m.status === 'manual' && <span className="text-[10px] font-bold uppercase tracking-wider bg-[var(--info-subtle)]/30 text-[var(--info)] px-2 py-0.5 rounded-full hidden sm:inline">Manual</span>}
                     </div>
-                    <div className="flex items-center gap-3 mt-0.5 text-xs text-gray-400 flex-wrap">
+                    <div className="flex items-center gap-3 mt-0.5 text-xs text-[var(--text-muted)] flex-wrap">
                       {m.records > 0 ? (
                         <>
                           <span className="flex items-center gap-1"><Users size={12} />{m.records} employee{m.records !== 1 ? 's' : ''}</span>
-                          {m.totalPayable > 0 && <span className="font-medium text-gray-500">{formatTaka(Math.round(m.totalPayable))}</span>}
+                          {m.totalPayable > 0 && <span className="font-medium text-[var(--text-secondary)]">{formatTaka(Math.round(m.totalPayable))}</span>}
                           {m.log && <span className="flex items-center gap-1"><FileSpreadsheet size={12} /><span className="truncate max-w-[140px]">{m.log.fileName || 'Imported'}</span></span>}
                           {m.log && <span className="flex items-center gap-1"><Clock size={12} />{formatRelative(m.log.uploadedAt)}</span>}
                         </>
                       ) : (
-                        <span className="text-gray-300">No records yet</span>
+                        <span className="text-[var(--text-muted)] opacity-50">No records yet</span>
                       )}
                     </div>
                   </div>
 
                   {m.records > 0 && (
                     <div className="shrink-0 hidden sm:flex flex-col items-end gap-1">
-                      <span className="text-xs font-semibold text-gray-500">{m.completion}%</span>
-                      <div className="w-16 bg-gray-100 rounded-full h-1.5 overflow-hidden">
+                      <span className="text-xs font-semibold text-[var(--text-muted)]">{m.completion}%</span>
+                      <div className="w-16 bg-[var(--border)]/30 rounded-full h-1.5 overflow-hidden">
                         <div
-                          className={`h-full rounded-full transition-all ${m.completion >= 100 ? 'bg-emerald-400' : m.completion >= 50 ? 'bg-blue-400' : 'bg-amber-400'}`}
+                          className={`h-full rounded-full transition-all ${m.completion >= 100 ? 'bg-[var(--success)]' : m.completion >= 50 ? 'bg-[var(--info)]' : 'bg-[var(--warning)]'}`}
                           style={{ width: `${Math.min(m.completion, 100)}%` }}
                         />
                       </div>
@@ -252,26 +253,27 @@ function FeedContent() {
                   )}
 
                   <div className="flex items-center gap-2 shrink-0">
-                    <ChevronRight size={16} className="text-gray-300 group-hover:text-gray-500 group-hover:translate-x-0.5 transition-all" />
+                    <ChevronRight size={16} className="text-[var(--text-muted)] opacity-50 group-hover:text-[var(--text-primary)] group-hover:translate-x-0.5 transition-all" />
                   </div>
                 </div>
               </Link>
             )
           })}
           {filtered.length === 0 && (
-            <div className="bg-white rounded-xl border border-gray-200 text-center py-16">
-              <p className="text-gray-400 text-sm">No months match the selected filter</p>
+            <div className="bg-[var(--surface)] rounded-xl border border-[var(--border)] text-center py-16">
+              <p className="text-[var(--text-muted)] text-sm">No months match the selected filter</p>
             </div>
           )}
         </div>
       )}
 
-      <div className="mt-6 flex flex-wrap items-center gap-4 text-xs text-gray-400 px-1">
-        <span className="flex items-center gap-1.5"><CheckCircle2 size={14} className="text-emerald-500" /> Uploaded via Excel</span>
-        <span className="flex items-center gap-1.5"><Circle size={14} className="text-blue-400" /> Manually entered</span>
-        <span className="flex items-center gap-1.5"><Circle size={14} className="text-gray-300" /> Not processed</span>
+      <div className="mt-6 flex flex-wrap items-center gap-4 text-xs text-[var(--text-muted)] px-1">
+        <span className="flex items-center gap-1.5"><CheckCircle2 size={14} className="text-[var(--success)]" /> Uploaded via Excel</span>
+        <span className="flex items-center gap-1.5"><Circle size={14} className="text-[var(--info)]" /> Manually entered</span>
+        <span className="flex items-center gap-1.5"><Circle size={14} className="text-[var(--text-muted)] opacity-50" /> Not processed</span>
       </div>
     </div>
+    </>
   )
 }
 

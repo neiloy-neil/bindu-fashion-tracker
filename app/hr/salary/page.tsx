@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { SearchFilter, type SortOption } from '@/components/shared/SearchFilter'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 const ATTENDANCE_BONUS_AMOUNT = 700
@@ -319,76 +320,74 @@ function SalaryContent() {
   const yearOptions = [currentYear - 1, currentYear, currentYear + 1]
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-full mx-auto">
-      <div className="flex flex-col gap-3 mb-4 sm:mb-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2">
-              Salary Processing
-              {isLocked && <Lock size={18} className="text-gray-400" />}
-            </h1>
-            <p className="text-gray-500 text-sm mt-0.5">Input monthly data for each employee</p>
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <Select value={String(month)} onValueChange={v => setMonth(+(v ?? month))}>
-              <SelectTrigger className="w-36 bg-white border-gray-300 text-gray-900"><SelectValue /></SelectTrigger>
-              <SelectContent>{MONTHS.map((m, i) => <SelectItem key={i} value={String(i + 1)}>{m}</SelectItem>)}</SelectContent>
-            </Select>
-            <Select value={String(year)} onValueChange={v => setYear(+(v ?? year))}>
-              <SelectTrigger className="w-24 bg-white border-gray-300 text-gray-900"><SelectValue /></SelectTrigger>
-              <SelectContent>{yearOptions.map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}</SelectContent>
-            </Select>
-          </div>
+    <>
+      <div className="sticky top-0 z-10 flex items-center justify-between gap-4 px-6 py-4 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur">
+        <div>
+          <h1 className="text-lg font-semibold text-[var(--text-primary)] leading-none flex items-center gap-2">
+            Salary Processing {isLocked && <Lock size={16} className="text-[var(--text-muted)]" />}
+          </h1>
+          <p className="text-sm text-[var(--text-muted)] mt-1">Input monthly data for each employee</p>
         </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Select value={String(month)} onValueChange={v => setMonth(+(v ?? month))}>
+            <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
+            <SelectContent>{MONTHS.map((m, i) => <SelectItem key={i} value={String(i + 1)}>{m}</SelectItem>)}</SelectContent>
+          </Select>
+          <Select value={String(year)} onValueChange={v => setYear(+(v ?? year))}>
+            <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
+            <SelectContent>{yearOptions.map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}</SelectContent>
+          </Select>
+        </div>
+      </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <Button onClick={syncTrackerAdvances} disabled={syncing || isLocked} variant="outline" size="sm" className="gap-2 bg-white border-brand-orange text-brand-orange hover:bg-orange-50">
+      <div className="flex-1 p-6 space-y-6 min-h-0">
+        <div className="flex flex-wrap items-center gap-2 p-4 border-b border-[var(--border)] bg-[var(--surface)] rounded-xl">
+          <Button onClick={syncTrackerAdvances} disabled={syncing || isLocked} variant="outline" size="sm" className="gap-2 text-[var(--brand-orange)] border-[var(--brand-orange)] hover:bg-[var(--warning-subtle)]">
             <RefreshCw size={14} className={syncing ? "animate-spin" : ""} /> Sync Advances
           </Button>
 
-          <div className="w-px h-6 bg-gray-200 mx-1" />
+          <div className="w-px h-6 bg-[var(--border)] mx-1" />
 
-          <Button onClick={saveAll} disabled={saving || dirtyCount === 0 || isLocked} size="sm" className="gap-2 relative bg-gray-900 text-white hover:bg-gray-800 disabled:bg-gray-200 disabled:text-gray-500">
+          <Button onClick={saveAll} disabled={saving || dirtyCount === 0 || isLocked} size="sm" className="gap-2 relative">
             <Save size={14} />{saving ? 'Saving…' : 'Save All'}
             {dirtyCount > 0 && !saving && (
-              <span className="absolute -top-1.5 -right-1.5 bg-amber-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center leading-none">
+              <span className="absolute -top-1.5 -right-1.5 bg-[var(--danger)] text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center leading-none">
                 {dirtyCount > 99 ? '99+' : dirtyCount}
               </span>
             )}
           </Button>
-          <Button onClick={lockMonth} disabled={isLocked} variant="outline" size="sm" className="gap-1.5 bg-white border-gray-300 text-gray-900 hover:bg-gray-50">
+          <Button onClick={lockMonth} disabled={isLocked} variant="outline" size="sm" className="gap-1.5">
             <Lock size={14} /> Lock Month
           </Button>
           {isAdmin && (
-            <Button onClick={() => setConfirmClearMonth(true)} disabled={isLocked || !rows.some(r => r.record.id)} variant="outline" size="sm" className="gap-1.5 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700">
+            <Button onClick={() => setConfirmClearMonth(true)} disabled={isLocked || !rows.some(r => r.record.id)} variant="outline" size="sm" className="gap-1.5 text-[var(--danger)] border-[var(--danger-subtle)] hover:bg-[var(--danger-subtle)]">
               <Trash2 size={14} /> Clear Month
             </Button>
           )}
         </div>
-      </div>
 
       {isLocked && (
-        <div className="mb-3 bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 flex items-center gap-3 text-sm">
-          <Lock size={15} className="text-gray-500 shrink-0" />
-          <span className="text-gray-800 font-medium">This month is locked and cannot be edited.</span>
+        <div className="mb-3 bg-[var(--surface-raised)] border border-[var(--border)] rounded-lg px-4 py-2.5 flex items-center gap-3 text-sm">
+          <Lock size={15} className="text-[var(--text-muted)] shrink-0" />
+          <span className="text-[var(--text-primary)] font-medium">This month is locked and cannot be edited.</span>
         </div>
       )}
 
       {confirmClearMonth && (
-        <div className="mb-3 bg-red-50 border border-red-200 rounded-lg px-4 py-3 flex items-center gap-3 text-sm flex-wrap">
-          <Trash2 size={15} className="text-red-500 shrink-0" />
-          <span className="text-red-800 font-medium">This will delete all {rows.filter(r => r.record.id).length} records for {MONTHS[month - 1]} {year}. Confirm?</span>
+        <div className="mb-3 bg-[var(--danger-subtle)] border border-[var(--danger-subtle)] rounded-lg px-4 py-3 flex items-center gap-3 text-sm flex-wrap">
+          <Trash2 size={15} className="text-[var(--danger)] shrink-0" />
+          <span className="text-[var(--danger)] font-medium">This will delete all {rows.filter(r => r.record.id).length} records for {MONTHS[month - 1]} {year}. Confirm?</span>
           <div className="ml-auto flex items-center gap-2">
-            <Button size="sm" variant="outline" onClick={() => setConfirmClearMonth(false)} className="h-7 text-xs bg-white text-gray-700">Cancel</Button>
+            <Button size="sm" variant="outline" onClick={() => setConfirmClearMonth(false)} className="h-7 text-xs">Cancel</Button>
             <Button size="sm" variant="destructive" onClick={clearMonth} disabled={saving} className="h-7 text-xs">Yes, Clear</Button>
           </div>
         </div>
       )}
 
       {dirtyCount > 0 && (
-        <div className="mb-3 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2.5 flex items-center gap-3 text-sm">
-          <AlertCircle size={15} className="text-amber-500 shrink-0" />
-          <span className="text-amber-800 font-medium">{dirtyCount} unsaved change{dirtyCount !== 1 ? 's' : ''}</span>
+        <div className="mb-3 bg-[var(--warning-subtle)] border border-[var(--warning-subtle)] rounded-lg px-4 py-2.5 flex items-center gap-3 text-sm">
+          <AlertCircle size={15} className="text-[var(--warning)] shrink-0" />
+          <span className="text-[var(--warning)] font-medium">{dirtyCount} unsaved change{dirtyCount !== 1 ? 's' : ''}</span>
           <Button size="sm" variant="outline" onClick={saveAll} disabled={saving} className="ml-auto h-7 text-xs gap-1">
             <Save size={12} />Save Now
           </Button>
@@ -413,105 +412,112 @@ function SalaryContent() {
       />
 
       {pageLoading ? (
-        <div className="mt-4 p-8 text-center text-gray-500">Loading...</div>
+        <div className="flex items-center justify-center h-64 gap-3">
+          <div className="w-5 h-5 rounded-full border-2 border-[var(--border-strong)] border-t-[var(--accent)] animate-spin" />
+          <span className="text-sm text-[var(--text-muted)]">Loading…</span>
+        </div>
       ) : (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden mt-4 flex-1 min-h-0 flex flex-col">
-          <div className="overflow-auto flex-1 min-h-0">
-            <table className="w-full text-sm border-collapse">
-              <thead className="sticky top-0 z-10">
-                <tr className="bg-gray-50/95 backdrop-blur border-b-2 border-gray-200 text-xs uppercase tracking-wide">
-                  <th className="text-left px-3 py-2.5 font-semibold text-gray-500">Employee</th>
-                  <th className="text-left px-3 py-2.5 font-semibold text-gray-500">Branch</th>
-                  <th className="text-right px-3 py-2.5 font-semibold text-gray-500">Basic</th>
-                  <th className="text-center px-2 py-2.5 font-semibold text-gray-500 w-24" title="Synced from tracker automatically">
-                    Branch Adv<br /><span className="normal-case font-normal text-gray-400 text-[10px]">(৳)</span>
-                  </th>
-                  <th className="text-center px-2 py-2.5 font-semibold text-gray-500 w-24">
-                    HR Adv<br /><span className="normal-case font-normal text-gray-400 text-[10px]">(৳)</span>
-                  </th>
-                  <th className="text-center px-2 py-2.5 font-semibold text-gray-500 w-24">
-                    Leave<br /><span className="normal-case font-normal text-gray-400 text-[10px]">(days)</span>
-                  </th>
-                  <th className="text-center px-2 py-2.5 font-semibold text-gray-500 w-20">
-                    Late<br /><span className="normal-case font-normal text-gray-400 text-[10px]">(days)</span>
-                  </th>
-                  <th className="text-center px-2 py-2.5 font-semibold text-gray-500 w-20">
-                    OT<br /><span className="normal-case font-normal text-gray-400 text-[10px]">(days)</span>
-                  </th>
-                  <th className="text-center px-2 py-2.5 font-semibold text-gray-500 w-24">
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] overflow-hidden">
+          <div className="px-5 py-4 border-b border-[var(--border)]">
+            <h3 className="text-sm font-semibold text-[var(--text-primary)]">
+              Salary Records
+            </h3>
+          </div>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="border-[var(--border)] hover:bg-transparent">
+                  <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide">Employee</TableHead>
+                  <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide">Branch</TableHead>
+                  <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-right">Basic</TableHead>
+                  <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-center w-24" title="Synced from tracker automatically">
+                    Branch Adv<br /><span className="normal-case font-normal text-[var(--text-muted)] text-[10px]">(৳)</span>
+                  </TableHead>
+                  <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-center w-24">
+                    HR Adv<br /><span className="normal-case font-normal text-[var(--text-muted)] text-[10px]">(৳)</span>
+                  </TableHead>
+                  <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-center w-24">
+                    Leave<br /><span className="normal-case font-normal text-[var(--text-muted)] text-[10px]">(days)</span>
+                  </TableHead>
+                  <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-center w-20">
+                    Late<br /><span className="normal-case font-normal text-[var(--text-muted)] text-[10px]">(days)</span>
+                  </TableHead>
+                  <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-center w-20">
+                    OT<br /><span className="normal-case font-normal text-[var(--text-muted)] text-[10px]">(days)</span>
+                  </TableHead>
+                  <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-center w-24">
                     <div className="flex flex-col items-center gap-0.5">
                       <div className="flex items-center gap-1">
                         <Checkbox checked={allChecked} disabled={isLocked} data-state={!allChecked && someChecked ? 'indeterminate' : undefined} onCheckedChange={toggleAllBonus} className="shrink-0" />
                         <span>Att.</span>
                       </div>
-                      <span className="normal-case font-normal text-gray-400 text-[10px]">Bonus</span>
+                      <span className="normal-case font-normal text-[var(--text-muted)] text-[10px]">Bonus</span>
                     </div>
-                  </th>
-                  <th className="text-center px-2 py-2.5 font-semibold text-gray-500 w-24">
-                    Conv.<br /><span className="normal-case font-normal text-gray-400 text-[10px]">(৳)</span>
-                  </th>
-                  <th className="text-left px-3 py-2.5 font-semibold text-gray-500" style={{ minWidth: 160 }}>Notes</th>
-                  <th className="text-right px-3 py-2.5 font-semibold text-gray-700 bg-blue-50/80">Net Payable</th>
-                  <th className="w-10"></th>
-                </tr>
-              </thead>
+                  </TableHead>
+                  <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-center w-24">
+                    Conv.<br /><span className="normal-case font-normal text-[var(--text-muted)] text-[10px]">(৳)</span>
+                  </TableHead>
+                  <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide min-w-[160px]">Notes</TableHead>
+                  <TableHead className="text-[var(--text-primary)] text-xs font-semibold uppercase tracking-wide text-right bg-[var(--surface-raised)]">Net Payable</TableHead>
+                  <TableHead className="w-10"></TableHead>
+                </TableRow>
+              </TableHeader>
 
-              <tbody className="divide-y divide-gray-100">
+              <TableBody>
                 {displayed.map((row) => {
                   const rec = row.record as SalaryRecord
                   const calc = calcSalary(row.employee, rec)
                   const bonusChecked = (rec.attendanceBonus ?? 0) === ATTENDANCE_BONUS_AMOUNT
                   return (
-                    <tr key={row.employee.id} className={`hover:bg-gray-50/60 transition-colors ${row.dirty ? 'bg-amber-50/30' : ''}`}>
-                      <td className="px-3 py-2">
-                        <p className="font-medium text-gray-900 text-sm leading-tight">{row.employee.name}</p>
-                        <p className="text-xs text-gray-400 mt-0.5 leading-tight">{row.employee.employeeId}</p>
-                      </td>
-                      <td className="px-3 py-2 text-gray-500 text-xs">{row.employee.branch?.name}</td>
-                      <td className="px-3 py-2 text-right text-gray-700 text-sm whitespace-nowrap font-medium">{formatTaka(row.employee.basicSalary)}</td>
+                    <TableRow key={row.employee.id} className={`border-[var(--border)] hover:bg-[var(--surface-raised)] transition-colors ${row.dirty ? 'bg-[var(--warning-subtle)]' : ''}`}>
+                      <TableCell>
+                        <p className="font-medium text-[var(--text-primary)] text-sm leading-tight">{row.employee.name}</p>
+                        <p className="text-xs text-[var(--text-muted)] mt-0.5 leading-tight">{row.employee.employeeId}</p>
+                      </TableCell>
+                      <TableCell className="text-[var(--text-secondary)] text-xs">{row.employee.branch?.name}</TableCell>
+                      <TableCell className="text-right text-[var(--text-secondary)] text-sm whitespace-nowrap font-medium tabular-nums">{formatTaka(row.employee.basicSalary)}</TableCell>
                       
-                      <td 
-                        className="px-2 py-2 text-center text-gray-500 font-medium cursor-help"
+                      <TableCell 
+                        className="text-center text-[var(--text-secondary)] font-medium cursor-help tabular-nums"
                         title={((rec as any).advances || []).map((a: any) => `Given by ${a.user} on ${new Date(a.date).toLocaleDateString()}`).join('\n') || undefined}
                       >
                         {formatTaka(rec.trackerAdvanceTotal ?? 0)}
-                      </td>
+                      </TableCell>
 
-                      <td className="px-2 py-2">
-                        <Input disabled={isLocked} type="number" min="0" value={rec.hrAdvanceDeducted ?? 0} onChange={e => update(row.employee.id, 'hrAdvanceDeducted', +e.target.value)} className="text-right h-7 text-xs w-full min-w-[60px] border-gray-300 bg-white text-gray-900 focus:border-blue-500" />
-                      </td>
-                      <td className="px-2 py-2">
-                        <Input disabled={isLocked} type="number" min="0" step="0.5" value={rec.leaveDaysTaken ?? 0} onChange={e => update(row.employee.id, 'leaveDaysTaken', +e.target.value)} className="text-right h-7 text-xs w-full min-w-[60px] border-gray-300 bg-white text-gray-900 focus:border-blue-500" />
-                      </td>
-                      <td className="px-2 py-2">
-                        <Input disabled={isLocked} type="number" min="0" value={rec.lateDays ?? 0} onChange={e => update(row.employee.id, 'lateDays', +e.target.value)} className="text-right h-7 text-xs w-full min-w-[60px] border-gray-300 bg-white text-gray-900 focus:border-blue-500" />
-                      </td>
-                      <td className="px-2 py-2">
-                        <Input disabled={isLocked} type="number" min="0" step="0.5" value={rec.otDays ?? 0} onChange={e => update(row.employee.id, 'otDays', +e.target.value)} className="text-right h-7 text-xs w-full min-w-[60px] border-gray-300 bg-white text-gray-900 focus:border-blue-500" />
-                      </td>
-                      <td className="px-2 py-2 text-center">
-                        <Checkbox disabled={isLocked} checked={bonusChecked} onCheckedChange={checked => update(row.employee.id, 'attendanceBonus', checked ? ATTENDANCE_BONUS_AMOUNT : 0)} className="border-gray-400" />
-                      </td>
-                      <td className="px-2 py-2">
-                        <Input disabled={isLocked} type="number" min="0" value={rec.conveyanceOverride ?? row.employee.conveyance} onChange={e => update(row.employee.id, 'conveyanceOverride', +e.target.value)} className="text-right h-7 text-xs w-full min-w-[60px] border-gray-300 bg-white text-gray-900 focus:border-blue-500" />
-                      </td>
-                      <td className="px-3 py-2 align-top" style={{ minWidth: 160 }}>
-                        <textarea
+                      <TableCell>
+                        <Input disabled={isLocked} type="number" min="0" value={rec.hrAdvanceDeducted ?? 0} onChange={e => update(row.employee.id, 'hrAdvanceDeducted', +e.target.value)} className="text-right h-7 text-xs w-full min-w-[60px]" />
+                      </TableCell>
+                      <TableCell>
+                        <Input disabled={isLocked} type="number" min="0" step="0.5" value={rec.leaveDaysTaken ?? 0} onChange={e => update(row.employee.id, 'leaveDaysTaken', +e.target.value)} className="text-right h-7 text-xs w-full min-w-[60px]" />
+                      </TableCell>
+                      <TableCell>
+                        <Input disabled={isLocked} type="number" min="0" value={rec.lateDays ?? 0} onChange={e => update(row.employee.id, 'lateDays', +e.target.value)} className="text-right h-7 text-xs w-full min-w-[60px]" />
+                      </TableCell>
+                      <TableCell>
+                        <Input disabled={isLocked} type="number" min="0" step="0.5" value={rec.otDays ?? 0} onChange={e => update(row.employee.id, 'otDays', +e.target.value)} className="text-right h-7 text-xs w-full min-w-[60px]" />
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Checkbox disabled={isLocked} checked={bonusChecked} onCheckedChange={checked => update(row.employee.id, 'attendanceBonus', checked ? ATTENDANCE_BONUS_AMOUNT : 0)} />
+                      </TableCell>
+                      <TableCell>
+                        <Input disabled={isLocked} type="number" min="0" value={rec.conveyanceOverride ?? row.employee.conveyance} onChange={e => update(row.employee.id, 'conveyanceOverride', +e.target.value)} className="text-right h-7 text-xs w-full min-w-[60px]" />
+                      </TableCell>
+                      <TableCell className="align-top min-w-[160px]">
+                        <Input
                           disabled={isLocked}
                           value={rec.notes ?? ''}
                           onChange={e => update(row.employee.id, 'notes', e.target.value)}
                           placeholder="Note..."
-                          rows={1}
-                          className="w-full text-xs px-2 py-1.5 border border-gray-300 rounded-md bg-white text-gray-900 placeholder:text-gray-400 resize-y focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50"
+                          className="w-full text-xs h-7"
                         />
-                      </td>
-                      <td className="px-3 py-2 text-right font-semibold text-blue-700 bg-blue-50/40 whitespace-nowrap text-sm">
+                      </TableCell>
+                      <TableCell className="text-right font-semibold text-[var(--info)] bg-[var(--surface-raised)] whitespace-nowrap text-sm tabular-nums">
                         {formatTaka(calc.netPayable)}
-                      </td>
-                      <td className="px-2 py-2 text-right">
+                      </TableCell>
+                      <TableCell className="text-right">
                         {confirmDeleteId === rec.id && rec.id ? (
                           <div className="flex items-center justify-end gap-1">
-                            <span className="text-xs text-red-600 font-medium mr-1">Delete?</span>
+                            <span className="text-xs text-[var(--danger)] font-medium mr-1">Delete?</span>
                             <Button size="sm" variant="destructive" className="h-6 px-2 text-[10px]" onClick={() => deleteRecord(row)}>Yes</Button>
                             <Button size="sm" variant="outline" className="h-6 px-2 text-[10px]" onClick={() => setConfirmDeleteId(null)}>No</Button>
                           </div>
@@ -519,7 +525,7 @@ function SalaryContent() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-7 w-7 text-gray-400 hover:text-red-600 hover:bg-red-50"
+                            className="h-7 w-7 text-[var(--text-muted)] hover:text-[var(--danger)] hover:bg-[var(--danger-subtle)]"
                             disabled={isLocked}
                             onClick={() => rec.id ? setConfirmDeleteId(rec.id) : deleteRecord(row)}
                             title="Delete record"
@@ -527,43 +533,51 @@ function SalaryContent() {
                             <Trash2 size={14} />
                           </Button>
                         )}
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   )
                 })}
                 {displayed.length === 0 && (
-                  <tr>
-                    <td colSpan={12} className="text-center py-16">
-                      <Users size={32} className="mx-auto text-gray-300 mb-2" />
-                      <p className="text-gray-400 text-sm">No employees found</p>
-                    </td>
-                  </tr>
+                  <TableRow>
+                    <TableCell colSpan={13} className="text-center py-16">
+                      <div className="flex flex-col items-center justify-center h-64 gap-3">
+                        <div className="w-12 h-12 rounded-full bg-[var(--surface-raised)] flex items-center justify-center">
+                          <Users className="w-5 h-5 text-[var(--text-muted)]" />
+                        </div>
+                        <p className="text-sm font-medium text-[var(--text-muted)]">
+                          No employees found
+                        </p>
+                      </div>
+                    </TableCell>
+                  </TableRow>
                 )}
-              </tbody>
+              </TableBody>
 
               {displayed.length > 0 && (
-                <tfoot>
-                  <tr className="bg-gray-50/80 border-t-2 border-gray-200 text-sm font-medium">
-                    <td className="px-3 py-2.5 font-semibold text-gray-700" colSpan={3}>
+                <TableBody>
+                  <TableRow className="bg-[var(--surface-raised)] border-t-[var(--border-strong)] text-sm font-medium hover:bg-[var(--surface-raised)]">
+                    <TableCell className="font-semibold text-[var(--text-primary)]" colSpan={3}>
                       Total ({totals.count} emp.)
-                    </td>
-                    <td className="px-2 py-2.5 text-center text-red-600"></td>
-                    <td className="px-2 py-2.5 text-center text-red-600">{formatTaka(Math.round(totals.advance))}</td>
-                    <td className="px-2 py-2.5 text-center text-red-600">{formatTaka(Math.round(totals.leave))}</td>
-                    <td className="px-2 py-2.5 text-center text-red-600">{formatTaka(Math.round(totals.late))}</td>
-                    <td className="px-2 py-2.5 text-center text-green-600">{formatTaka(Math.round(totals.ot))}</td>
-                    <td className="px-2 py-2.5 text-center text-green-600">{formatTaka(Math.round(totals.bonus))}</td>
-                    <td className="px-2 py-2.5 text-center text-green-600">{formatTaka(Math.round(totals.conveyance))}</td>
-                    <td className="px-3 py-2.5" />
-                    <td className="px-3 py-2.5 text-right font-bold text-blue-800 bg-blue-50 text-base">{formatTaka(Math.round(totals.net))}</td>
-                  </tr>
-                </tfoot>
+                    </TableCell>
+                    <TableCell className="text-center text-[var(--danger)] tabular-nums"></TableCell>
+                    <TableCell className="text-center text-[var(--danger)] tabular-nums">{formatTaka(Math.round(totals.advance))}</TableCell>
+                    <TableCell className="text-center text-[var(--danger)] tabular-nums">{formatTaka(Math.round(totals.leave))}</TableCell>
+                    <TableCell className="text-center text-[var(--danger)] tabular-nums">{formatTaka(Math.round(totals.late))}</TableCell>
+                    <TableCell className="text-center text-[var(--success)] tabular-nums">{formatTaka(Math.round(totals.ot))}</TableCell>
+                    <TableCell className="text-center text-[var(--success)] tabular-nums">{formatTaka(Math.round(totals.bonus))}</TableCell>
+                    <TableCell className="text-center text-[var(--success)] tabular-nums">{formatTaka(Math.round(totals.conveyance))}</TableCell>
+                    <TableCell />
+                    <TableCell className="text-right font-bold text-[var(--info)] text-base tabular-nums">{formatTaka(Math.round(totals.net))}</TableCell>
+                    <TableCell />
+                  </TableRow>
+                </TableBody>
               )}
-            </table>
+            </Table>
           </div>
         </div>
       )}
     </div>
+    </>
   )
 }
 

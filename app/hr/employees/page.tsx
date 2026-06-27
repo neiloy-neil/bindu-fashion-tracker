@@ -6,6 +6,7 @@ import { SearchFilter } from '@/components/shared/SearchFilter'
 import { EmployeeModal } from '@/components/hr/EmployeeModal'
 import { EmployeeProfileModal } from '@/components/hr/EmployeeProfileModal'
 import { Button } from '@/components/ui/button'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { Plus, User, Pencil, Trash2, Upload, Download } from 'lucide-react'
 import { downloadEmployeeTemplate, parseEmployeeSheet } from '@/lib/hr/excel'
 
@@ -178,10 +179,13 @@ export default function EmployeesPage() {
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold font-display text-[var(--brand-blue)]">Employees</h1>
-        <div className="flex gap-2">
+    <>
+      <div className="sticky top-0 z-10 flex items-center justify-between gap-4 px-6 py-4 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur">
+        <div>
+          <h1 className="text-lg font-semibold text-[var(--text-primary)] leading-none">Employees</h1>
+          <p className="text-sm text-[var(--text-muted)] mt-1">{filteredEmployees.length} total employees</p>
+        </div>
+        <div className="flex items-center gap-2">
           <input type="file" ref={fileInputRef} className="hidden" accept=".xlsx" onChange={handleImport} />
           <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
             <Upload size={14} className="mr-2" /> Import
@@ -189,11 +193,13 @@ export default function EmployeesPage() {
           <Button variant="outline" onClick={handleExport}>
             <Download size={14} className="mr-2" /> Export
           </Button>
-          <Button onClick={() => { setEditingEmployee(null); setIsModalOpen(true) }} className="bg-[var(--brand-orange)] hover:bg-orange-600">
+          <Button onClick={() => { setEditingEmployee(null); setIsModalOpen(true) }}>
             <Plus size={14} className="mr-2" /> Add Employee
           </Button>
         </div>
       </div>
+
+      <div className="flex-1 p-6 space-y-6 min-h-0">
 
       <SearchFilter 
         search={search}
@@ -221,56 +227,75 @@ export default function EmployeesPage() {
         resultLabel="employees"
       />
 
-      <div className="bg-[var(--card-bg)] rounded-xl shadow-sm border border-border overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
-            <thead className="text-xs text-muted-foreground bg-[var(--nested-bg)] uppercase border-b border-border">
-              <tr>
-                <th className="px-4 py-3">ID</th>
-                <th className="px-4 py-3">Name & Role</th>
-                <th className="px-4 py-3">Branch</th>
-                <th className="px-4 py-3">Basic Salary</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {loading ? (
-                <tr><td colSpan={6} className="text-center py-8 text-muted-foreground">Loading...</td></tr>
-              ) : filteredEmployees.length === 0 ? (
-                <tr><td colSpan={6} className="text-center py-8 text-muted-foreground">No employees found.</td></tr>
-              ) : (
-                filteredEmployees.map(emp => (
-                  <tr key={emp.id} className="hover:bg-[var(--nested-bg)] transition-colors">
-                    <td className="px-4 py-3 font-mono text-xs">{emp.employeeId}</td>
-                    <td className="px-4 py-3">
-                      <div className="font-medium text-foreground">{emp.name}</div>
-                      <div className="text-xs text-muted-foreground">{emp.designation || '—'}</div>
-                    </td>
-                    <td className="px-4 py-3">{emp.branch?.name || '—'}</td>
-                    <td className="px-4 py-3 tabular-nums">{emp.basicSalary.toLocaleString()} ৳</td>
-                    <td className="px-4 py-3">
-                      <span className={`px-2 py-0.5 text-[10px] uppercase font-bold rounded-full ${emp.isActive ? 'bg-[var(--status-success-bg)] text-[var(--status-success-text)]' : 'bg-[var(--status-draft-bg)] text-[var(--status-draft-text)]'}`}>
-                        {emp.isActive ? 'Active' : 'Inactive'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right space-x-2">
-                      <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-[var(--brand-orange)]" onClick={() => { setViewingEmployee(emp); setIsProfileOpen(true) }}>
-                        <User size={14} />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-[var(--brand-orange)]" onClick={() => { setEditingEmployee(emp); setIsModalOpen(true) }}>
-                        <Pencil size={14} />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-[var(--brand-red)] hover:text-red-700 hover:bg-red-50" onClick={() => handleDelete(emp)}>
-                        <Trash2 size={14} />
-                      </Button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+      <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] overflow-hidden">
+        <div className="px-5 py-4 border-b border-[var(--border)]">
+          <h3 className="text-sm font-semibold text-[var(--text-primary)]">
+            Employee Directory
+          </h3>
         </div>
+        <Table>
+          <TableHeader>
+            <TableRow className="border-[var(--border)] hover:bg-transparent">
+              <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide">ID</TableHead>
+              <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide">Name & Role</TableHead>
+              <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide">Branch</TableHead>
+              <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-right">Basic Salary</TableHead>
+              <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide">Status</TableHead>
+              <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {loading ? (
+              <TableRow className="border-[var(--border)] hover:bg-[var(--surface-raised)] transition-colors">
+                <TableCell colSpan={6}>
+                  <div className="flex items-center justify-center h-64 gap-3">
+                    <div className="w-5 h-5 rounded-full border-2 border-[var(--border-strong)] border-t-[var(--accent)] animate-spin" />
+                    <span className="text-sm text-[var(--text-muted)]">Loading…</span>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : filteredEmployees.length === 0 ? (
+              <TableRow className="border-[var(--border)] hover:bg-[var(--surface-raised)] transition-colors">
+                <TableCell colSpan={6}>
+                  <div className="flex flex-col items-center justify-center h-64 gap-3">
+                    <div className="w-12 h-12 rounded-full bg-[var(--surface-raised)] flex items-center justify-center">
+                      <User className="w-5 h-5 text-[var(--text-muted)]" />
+                    </div>
+                    <p className="text-sm font-medium text-[var(--text-muted)]">No employees found.</p>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : (
+              filteredEmployees.map(emp => (
+                <TableRow key={emp.id} className="border-[var(--border)] hover:bg-[var(--surface-raised)] transition-colors">
+                  <TableCell className="font-mono text-xs text-[var(--text-primary)]">{emp.employeeId}</TableCell>
+                  <TableCell>
+                    <div className="font-medium text-[var(--text-primary)]">{emp.name}</div>
+                    <div className="text-xs text-[var(--text-muted)]">{emp.designation || '—'}</div>
+                  </TableCell>
+                  <TableCell className="text-[var(--text-primary)]">{emp.branch?.name || '—'}</TableCell>
+                  <TableCell className="tabular-nums text-right text-[var(--text-secondary)]">{emp.basicSalary.toLocaleString()} ৳</TableCell>
+                  <TableCell>
+                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold tabular-nums ${emp.isActive ? 'bg-[var(--success-subtle)] text-[var(--success)]' : 'bg-[var(--danger-subtle)] text-[var(--danger)]'}`}>
+                      {emp.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-[var(--text-muted)] hover:text-[var(--info)] hover:bg-[var(--info-subtle)]" onClick={() => { setViewingEmployee(emp); setIsProfileOpen(true) }}>
+                      <User size={14} />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-[var(--text-muted)] hover:text-[var(--accent)] hover:bg-[var(--accent-subtle)]" onClick={() => { setEditingEmployee(emp); setIsModalOpen(true) }}>
+                      <Pencil size={14} />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-[var(--text-muted)] hover:text-[var(--danger)] hover:bg-[var(--danger-subtle)]" onClick={() => handleDelete(emp)}>
+                      <Trash2 size={14} />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
       </div>
 
       <EmployeeModal 
@@ -288,5 +313,6 @@ export default function EmployeesPage() {
         onEdit={() => { setIsProfileOpen(false); setEditingEmployee(viewingEmployee); setIsModalOpen(true) }}
       />
     </div>
+    </>
   )
 }

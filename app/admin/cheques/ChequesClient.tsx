@@ -6,6 +6,7 @@ import toast from 'react-hot-toast'
 import { CheckCircle, XCircle, Clock, Search, AlertCircle, Building2, User, Image as ImageIcon, CreditCard } from 'lucide-react'
 import { ViewReceiptModal } from '@/components/entries/ViewReceiptModal'
 import { BrandSpinner } from '@/components/ui/BrandSpinner'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 
 interface Cheque {
   id: number
@@ -132,13 +133,14 @@ export function ChequesClient() {
   )
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <>
+      <div className="sticky top-0 z-10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 px-6 py-4 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur supports-[backdrop-filter]:bg-[var(--surface)]/80">
         <div>
-          <h1 className="text-2xl font-bold">Approval Centre</h1>
-          <p className="text-sm text-muted-foreground mt-1">Approve cheques and party payments from branches.</p>
+          <h1 className="text-lg font-semibold text-[var(--text-primary)] leading-none">Approval Centre</h1>
+          <p className="text-sm text-[var(--text-muted)] mt-1">Approve cheques and party payments from branches.</p>
         </div>
       </div>
+      <div className="flex-1 p-6 space-y-6 min-h-0 flex flex-col overflow-auto">
 
       {/* Top-level tabs */}
       <div className="flex gap-2 border-b border-border pb-0">
@@ -172,62 +174,62 @@ export function ChequesClient() {
             </div>
           </div>
           <div className="overflow-x-auto min-h-[300px]">
-            <table className="w-full text-sm text-left">
-              <thead className="bg-muted/30 text-muted-foreground text-xs uppercase tracking-wider">
-                <tr>
-                  <th className="px-6 py-4">Party & Branch</th>
-                  <th className="px-6 py-4">Amount</th>
-                  <th className="px-6 py-4">Issue Date</th>
-                  <th className="px-6 py-4">Withdraw Date</th>
-                  <th className="px-6 py-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/50">
+            <Table>
+              <TableHeader className="bg-[var(--surface-raised)] border-b border-[var(--border)]">
+                <TableRow className="border-none hover:bg-transparent">
+                  <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide">Party & Branch</TableHead>
+                  <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide">Amount</TableHead>
+                  <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide">Issue Date</TableHead>
+                  <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide">Withdraw Date</TableHead>
+                  <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {chequesLoading ? (
-                  <tr><td colSpan={5} className="px-6 py-12 text-center text-muted-foreground"><BrandSpinner size={16} /> Loading…</td></tr>
+                  <TableRow><TableCell colSpan={5} className="py-12 text-center text-[var(--text-muted)]"><BrandSpinner size={16} /> Loading…</TableCell></TableRow>
                 ) : filteredCheques.length === 0 ? (
-                  <tr><td colSpan={5} className="px-6 py-12 text-center text-muted-foreground">
+                  <TableRow><TableCell colSpan={5} className="py-12 text-center text-[var(--text-muted)]">
                     <AlertCircle size={28} className="mx-auto mb-3 opacity-20" />
                     No {chequeFilter.toLowerCase()} cheques
-                  </td></tr>
+                  </TableCell></TableRow>
                 ) : filteredCheques.map(c => (
-                  <tr key={c.id} className="hover:bg-muted/10">
-                    <td className="px-6 py-4">
-                      <div className="font-semibold flex items-center gap-1.5"><User size={13} className="text-muted-foreground" />{c.payment.party.name}</div>
-                      <div className="text-xs text-muted-foreground flex items-center gap-1 mt-1"><Building2 size={12} />{c.payment.dailyEntry?.branch.name || '—'}</div>
-                      {c.payment.note && <div className="text-xs text-muted-foreground italic mt-1">Note: {c.payment.note}</div>}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="font-mono font-bold">{formatCurrency(c.payment.amount)}</div>
+                  <TableRow key={c.id} className="border-b border-[var(--border)] hover:bg-[var(--surface-raised)] transition-colors">
+                    <TableCell>
+                      <div className="font-semibold text-[var(--text-primary)] flex items-center gap-1.5"><User size={13} className="text-[var(--text-muted)]" />{c.payment.party.name}</div>
+                      <div className="text-xs text-[var(--text-muted)] flex items-center gap-1 mt-1"><Building2 size={12} />{c.payment.dailyEntry?.branch.name || '—'}</div>
+                      {c.payment.note && <div className="text-xs text-[var(--text-muted)] italic mt-1">Note: {c.payment.note}</div>}
+                    </TableCell>
+                    <TableCell>
+                      <div className="font-mono font-bold text-[var(--text-primary)]">{formatCurrency(c.payment.amount)}</div>
                       {c.payment.attachmentUrl && (
-                        <button onClick={() => setReceiptUrl(c.payment.attachmentUrl)} className="text-xs text-blue-500 hover:text-blue-400 mt-1 flex items-center gap-1">
+                        <button onClick={() => setReceiptUrl(c.payment.attachmentUrl)} className="text-xs text-[var(--info)] hover:text-[var(--info-hover)] mt-1 flex items-center gap-1">
                           <ImageIcon size={12} /> View Slip
                         </button>
                       )}
-                    </td>
-                    <td className="px-6 py-4 text-muted-foreground">{formatDate(c.issueDate)}</td>
-                    <td className="px-6 py-4">
-                      <div className={`font-medium ${new Date(c.withdrawDate) <= new Date() && chequeFilter === 'PENDING' ? 'text-destructive' : ''}`}>{formatDate(c.withdrawDate)}</div>
+                    </TableCell>
+                    <TableCell className="text-[var(--text-secondary)]">{formatDate(c.issueDate)}</TableCell>
+                    <TableCell>
+                      <div className={`font-medium ${new Date(c.withdrawDate) <= new Date() && chequeFilter === 'PENDING' ? 'text-[var(--danger)]' : 'text-[var(--text-primary)]'}`}>{formatDate(c.withdrawDate)}</div>
                       {new Date(c.withdrawDate) <= new Date() && chequeFilter === 'PENDING' && (
-                        <span className="text-[10px] bg-destructive/20 text-destructive px-1.5 py-0.5 rounded font-bold mt-1 inline-block">Due</span>
+                        <span className="text-[10px] bg-[var(--danger-subtle)]/20 text-[var(--danger)] px-1.5 py-0.5 rounded font-bold mt-1 inline-block">Due</span>
                       )}
-                    </td>
-                    <td className="px-6 py-4 text-right">
+                    </TableCell>
+                    <TableCell className="text-right">
                       {chequeFilter === 'PENDING' ? (
                         <div className="flex items-center justify-end gap-2">
                           <button onClick={() => handleChequeAction(c.id, 'reject')} disabled={chequeActionLoading === c.id}
-                            className="btn bg-destructive/10 text-destructive hover:bg-destructive/20 text-xs px-3 h-8">Reject</button>
+                            className="btn bg-[var(--danger-subtle)]/30 text-[var(--danger)] hover:bg-[var(--danger-subtle)]/50 text-xs px-3 h-8">Reject</button>
                           <button onClick={() => handleChequeAction(c.id, 'approve')} disabled={chequeActionLoading === c.id}
                             className="btn btn-primary text-xs px-3 h-8">{chequeActionLoading === c.id ? <BrandSpinner size={14} /> : 'Clear'}</button>
                         </div>
                       ) : (
-                        <div className="text-xs text-muted-foreground">{chequeFilter === 'APPROVED' ? 'Cleared' : 'Rejected'} by<br /><span className="font-semibold">{c.approvedBy?.username || 'Admin'}</span></div>
+                        <div className="text-xs text-[var(--text-muted)]">{chequeFilter === 'APPROVED' ? 'Cleared' : 'Rejected'} by<br /><span className="font-semibold text-[var(--text-primary)]">{c.approvedBy?.username || 'Admin'}</span></div>
                       )}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         </div>
       )}
@@ -249,66 +251,67 @@ export function ChequesClient() {
             </div>
           </div>
           <div className="overflow-x-auto min-h-[300px]">
-            <table className="w-full text-sm text-left">
-              <thead className="bg-muted/30 text-muted-foreground text-xs uppercase tracking-wider">
-                <tr>
-                  <th className="px-6 py-4">Party & Branch</th>
-                  <th className="px-6 py-4">Method</th>
-                  <th className="px-6 py-4">Amount</th>
-                  <th className="px-6 py-4">Date</th>
-                  <th className="px-6 py-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/50">
+            <Table>
+              <TableHeader className="bg-[var(--surface-raised)] border-b border-[var(--border)]">
+                <TableRow className="border-none hover:bg-transparent">
+                  <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide">Party & Branch</TableHead>
+                  <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide">Method</TableHead>
+                  <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide">Amount</TableHead>
+                  <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide">Date</TableHead>
+                  <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {paymentsLoading ? (
-                  <tr><td colSpan={5} className="px-6 py-12 text-center text-muted-foreground"><BrandSpinner size={16} /> Loading…</td></tr>
+                  <TableRow><TableCell colSpan={5} className="py-12 text-center text-[var(--text-muted)]"><BrandSpinner size={16} /> Loading…</TableCell></TableRow>
                 ) : filteredPayments.length === 0 ? (
-                  <tr><td colSpan={5} className="px-6 py-12 text-center text-muted-foreground">
+                  <TableRow><TableCell colSpan={5} className="py-12 text-center text-[var(--text-muted)]">
                     <AlertCircle size={28} className="mx-auto mb-3 opacity-20" />
                     No {paymentFilter.toLowerCase()} party payments
-                  </td></tr>
+                  </TableCell></TableRow>
                 ) : filteredPayments.map(p => (
-                  <tr key={p.id} className="hover:bg-muted/10">
-                    <td className="px-6 py-4">
-                      <div className="font-semibold flex items-center gap-1.5"><User size={13} className="text-muted-foreground" />{p.party.name}</div>
-                      <div className="text-xs text-muted-foreground flex items-center gap-1 mt-1"><Building2 size={12} />{p.dailyEntry?.branch.name || '—'}</div>
-                      {p.note && <div className="text-xs text-muted-foreground italic mt-1">Note: {p.note}</div>}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="text-xs bg-muted/50 px-2 py-1 rounded font-mono font-medium">{p.method}</span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="font-mono font-bold">{formatCurrency(p.amount)}</div>
+                  <TableRow key={p.id} className="border-b border-[var(--border)] hover:bg-[var(--surface-raised)] transition-colors">
+                    <TableCell>
+                      <div className="font-semibold text-[var(--text-primary)] flex items-center gap-1.5"><User size={13} className="text-[var(--text-muted)]" />{p.party.name}</div>
+                      <div className="text-xs text-[var(--text-muted)] flex items-center gap-1 mt-1"><Building2 size={12} />{p.dailyEntry?.branch.name || '—'}</div>
+                      {p.note && <div className="text-xs text-[var(--text-muted)] italic mt-1">Note: {p.note}</div>}
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-xs bg-[var(--surface-raised)] border border-[var(--border)] px-2 py-1 rounded font-mono font-medium text-[var(--text-primary)]">{p.method}</span>
+                    </TableCell>
+                    <TableCell>
+                      <div className="font-mono font-bold text-[var(--text-primary)]">{formatCurrency(p.amount)}</div>
                       {p.attachmentUrl && (
-                        <button onClick={() => setReceiptUrl(p.attachmentUrl)} className="text-xs text-blue-500 hover:text-blue-400 mt-1 flex items-center gap-1">
+                        <button onClick={() => setReceiptUrl(p.attachmentUrl)} className="text-xs text-[var(--info)] hover:text-[var(--info-hover)] mt-1 flex items-center gap-1">
                           <ImageIcon size={12} /> View Slip
                         </button>
                       )}
-                    </td>
-                    <td className="px-6 py-4 text-muted-foreground">{p.dailyEntry ? formatDate(p.dailyEntry.date) : formatDate(p.createdAt)}</td>
-                    <td className="px-6 py-4 text-right">
+                    </TableCell>
+                    <TableCell className="text-[var(--text-secondary)]">{p.dailyEntry ? formatDate(p.dailyEntry.date) : formatDate(p.createdAt)}</TableCell>
+                    <TableCell className="text-right">
                       {paymentFilter === 'PENDING' ? (
                         <div className="flex items-center justify-end gap-2">
                           <button onClick={() => handlePaymentAction(p.id, 'reject')} disabled={paymentActionLoading === p.id}
-                            className="btn bg-destructive/10 text-destructive hover:bg-destructive/20 text-xs px-3 h-8">Reject</button>
+                            className="btn bg-[var(--danger-subtle)]/30 text-[var(--danger)] hover:bg-[var(--danger-subtle)]/50 text-xs px-3 h-8">Reject</button>
                           <button onClick={() => handlePaymentAction(p.id, 'approve')} disabled={paymentActionLoading === p.id}
                             className="btn btn-primary text-xs px-3 h-8">{paymentActionLoading === p.id ? <BrandSpinner size={14} /> : 'Approve'}</button>
                         </div>
                       ) : (
-                        <span className={`text-xs px-2 py-1 rounded font-bold ${paymentFilter === 'APPROVED' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                        <span className={`text-xs px-2 py-1 rounded font-bold ${paymentFilter === 'APPROVED' ? 'bg-[var(--success-subtle)]/30 text-[var(--success)]' : 'bg-[var(--danger-subtle)]/30 text-[var(--danger)]'}`}>
                           {paymentFilter}
                         </span>
                       )}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         </div>
       )}
 
       {receiptUrl && <ViewReceiptModal url={receiptUrl} onClose={() => setReceiptUrl(null)} />}
     </div>
+    </>
   )
 }

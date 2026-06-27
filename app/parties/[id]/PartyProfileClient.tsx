@@ -6,6 +6,7 @@ import { ArrowLeft, Plus, Building2, Phone, MapPin, Building, FileText, CreditCa
 import Link from 'next/link'
 import { formatCurrency } from '@/lib/utils'
 import { format } from 'date-fns'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 
 // Import extracted Modals
 import { BankModal } from '@/components/parties/BankModal'
@@ -37,11 +38,21 @@ export default function PartyProfileClient({ party: initialParty }: { party: any
   }
 
   return (
-    <div className="p-4 sm:p-8 max-w-7xl mx-auto pb-20">
-      <Link href="/parties" className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 transition-colors w-fit">
-        <ArrowLeft size={16} />
-        <span className="text-sm font-medium">Back to Parties</span>
-      </Link>
+    <>
+      <div className="sticky top-0 z-10 flex items-center justify-between gap-4 px-6 py-4 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur supports-[backdrop-filter]:bg-[var(--surface)]/80">
+        <div>
+          <h1 className="text-lg font-semibold text-[var(--text-primary)] leading-none flex items-center gap-2">
+            <Building2 size={18} className="text-primary" />
+            {party?.name || 'Party Profile'}
+          </h1>
+          <div className="flex items-center gap-2 text-sm text-[var(--text-muted)] mt-1">
+            <Link href="/parties" className="flex items-center gap-1 hover:text-[var(--text-primary)] transition-colors">
+              <ArrowLeft size={14} /> Back to Parties
+            </Link>
+          </div>
+        </div>
+      </div>
+      <div className="flex-1 p-6 space-y-6 min-h-0 flex flex-col overflow-auto">
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         {/* Profile Card */}
@@ -150,79 +161,79 @@ export default function PartyProfileClient({ party: initialParty }: { party: any
 
         {/* Desktop Table */}
         <div className="hidden sm:block overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-muted/50 border-b border-border text-muted-foreground">
-              <tr>
-                <th className="p-4 font-semibold whitespace-nowrap">Date</th>
-                <th className="p-4 font-semibold">Type</th>
-                <th className="p-4 font-semibold">Details</th>
-                <th className="p-4 font-semibold text-right">Debit (Owed)</th>
-                <th className="p-4 font-semibold text-right">Credit (Paid)</th>
-                <th className="p-4 font-semibold text-right">Balance</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
+          <Table>
+            <TableHeader className="bg-[var(--surface-raised)] border-b border-[var(--border)]">
+              <TableRow className="border-none hover:bg-transparent">
+                <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide whitespace-nowrap">Date</TableHead>
+                <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide">Type</TableHead>
+                <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide">Details</TableHead>
+                <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-right">Debit (Owed)</TableHead>
+                <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-right">Credit (Paid)</TableHead>
+                <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-right">Balance</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {isLoadingLedger ? (
-                <tr>
-                  <td colSpan={6} className="p-8 text-center text-muted-foreground">Loading ledger...</td>
-                </tr>
+                <TableRow>
+                  <TableCell colSpan={6} className="py-12 text-center text-[var(--text-muted)]">Loading ledger...</TableCell>
+                </TableRow>
               ) : !ledger || ledger.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="p-8 text-center text-muted-foreground">No ledger entries found.</td>
-                </tr>
+                <TableRow>
+                  <TableCell colSpan={6} className="py-12 text-center text-[var(--text-muted)]">No ledger entries found.</TableCell>
+                </TableRow>
               ) : (
                 ledger.map((entry: any) => (
-                  <tr key={`${entry.type}-${entry.id}`} className="hover:bg-muted/20 transition-colors">
-                    <td className="p-4 whitespace-nowrap font-medium">{format(new Date(entry.date), 'dd MMM yyyy')}</td>
-                    <td className="p-4">
+                  <TableRow key={`${entry.type}-${entry.id}`} className="border-b border-[var(--border)] hover:bg-[var(--surface-raised)] transition-colors">
+                    <TableCell className="whitespace-nowrap font-medium text-[var(--text-primary)]">{format(new Date(entry.date), 'dd MMM yyyy')}</TableCell>
+                    <TableCell>
                       {entry.type === 'PURCHASE' ? (
-                        <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-destructive/10 text-destructive">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[var(--danger-subtle)]/30 text-[var(--danger)]">
                           {entry.isOpeningDue ? 'Opening Due' : 'Purchase'}
                         </span>
                       ) : (
-                        <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-emerald-500/10 text-emerald-600">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[var(--success-subtle)]/30 text-[var(--success)]">
                           Payment
                         </span>
                       )}
-                    </td>
-                    <td className="p-4 max-w-xs">
+                    </TableCell>
+                    <TableCell className="max-w-xs">
                       {entry.type === 'PURCHASE' ? (
                         <div className="space-y-1">
-                          {entry.invoiceNumber && <p className="font-mono text-xs">Inv: {entry.invoiceNumber}</p>}
-                          {entry.note && <p className="text-muted-foreground truncate" title={entry.note}>{entry.note}</p>}
+                          {entry.invoiceNumber && <p className="font-mono text-xs text-[var(--text-secondary)]">Inv: {entry.invoiceNumber}</p>}
+                          {entry.note && <p className="text-[var(--text-muted)] truncate" title={entry.note}>{entry.note}</p>}
                           {entry.attachmentUrl && (
-                            <a href={entry.attachmentUrl} target="_blank" rel="noreferrer" className="text-primary text-xs hover:underline inline-flex items-center gap-1">
+                            <a href={entry.attachmentUrl} target="_blank" rel="noreferrer" className="text-[var(--accent)] text-xs hover:underline inline-flex items-center gap-1">
                               <FileText size={12} /> View Invoice
                             </a>
                           )}
                         </div>
                       ) : (
                         <div className="space-y-1">
-                          <p className="font-semibold text-xs">{entry.method}</p>
-                          {entry.branch && <p className="text-muted-foreground text-xs">Branch: {entry.branch.name}</p>}
-                          {entry.note && <p className="text-muted-foreground truncate" title={entry.note}>{entry.note}</p>}
+                          <p className="font-semibold text-xs text-[var(--text-primary)]">{entry.method}</p>
+                          {entry.branch && <p className="text-[var(--text-muted)] text-xs">Branch: {entry.branch.name}</p>}
+                          {entry.note && <p className="text-[var(--text-muted)] truncate" title={entry.note}>{entry.note}</p>}
                           {entry.attachmentUrl && (
-                            <a href={entry.attachmentUrl} target="_blank" rel="noreferrer" className="text-primary text-xs hover:underline inline-flex items-center gap-1">
+                            <a href={entry.attachmentUrl} target="_blank" rel="noreferrer" className="text-[var(--accent)] text-xs hover:underline inline-flex items-center gap-1">
                               <FileText size={12} /> View Receipt/Cheque
                             </a>
                           )}
                         </div>
                       )}
-                    </td>
-                    <td className="p-4 text-right font-mono">
-                      {entry.type === 'PURCHASE' ? <span className="text-destructive font-semibold">৳{formatCurrency(entry.amount)}</span> : '-'}
-                    </td>
-                    <td className="p-4 text-right font-mono">
-                      {entry.type === 'PAYMENT' ? <span className="text-emerald-500 font-semibold">৳{formatCurrency(entry.amount)}</span> : '-'}
-                    </td>
-                    <td className="p-4 text-right font-mono font-bold">
+                    </TableCell>
+                    <TableCell className="text-right font-mono">
+                      {entry.type === 'PURCHASE' ? <span className="text-[var(--danger)] font-semibold">৳{formatCurrency(entry.amount)}</span> : <span className="text-[var(--text-muted)] opacity-50">-</span>}
+                    </TableCell>
+                    <TableCell className="text-right font-mono">
+                      {entry.type === 'PAYMENT' ? <span className="text-emerald-500 font-semibold">৳{formatCurrency(entry.amount)}</span> : <span className="text-[var(--text-muted)] opacity-50">-</span>}
+                    </TableCell>
+                    <TableCell className="text-right font-mono font-bold text-[var(--text-primary)]">
                       ৳{formatCurrency(entry.runningBalance)}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))
               )}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
 
         {/* Mobile Cards */}
@@ -313,6 +324,7 @@ export default function PartyProfileClient({ party: initialParty }: { party: any
         partyId={party.id} 
         onSuccess={handleSuccess} 
       />
-    </div>
+      </div>
+    </>
   )
 }

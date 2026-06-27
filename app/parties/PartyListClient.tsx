@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { Search, Filter, Plus, Phone, MapPin, Building2, ChevronRight } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { AddPartyModal } from '@/components/parties/AddPartyModal'
 import { useRouter } from 'next/navigation'
 
@@ -33,26 +34,27 @@ export default function PartyListClient({ initialParties }: { initialParties: an
   })
 
   return (
-    <div className="p-4 sm:p-8 max-w-7xl mx-auto pb-20">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+    <>
+      <div className="sticky top-0 z-10 flex items-center justify-between gap-4 px-6 py-4 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur supports-[backdrop-filter]:bg-[var(--surface)]/80">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Building2 className="text-primary" />
+          <h1 className="text-lg font-semibold text-[var(--text-primary)] leading-none flex items-center gap-2">
+            <Building2 size={18} className="text-primary" />
             Vendors & Parties
           </h1>
-          <p className="text-muted-foreground mt-1 text-sm">
+          <p className="text-sm text-[var(--text-muted)] mt-1">
             Manage suppliers, track purchases, and monitor due balances.
           </p>
         </div>
         <button 
           onClick={() => setIsAddModalOpen(true)}
-          className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors shadow-sm"
+          className="btn btn-primary flex items-center gap-2"
         >
           <Plus size={16} /> Add Party
         </button>
       </div>
+      <div className="flex-1 p-6 space-y-6 min-h-0 flex flex-col overflow-auto">
 
-      <div className="bg-card border border-border rounded-xl shadow-lg overflow-hidden flex flex-col">
+      <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl shadow-lg overflow-hidden flex flex-col">
         {/* Header and Controls */}
         <div className="p-4 sm:p-6 border-b border-border bg-muted/20">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
@@ -88,67 +90,67 @@ export default function PartyListClient({ initialParties }: { initialParties: an
 
         {/* List */}
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-muted/50 border-b border-border text-muted-foreground">
-              <tr>
-                <th className="p-4 font-semibold">Company Info</th>
-                <th className="p-4 font-semibold hidden sm:table-cell">Contact</th>
-                <th className="p-4 font-semibold hidden md:table-cell">Location</th>
-                <th className="p-4 font-semibold text-right">Total Due</th>
-                <th className="p-4 font-semibold w-10"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
+          <Table>
+            <TableHeader className="bg-[var(--surface-raised)] border-b border-[var(--border)]">
+              <TableRow className="border-none hover:bg-transparent">
+                <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide">Company Info</TableHead>
+                <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide hidden sm:table-cell">Contact</TableHead>
+                <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide hidden md:table-cell">Location</TableHead>
+                <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-right">Total Due</TableHead>
+                <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide w-10"></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {filteredParties.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="p-8 text-center text-muted-foreground">
+                <TableRow>
+                  <TableCell colSpan={5} className="py-12 text-center text-[var(--text-muted)]">
                     No parties found matching your criteria.
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ) : (
                 filteredParties.map(party => (
-                  <tr key={party.id} className="hover:bg-muted/20 transition-colors group">
-                    <td className="p-4">
-                      <div className="font-bold text-foreground">{party.name}</div>
-                      {party.contactPerson && <div className="text-xs text-muted-foreground mt-0.5">{party.contactPerson}</div>}
-                    </td>
-                    <td className="p-4 hidden sm:table-cell">
+                  <TableRow key={party.id} className="border-b border-[var(--border)] hover:bg-[var(--surface-raised)] transition-colors group">
+                    <TableCell>
+                      <div className="font-bold text-[var(--text-primary)]">{party.name}</div>
+                      {party.contactPerson && <div className="text-xs text-[var(--text-muted)] mt-0.5">{party.contactPerson}</div>}
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell">
                       {party.contactNumber ? (
-                        <div className="flex items-center gap-1.5 text-muted-foreground">
+                        <div className="flex items-center gap-1.5 text-[var(--text-secondary)]">
                           <Phone size={14} />
                           {party.contactNumber}
                         </div>
                       ) : (
-                        <span className="text-muted-foreground/50">-</span>
+                        <span className="text-[var(--text-muted)] opacity-50">-</span>
                       )}
-                    </td>
-                    <td className="p-4 hidden md:table-cell max-w-[200px] truncate">
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell max-w-[200px] truncate">
                       {party.address ? (
-                        <div className="flex items-center gap-1.5 text-muted-foreground" title={party.address}>
+                        <div className="flex items-center gap-1.5 text-[var(--text-secondary)]" title={party.address}>
                           <MapPin size={14} className="shrink-0" />
                           <span className="truncate">{party.address}</span>
                         </div>
                       ) : (
-                        <span className="text-muted-foreground/50">-</span>
+                        <span className="text-[var(--text-muted)] opacity-50">-</span>
                       )}
-                    </td>
-                    <td className="p-4 text-right">
-                      <div className={`font-bold font-mono ${party.balance > 0 ? 'text-destructive' : 'text-emerald-500'}`}>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className={`font-bold font-mono ${party.balance > 0 ? 'text-[var(--danger)]' : 'text-emerald-500'}`}>
                         ৳{formatCurrency(party.balance)}
                       </div>
-                    </td>
-                    <td className="p-4 text-right">
+                    </TableCell>
+                    <TableCell className="text-right">
                       <Link href={`/parties/${party.id}`}>
                         <button className="px-3 py-1.5 bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground font-medium text-xs rounded-md transition-colors flex items-center gap-1 ml-auto">
                           View Details <ChevronRight size={14} />
                         </button>
                       </Link>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))
               )}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       </div>
       <AddPartyModal 
@@ -156,6 +158,7 @@ export default function PartyListClient({ initialParties }: { initialParties: an
         onClose={() => setIsAddModalOpen(false)} 
         onSuccess={handleSuccess} 
       />
-    </div>
+      </div>
+    </>
   )
 }

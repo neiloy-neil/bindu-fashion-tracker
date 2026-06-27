@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { PlusCircle, Pencil, ToggleLeft, ToggleRight } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 
 type User = {
   id: number
@@ -154,8 +155,14 @@ export default function UsersPage() {
   if (loading) return <div className="p-8">Loading...</div>
 
   return (
-    <div className="p-8 max-w-6xl">
-      <h1 className="text-2xl font-bold mb-6">User Management</h1>
+    <>
+      <div className="sticky top-0 z-10 flex items-center justify-between gap-4 px-6 py-4 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur supports-[backdrop-filter]:bg-[var(--surface)]/80">
+        <div>
+          <h1 className="text-lg font-semibold text-[var(--text-primary)] leading-none">User Management</h1>
+          <p className="text-sm text-[var(--text-muted)] mt-1">Manage system access and roles</p>
+        </div>
+      </div>
+      <div className="flex-1 p-6 space-y-6 min-h-0 flex flex-col overflow-auto">
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {/* Create Form */}
@@ -225,52 +232,52 @@ export default function UsersPage() {
 
         {/* User Table */}
         <div className="md:col-span-2">
-          <div className="bg-[var(--bg-card)] rounded-lg border border-[var(--border)] overflow-hidden">
-            <table className="w-full text-left border-collapse text-sm">
-              <thead>
-                <tr className="bg-[var(--border)]/50 border-b border-[var(--border)] text-[var(--text-muted)]">
-                  <th className="p-3">User</th>
-                  <th className="p-3">Role</th>
-                  <th className="p-3">Branch</th>
-                  <th className="p-3">Status</th>
-                  <th className="p-3 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
+          <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] overflow-hidden">
+            <Table>
+              <TableHeader className="bg-[var(--surface)] border-b border-[var(--border)]">
+                <TableRow className="border-none hover:bg-transparent">
+                  <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide">User</TableHead>
+                  <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide">Role</TableHead>
+                  <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide">Branch</TableHead>
+                  <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide">Status</TableHead>
+                  <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {users.map(u => (
-                  <tr key={u.id} className="border-b border-[var(--border)] hover:bg-[var(--border)]/20">
-                    <td className="p-3">
-                      <div className="font-medium">{u.username}</div>
+                  <TableRow key={u.id} className="border-b border-[var(--border)] hover:bg-[var(--surface-raised)] transition-colors">
+                    <TableCell>
+                      <div className="font-medium text-[var(--text-primary)]">{u.username}</div>
                       {u.email && <div className="text-xs text-[var(--text-muted)]">{u.email}</div>}
                       {u.phoneNumber && <div className="text-xs text-[var(--text-muted)]">{u.phoneNumber}</div>}
-                    </td>
-                    <td className="p-3">
-                      <span className={`text-xs px-2 py-1 rounded ${u.role === 'ADMIN' ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/20 text-blue-400'}`}>
+                    </TableCell>
+                    <TableCell>
+                      <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${u.role === 'ADMIN' ? 'bg-[var(--info-subtle)]/30 text-[var(--info)]' : 'bg-[var(--success-subtle)]/30 text-[var(--success)]'}`}>
                         {u.role}
                       </span>
-                    </td>
-                    <td className="p-3 text-[var(--text-muted)] text-xs">
+                    </TableCell>
+                    <TableCell className="text-[var(--text-secondary)] text-sm">
                       {u.role === 'ADMIN' ? 'All Branches' :
                        u.role === 'AUDITOR' ? 'Read-Only' :
                        u.role === 'AREA_MANAGER' ? (u.managedBranches?.map(b => b.name).join(', ') || 'None') :
                        u.branch?.name || 'Unassigned'}
-                    </td>
-                    <td className="p-3">
+                    </TableCell>
+                    <TableCell>
                       <button onClick={() => toggleActive(u)} title={u.isActive ? 'Deactivate' : 'Activate'}
                         className={`flex items-center gap-1 text-xs font-medium ${u.isActive ? 'text-[var(--success)]' : 'text-[var(--danger)]'}`}>
                         {u.isActive ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
                         {u.isActive ? 'Active' : 'Inactive'}
                       </button>
-                    </td>
-                    <td className="p-3 text-right">
+                    </TableCell>
+                    <TableCell className="text-right">
                       <button onClick={() => openEdit(u)} className="btn btn-secondary text-xs px-3 h-8 flex items-center gap-1.5 ml-auto">
                         <Pencil size={13} /> Edit
                       </button>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         </div>
       </div>
@@ -349,5 +356,6 @@ export default function UsersPage() {
         </div>
       )}
     </div>
+    </>
   )
 }

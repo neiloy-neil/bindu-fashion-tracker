@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 
 export default function LeaveRequestsPage() {
   const [leaves, setLeaves] = useState<any[]>([])
@@ -48,11 +49,11 @@ export default function LeaveRequestsPage() {
   const filteredLeaves = leaves.filter(l => statusFilter === 'all' || l.status === statusFilter)
 
   return (
-    <div className="p-4 md:p-8 max-w-6xl mx-auto">
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4">
+    <>
+      <div className="sticky top-0 z-10 flex items-center justify-between gap-4 px-6 py-4 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur">
         <div>
-          <h1 className="text-2xl font-bold">Leave Requests</h1>
-          <p className="text-slate-500">Manage employee absences and leave approvals</p>
+          <h1 className="text-lg font-semibold text-[var(--text-primary)] leading-none">Leave Requests</h1>
+          <p className="text-sm text-[var(--text-muted)] mt-1">Manage employee absences and leave approvals</p>
         </div>
         <div className="flex items-center gap-2">
           <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v ?? 'all')}>
@@ -70,74 +71,91 @@ export default function LeaveRequestsPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
-            <thead className="bg-slate-50 text-slate-600 font-medium border-b border-slate-200">
-              <tr>
-                <th className="px-4 py-3">Employee</th>
-                <th className="px-4 py-3">Branch</th>
-                <th className="px-4 py-3">Type</th>
-                <th className="px-4 py-3">Dates</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
+      <div className="flex-1 p-6 space-y-6 min-h-0">
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] overflow-hidden">
+          <div className="px-5 py-4 border-b border-[var(--border)]">
+            <h3 className="text-sm font-semibold text-[var(--text-primary)]">
+              Requests Directory
+            </h3>
+          </div>
+          <Table>
+            <TableHeader>
+              <TableRow className="border-[var(--border)] hover:bg-transparent">
+                <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide">Employee</TableHead>
+                <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide">Branch</TableHead>
+                <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide">Type</TableHead>
+                <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide">Dates</TableHead>
+                <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide">Status</TableHead>
+                <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {loading ? (
-                <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-slate-500">Loading leave requests...</td>
-                </tr>
+                <TableRow className="border-[var(--border)] hover:bg-[var(--surface-raised)] transition-colors">
+                  <TableCell colSpan={6}>
+                    <div className="flex items-center justify-center h-64 gap-3">
+                      <div className="w-5 h-5 rounded-full border-2 border-[var(--border-strong)] border-t-[var(--accent)] animate-spin" />
+                      <span className="text-sm text-[var(--text-muted)]">Loading leave requests...</span>
+                    </div>
+                  </TableCell>
+                </TableRow>
               ) : filteredLeaves.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-slate-500">No leave requests found.</td>
-                </tr>
+                <TableRow className="border-[var(--border)] hover:bg-[var(--surface-raised)] transition-colors">
+                  <TableCell colSpan={6}>
+                    <div className="flex flex-col items-center justify-center h-64 gap-3">
+                      <div className="w-12 h-12 rounded-full bg-[var(--surface-raised)] flex items-center justify-center">
+                        <Filter className="w-5 h-5 text-[var(--text-muted)]" />
+                      </div>
+                      <p className="text-sm font-medium text-[var(--text-muted)]">No leave requests found.</p>
+                    </div>
+                  </TableCell>
+                </TableRow>
               ) : (
                 filteredLeaves.map(leave => (
-                  <tr key={leave.id} className="hover:bg-slate-50">
-                    <td className="px-4 py-3 font-medium text-slate-900">{leave.employee.name}</td>
-                    <td className="px-4 py-3 text-slate-600">{leave.employee.branch?.name || 'HQ'}</td>
-                    <td className="px-4 py-3">
+                  <TableRow key={leave.id} className="border-[var(--border)] hover:bg-[var(--surface-raised)] transition-colors">
+                    <TableCell className="font-medium text-[var(--text-primary)]">{leave.employee.name}</TableCell>
+                    <TableCell className="text-[var(--text-secondary)]">{leave.employee.branch?.name || 'HQ'}</TableCell>
+                    <TableCell>
                       <Badge variant={leave.type === 'UNPAID' ? 'destructive' : 'secondary'}>
                         {leave.type}
                       </Badge>
-                    </td>
-                    <td className="px-4 py-3 text-slate-600 whitespace-nowrap">
+                    </TableCell>
+                    <TableCell className="text-[var(--text-secondary)] whitespace-nowrap">
                       {new Date(leave.startDate).toLocaleDateString()} - {new Date(leave.endDate).toLocaleDateString()}
-                    </td>
-                    <td className="px-4 py-3">
+                    </TableCell>
+                    <TableCell>
                       <div className="flex items-center gap-1.5">
-                        {leave.status === 'PENDING' && <Clock className="w-4 h-4 text-amber-500" />}
-                        {leave.status === 'APPROVED' && <Check className="w-4 h-4 text-emerald-500" />}
-                        {leave.status === 'REJECTED' && <X className="w-4 h-4 text-red-500" />}
-                        <span className={`font-medium ${leave.status === 'PENDING' ? 'text-amber-600' : leave.status === 'APPROVED' ? 'text-emerald-600' : 'text-red-600'}`}>
+                        {leave.status === 'PENDING' && <Clock className="w-4 h-4 text-[var(--warning)]" />}
+                        {leave.status === 'APPROVED' && <Check className="w-4 h-4 text-[var(--success)]" />}
+                        {leave.status === 'REJECTED' && <X className="w-4 h-4 text-[var(--danger)]" />}
+                        <span className={`font-medium ${leave.status === 'PENDING' ? 'text-[var(--warning)]' : leave.status === 'APPROVED' ? 'text-[var(--success)]' : 'text-[var(--danger)]'}`}>
                           {leave.status}
                         </span>
                       </div>
-                    </td>
-                    <td className="px-4 py-3 text-right">
+                    </TableCell>
+                    <TableCell className="text-right">
                       {leave.status === 'PENDING' ? (
                         <div className="flex items-center justify-end gap-2">
-                          <Button size="sm" variant="outline" className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50" onClick={() => updateStatus(leave.id, 'APPROVED')}>
+                          <Button size="sm" variant="outline" className="text-[var(--success)] hover:text-[var(--success)] hover:bg-[var(--success-subtle)]" onClick={() => updateStatus(leave.id, 'APPROVED')}>
                             Approve
                           </Button>
-                          <Button size="sm" variant="outline" className="text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => updateStatus(leave.id, 'REJECTED')}>
+                          <Button size="sm" variant="outline" className="text-[var(--danger)] hover:text-[var(--danger)] hover:bg-[var(--danger-subtle)]" onClick={() => updateStatus(leave.id, 'REJECTED')}>
                             Reject
                           </Button>
                         </div>
                       ) : (
-                        <span className="text-slate-400 text-xs">
+                        <span className="text-[var(--text-muted)] text-xs">
                           by {leave.approvedBy?.username || 'System'}
                         </span>
                       )}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))
               )}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       </div>
-    </div>
+    </>
   )
 }

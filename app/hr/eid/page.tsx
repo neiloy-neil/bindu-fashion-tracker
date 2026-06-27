@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { SearchFilter, type SortOption } from '@/components/shared/SearchFilter'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 
 type Row = {
   employee: Employee & { branch?: Branch }
@@ -167,41 +168,37 @@ function EidContent() {
   const yearOptions = [currentYear - 1, currentYear, currentYear + 1]
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-full mx-auto">
-      <div className="flex flex-col gap-3 mb-4 sm:mb-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Eid Bonus Processing</h1>
-            <p className="text-gray-500 text-sm mt-0.5">Input bonus and advance deductions</p>
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <Input 
-              value={title} 
-              onChange={e => {
-                setTitle(e.target.value)
-                setRows(prev => prev.map(r => ({ ...r, dirty: true })))
-              }}
-              placeholder="e.g. Eid ul Adha 2024" 
-              className="w-48 bg-white"
-            />
-            <Select value={String(year)} onValueChange={v => setYear(+(v ?? year))}>
-              <SelectTrigger className="w-24 bg-white border-gray-300 text-gray-900"><SelectValue /></SelectTrigger>
-              <SelectContent>{yearOptions.map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}</SelectContent>
-            </Select>
-          </div>
+    <>
+      <div className="sticky top-0 z-10 flex items-center justify-between gap-4 px-6 py-4 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur">
+        <div>
+          <h1 className="text-lg font-semibold text-[var(--text-primary)] leading-none">Eid Bonus Processing</h1>
+          <p className="text-sm text-[var(--text-muted)] mt-1">Input bonus and advance deductions</p>
         </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <Button onClick={saveAll} disabled={saving || dirtyCount === 0} size="sm" className="gap-2 relative bg-gray-900 text-white hover:bg-gray-800 disabled:bg-gray-200 disabled:text-gray-500">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Input 
+            value={title} 
+            onChange={e => {
+              setTitle(e.target.value)
+              setRows(prev => prev.map(r => ({ ...r, dirty: true })))
+            }}
+            placeholder="e.g. Eid ul Adha 2024" 
+            className="w-48"
+          />
+          <Select value={String(year)} onValueChange={v => setYear(+(v ?? year))}>
+            <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
+            <SelectContent>{yearOptions.map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}</SelectContent>
+          </Select>
+          <Button onClick={saveAll} disabled={saving || dirtyCount === 0} size="sm" className="gap-2 relative">
             <Save size={14} />{saving ? 'Saving…' : 'Save All'}
             {dirtyCount > 0 && !saving && (
-              <span className="absolute -top-1.5 -right-1.5 bg-amber-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center leading-none">
+              <span className="absolute -top-1.5 -right-1.5 bg-[var(--warning)] text-[var(--warning-fg)] text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center leading-none shadow-sm">
                 {dirtyCount > 99 ? '99+' : dirtyCount}
               </span>
             )}
           </Button>
         </div>
       </div>
+      <div className="flex-1 p-6 space-y-6 min-h-0 flex flex-col">
 
       <SearchFilter
         search={search}
@@ -221,96 +218,100 @@ function EidContent() {
       />
 
       {pageLoading ? (
-        <div className="mt-4 p-8 text-center text-gray-500">Loading...</div>
+        <div className="flex-1 flex items-center justify-center min-h-[400px]">
+          <div className="flex items-center gap-3">
+            <div className="w-5 h-5 rounded-full border-2 border-[var(--border-strong)] border-t-[var(--accent)] animate-spin" />
+            <span className="text-sm text-[var(--text-muted)]">Loading...</span>
+          </div>
+        </div>
       ) : (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden mt-4 flex-1 min-h-0 flex flex-col">
-          <div className="overflow-auto flex-1 min-h-0">
-            <table className="w-full text-sm border-collapse">
-              <thead className="sticky top-0 z-10">
-                <tr className="bg-gray-50/95 backdrop-blur border-b-2 border-gray-200 text-xs uppercase tracking-wide">
-                  <th className="text-left px-3 py-2.5 font-semibold text-gray-500">Employee</th>
-                  <th className="text-left px-3 py-2.5 font-semibold text-gray-500">Branch</th>
-                  <th className="text-right px-3 py-2.5 font-semibold text-gray-500">Basic</th>
-                  <th className="text-center px-2 py-2.5 font-semibold text-gray-500 w-24">
-                    Salary Pct<br /><span className="normal-case font-normal text-gray-400 text-[10px]">(%)</span>
-                  </th>
-                  <th className="text-center px-2 py-2.5 font-semibold text-gray-500 w-24">
-                    Branch Advance<br /><span className="normal-case font-normal text-gray-400 text-[10px]">(৳)</span>
-                  </th>
-                  <th className="text-center px-2 py-2.5 font-semibold text-gray-500 w-24">
-                    HR Advance<br /><span className="normal-case font-normal text-gray-400 text-[10px]">(৳)</span>
-                  </th>
-                  <th className="text-center px-2 py-2.5 font-semibold text-gray-500 w-24">
-                    Eid Bonus<br /><span className="normal-case font-normal text-gray-400 text-[10px]">(%)</span>
-                  </th>
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] overflow-hidden flex-1 flex flex-col min-h-0">
+          <div className="overflow-auto flex-1 min-h-0 relative">
+            <Table>
+              <TableHeader className="sticky top-0 z-10 bg-[var(--surface)]/95 backdrop-blur supports-[backdrop-filter]:bg-[var(--surface)]/80">
+                <TableRow className="border-b border-[var(--border)] hover:bg-transparent">
+                  <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide">Employee</TableHead>
+                  <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide">Branch</TableHead>
+                  <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-right">Basic</TableHead>
+                  <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-center w-24">
+                    Salary Pct<br /><span className="normal-case font-normal text-[var(--text-muted)] opacity-75 text-[10px]">(%)</span>
+                  </TableHead>
+                  <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-center w-24">
+                    Branch Advance<br /><span className="normal-case font-normal text-[var(--text-muted)] opacity-75 text-[10px]">(৳)</span>
+                  </TableHead>
+                  <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-center w-24">
+                    HR Advance<br /><span className="normal-case font-normal text-[var(--text-muted)] opacity-75 text-[10px]">(৳)</span>
+                  </TableHead>
+                  <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-center w-24">
+                    Eid Bonus<br /><span className="normal-case font-normal text-[var(--text-muted)] opacity-75 text-[10px]">(%)</span>
+                  </TableHead>
+                  <TableHead className="text-[var(--text-primary)] text-xs font-semibold uppercase tracking-wide text-right bg-[var(--info-subtle)]/30">Net Payable</TableHead>
+                </TableRow>
+              </TableHeader>
 
-                  <th className="text-right px-3 py-2.5 font-semibold text-gray-700 bg-blue-50/80">Net Payable</th>
-                </tr>
-              </thead>
-
-              <tbody className="divide-y divide-gray-100">
+              <TableBody>
                 {displayed.map((row) => {
                   const rec = row.record as EidRecord
                   const calc = calcEid(row.employee, rec)
                   return (
-                    <tr key={row.employee.id} className={`hover:bg-gray-50/60 transition-colors ${row.dirty ? 'bg-amber-50/30' : ''}`}>
-                      <td className="px-3 py-2">
-                        <p className="font-medium text-gray-900 text-sm leading-tight">{row.employee.name}</p>
-                        <p className="text-xs text-gray-400 mt-0.5 leading-tight">{row.employee.employeeId}</p>
-                      </td>
-                      <td className="px-3 py-2 text-gray-500 text-xs">{row.employee.branch?.name}</td>
-                      <td className="px-3 py-2 text-right text-gray-700 text-sm whitespace-nowrap font-medium">{formatTaka(row.employee.basicSalary)}</td>
+                    <TableRow key={row.employee.id} className={`border-[var(--border)] hover:bg-[var(--surface-raised)] transition-colors ${row.dirty ? 'bg-[var(--warning-subtle)]/40 hover:bg-[var(--warning-subtle)]/60' : ''}`}>
+                      <TableCell>
+                        <p className="font-medium text-[var(--text-primary)] leading-tight">{row.employee.name}</p>
+                        <p className="text-xs text-[var(--text-muted)] mt-0.5 leading-tight">{row.employee.employeeId}</p>
+                      </TableCell>
+                      <TableCell className="text-[var(--text-secondary)]">{row.employee.branch?.name}</TableCell>
+                      <TableCell className="text-right text-[var(--text-primary)] whitespace-nowrap font-medium tabular-nums">{formatTaka(row.employee.basicSalary)}</TableCell>
                       
-                      <td className="px-2 py-2">
-                        <Input type="number" min="0" value={rec.salaryPaymentPct ?? 50} onChange={e => update(row.employee.id, 'salaryPaymentPct', +e.target.value)} className="text-right h-7 text-xs w-full min-w-[60px] border-gray-300 bg-white text-gray-900 focus:border-blue-500" />
-                      </td>
-                      <td className="px-2 py-2">
-                        <div className="text-right text-gray-700 text-xs py-1 pr-2">
+                      <TableCell>
+                        <Input type="number" min="0" value={rec.salaryPaymentPct ?? 50} onChange={e => update(row.employee.id, 'salaryPaymentPct', +e.target.value)} className="text-right h-7 text-xs w-full min-w-[60px]" />
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-right text-[var(--text-secondary)] py-1 pr-2 tabular-nums">
                           {formatTaka(rec.trackerAdvanceTotal ?? 0)}
                         </div>
-                      </td>
-                      <td className="px-2 py-2">
-                        <Input type="number" min="0" value={rec.hrAdvanceDeducted ?? 0} onChange={e => update(row.employee.id, 'hrAdvanceDeducted', +e.target.value)} className="text-right h-7 text-xs w-full min-w-[60px] border-gray-300 bg-white text-gray-900 focus:border-blue-500" />
-                      </td>
-                      <td className="px-2 py-2">
-                        <Input type="number" min="0" value={rec.eidBonusPct ?? 50} onChange={e => update(row.employee.id, 'eidBonusPct', +e.target.value)} className="text-right h-7 text-xs w-full min-w-[60px] border-gray-300 bg-white text-gray-900 focus:border-blue-500" />
-                      </td>
+                      </TableCell>
+                      <TableCell>
+                        <Input type="number" min="0" value={rec.hrAdvanceDeducted ?? 0} onChange={e => update(row.employee.id, 'hrAdvanceDeducted', +e.target.value)} className="text-right h-7 text-xs w-full min-w-[60px]" />
+                      </TableCell>
+                      <TableCell>
+                        <Input type="number" min="0" value={rec.eidBonusPct ?? 50} onChange={e => update(row.employee.id, 'eidBonusPct', +e.target.value)} className="text-right h-7 text-xs w-full min-w-[60px]" />
+                      </TableCell>
 
-                      <td className="px-3 py-2 text-right font-semibold text-blue-700 bg-blue-50/40 whitespace-nowrap text-sm">
+                      <TableCell className="text-right font-bold text-[var(--info)] bg-[var(--info-subtle)]/10 whitespace-nowrap tabular-nums">
                         {formatTaka(calc.netPayable)}
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   )
                 })}
                 {displayed.length === 0 && (
-                  <tr>
-                    <td colSpan={7} className="text-center py-16">
-                      <Users size={32} className="mx-auto text-gray-300 mb-2" />
-                      <p className="text-gray-400 text-sm">No employees found</p>
-                    </td>
-                  </tr>
+                  <TableRow className="border-[var(--border)] hover:bg-transparent">
+                    <TableCell colSpan={8} className="text-center py-16">
+                      <Users size={32} className="mx-auto text-[var(--text-muted)] opacity-50 mb-3" />
+                      <p className="text-[var(--text-muted)] text-sm font-medium">No employees found</p>
+                    </TableCell>
+                  </TableRow>
                 )}
-              </tbody>
+              </TableBody>
 
               {displayed.length > 0 && (
-                <tfoot>
-                  <tr className="bg-gray-50/80 border-t-2 border-gray-200 text-sm font-medium">
-                    <td className="px-3 py-2.5 font-semibold text-gray-700" colSpan={3}>
+                <TableBody className="border-t-2 border-[var(--border)] bg-[var(--surface-raised)]/50">
+                  <TableRow className="border-none hover:bg-transparent">
+                    <TableCell className="font-semibold text-[var(--text-primary)]" colSpan={3}>
                       Total ({totals.count} emp.)
-                    </td>
-                    <td className="px-2 py-2.5 text-center text-gray-600">{formatTaka(Math.round(totals.payment))}</td>
-                    <td className="px-2 py-2.5 text-center text-red-600" colSpan={2}>{formatTaka(Math.round(totals.advance))}</td>
-                    <td className="px-2 py-2.5 text-center text-green-600">{formatTaka(Math.round(totals.bonus))}</td>
-                    <td className="px-3 py-2.5" />
-                    <td className="px-3 py-2.5 text-right font-bold text-blue-800 bg-blue-50 text-base">{formatTaka(Math.round(totals.net))}</td>
-                  </tr>
-                </tfoot>
+                    </TableCell>
+                    <TableCell className="text-center text-[var(--text-secondary)] font-medium tabular-nums">{formatTaka(Math.round(totals.payment))}</TableCell>
+                    <TableCell className="text-center text-[var(--danger)] font-medium tabular-nums" colSpan={2}>{formatTaka(Math.round(totals.advance))}</TableCell>
+                    <TableCell className="text-center text-[var(--success)] font-medium tabular-nums">{formatTaka(Math.round(totals.bonus))}</TableCell>
+                    <TableCell className="text-right font-bold text-[var(--info)] bg-[var(--info-subtle)]/30 text-base tabular-nums">{formatTaka(Math.round(totals.net))}</TableCell>
+                  </TableRow>
+                </TableBody>
               )}
-            </table>
+            </Table>
           </div>
         </div>
       )}
     </div>
+    </>
   )
 }
 

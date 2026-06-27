@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import { BrandSpinner } from '@/components/ui/BrandSpinner'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 
 type AuditLog = {
   id: number
@@ -70,6 +70,15 @@ export default function AuditLogsPage() {
         <div className="bg-[var(--bg-card)] p-2 rounded text-xs text-[var(--accent-light)] max-h-32 overflow-y-auto whitespace-pre-wrap font-mono border border-[var(--border)]">
           {JSON.stringify(parsed, null, 2)}
         </div>
+
+  const renderJsonViewer = (dataStr: string | null) => {
+    if (!dataStr) return <span className="text-[var(--text-muted)]">-</span>
+    try {
+      const parsed = JSON.parse(dataStr)
+      return (
+        <div className="bg-[var(--bg-card)] p-2 rounded text-xs text-[var(--accent-light)] max-h-32 overflow-y-auto whitespace-pre-wrap font-mono border border-[var(--border)]">
+          {JSON.stringify(parsed, null, 2)}
+        </div>
       )
     } catch {
       return <span>{dataStr}</span>
@@ -77,19 +86,20 @@ export default function AuditLogsPage() {
   }
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
+    <>
+      <div className="sticky top-0 z-10 flex items-center justify-between gap-4 px-6 py-4 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur supports-[backdrop-filter]:bg-[var(--surface)]/80">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
+          <h1 className="text-lg font-semibold text-[var(--text-primary)] leading-none flex items-center gap-2">
             📋 Immutable Audit Trail
           </h1>
-          <p className="text-[var(--text-secondary)] mt-1 text-sm">
+          <p className="text-sm text-[var(--text-muted)] mt-1">
             Strict log of all creations, updates, and deletions across the financial system.
           </p>
         </div>
       </div>
+      <div className="flex-1 p-6 space-y-6 min-h-0 flex flex-col overflow-auto">
 
-      <div className="bg-[var(--bg-card)] p-4 rounded-lg border border-[var(--border)] mb-6 flex gap-4">
+      <div className="bg-[var(--surface)] p-4 rounded-xl border border-[var(--border)] flex gap-4">
         <div>
           <label className="block text-xs text-[var(--text-muted)] mb-1 uppercase tracking-wider">Action</label>
           <select 
@@ -124,54 +134,53 @@ export default function AuditLogsPage() {
         <div className="flex justify-center p-12">
           <BrandSpinner />
         </div>
-      ) : (
-        <div className="bg-[var(--bg-card)] rounded-lg border border-[var(--border)] overflow-hidden">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-[var(--border)]/50 border-b border-[var(--border)] text-xs text-[var(--text-muted)] uppercase tracking-wider">
-                <th className="p-3 w-40">Timestamp</th>
-                <th className="p-3 w-32">User</th>
-                <th className="p-3 w-24">Action</th>
-                <th className="p-3 w-32">Entity</th>
-                <th className="p-3 w-48">Reason</th>
-                <th className="p-3">Changes</th>
-              </tr>
-            </thead>
-            <tbody>
+      ) : <div className="bg-[var(--surface)] rounded-xl border border-[var(--border)] overflow-hidden">
+          <Table>
+            <TableHeader className="bg-[var(--surface-raised)] border-b border-[var(--border)]">
+              <TableRow className="border-none hover:bg-transparent">
+                <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide w-40">Timestamp</TableHead>
+                <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide w-32">User</TableHead>
+                <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide w-24">Action</TableHead>
+                <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide w-32">Entity</TableHead>
+                <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide w-48">Reason</TableHead>
+                <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide">Changes</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {logs.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="p-8 text-center text-[var(--text-muted)]">
+                <TableRow>
+                  <TableCell colSpan={6} className="py-12 text-center text-[var(--text-muted)]">
                     No audit logs found.
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ) : logs.map(log => (
-                <tr key={log.id} className="border-b border-[var(--border)] hover:bg-[var(--border)]/30 align-top text-sm">
-                  <td className="p-3 text-[var(--text-secondary)] whitespace-nowrap">
+                <TableRow key={log.id} className="border-b border-[var(--border)] hover:bg-[var(--surface-raised)] transition-colors align-top">
+                  <TableCell className="text-[var(--text-secondary)] whitespace-nowrap">
                     {new Date(log.createdAt).toLocaleString()}
-                  </td>
-                  <td className="p-3">
-                    <div className="font-medium">{log.user.username}</div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="font-medium text-[var(--text-primary)]">{log.user.username}</div>
                     <div className="text-xs text-[var(--text-muted)]">{log.user.role}</div>
-                  </td>
-                  <td className="p-3">
-                    <span className={`px-2 py-0.5 rounded text-xs font-bold ${
-                      log.action === 'CREATE' ? 'bg-[var(--success)]/20 text-[var(--success)]' :
-                      log.action === 'UPDATE' ? 'bg-[var(--accent)]/20 text-[var(--accent)]' :
-                      'bg-[var(--danger)]/20 text-[var(--danger)]'
+                  </TableCell>
+                  <TableCell>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wider font-bold ${
+                      log.action === 'CREATE' ? 'bg-[var(--success-subtle)]/30 text-[var(--success)]' :
+                      log.action === 'UPDATE' ? 'bg-[var(--info-subtle)]/30 text-[var(--info)]' :
+                      'bg-[var(--danger-subtle)]/30 text-[var(--danger)]'
                     }`}>
                       {log.action}
                     </span>
-                  </td>
-                  <td className="p-3">
-                    <span className="font-mono text-[var(--accent-light)]">{log.entityType}</span>
+                  </TableCell>
+                  <TableCell>
+                    <span className="font-mono text-[var(--info)]">{log.entityType}</span>
                     <span className="text-[var(--text-muted)] ml-1">#{log.entityId}</span>
-                  </td>
-                  <td className="p-3">
-                    <span className={log.reason ? 'text-white' : 'text-[var(--text-muted)] italic'}>
+                  </TableCell>
+                  <TableCell>
+                    <span className={log.reason ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)] italic'}>
                       {log.reason || 'None provided'}
                     </span>
-                  </td>
-                  <td className="p-3">
+                  </TableCell>
+                  <TableCell>
                     {log.action === 'UPDATE' ? (
                       <div className="grid grid-cols-2 gap-2">
                         <div>
@@ -194,11 +203,11 @@ export default function AuditLogsPage() {
                         {renderJsonViewer(log.oldValues)}
                       </div>
                     )}
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
           
           <div className="p-4 border-t border-[var(--border)] flex items-center justify-between text-sm">
             <span className="text-[var(--text-muted)]">
@@ -224,5 +233,6 @@ export default function AuditLogsPage() {
         </div>
       )}
     </div>
+    </>
   )
 }

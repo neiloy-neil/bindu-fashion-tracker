@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
 import { Plus, Edit2, Trash2 } from 'lucide-react'
 import { BrandSpinner } from '@/components/ui/BrandSpinner'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 
 type Tab = 'BRANCHES' | 'PARTIES' | 'ACCOUNTS' | 'EMPLOYEES'
 
@@ -142,46 +143,46 @@ export default function AdminSettings() {
     }
 
     return (
-      <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl overflow-hidden">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="bg-[var(--bg-secondary)] border-b border-[var(--border)] text-[var(--text-secondary)] text-sm">
-              {columns.map(c => <th key={c.key} className="p-4 font-semibold">{c.label}</th>)}
-              <th className="p-4 font-semibold text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
+      <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl overflow-hidden">
+        <Table>
+          <TableHeader className="bg-[var(--surface-raised)] border-b border-[var(--border)]">
+            <TableRow className="border-none hover:bg-transparent">
+              {columns.map(c => <TableHead key={c.key} className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide">{c.label}</TableHead>)}
+              <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {data.map(item => (
-              <tr key={item.id} className="border-b border-[var(--border)] hover:bg-[var(--bg-secondary)] transition-colors">
-                <td className="p-4 text-white font-medium">{item.name}</td>
+              <TableRow key={item.id} className="border-b border-[var(--border)] hover:bg-[var(--surface-raised)] transition-colors">
+                <TableCell className="font-medium text-[var(--text-primary)]">{item.name}</TableCell>
                 
-                {activeTab === 'BRANCHES' && <td className="p-4 text-[var(--text-secondary)]">{item.code}</td>}
-                {activeTab === 'PARTIES' && <td className="p-4 text-[var(--text-secondary)]">৳{item.balance?.toFixed(2)}</td>}
-                {activeTab === 'ACCOUNTS' && <td className="p-4 text-[var(--text-secondary)]">{item.type}</td>}
-                <td className="p-4">
-                  <span className={`px-2 py-1 rounded text-xs font-bold ${item.isActive ? 'bg-[var(--success)]/20 text-[var(--success)]' : 'bg-[var(--danger)]/20 text-[var(--danger)]'}`}>
+                {activeTab === 'BRANCHES' && <TableCell className="text-[var(--text-secondary)]">{item.code}</TableCell>}
+                {activeTab === 'PARTIES' && <TableCell className="text-[var(--text-secondary)]">৳{item.balance?.toFixed(2)}</TableCell>}
+                {activeTab === 'ACCOUNTS' && <TableCell className="text-[var(--text-secondary)]">{item.type}</TableCell>}
+                <TableCell>
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wider font-bold ${item.isActive ? 'bg-[var(--success-subtle)]/30 text-[var(--success)]' : 'bg-[var(--danger-subtle)]/30 text-[var(--danger)]'}`}>
                     {item.isActive ? 'Active' : 'Inactive'}
                   </span>
-                </td>
-                <td className="p-4 text-right flex justify-end gap-2">
-                  <button onClick={() => openModal(item)} className="p-2 bg-[var(--border)] hover:bg-[var(--accent)] hover:text-[var(--bg-card)] text-[var(--text-secondary)] rounded transition-colors" title="Edit">
+                </TableCell>
+                <TableCell className="text-right flex justify-end gap-2">
+                  <button onClick={() => openModal(item)} className="p-2 hover:bg-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded transition-colors" title="Edit">
                     <Edit2 size={14} />
                   </button>
                   {activeTab !== 'BRANCHES' && (
-                    <button onClick={() => handleDelete(item.id)} className="p-2 bg-[var(--border)] hover:bg-red-500 hover:text-white text-[var(--text-secondary)] rounded transition-colors" title="Delete">
+                    <button onClick={() => handleDelete(item.id)} className="p-2 hover:bg-[var(--danger-subtle)]/50 text-[var(--text-secondary)] hover:text-[var(--danger)] rounded transition-colors" title="Delete">
                       <Trash2 size={14} />
                     </button>
                   )}
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ))}
             {data.length === 0 && !loading && (
-              <tr>
-                <td colSpan={columns.length + 1} className="p-8 text-center text-[var(--text-secondary)]">No data found.</td>
-              </tr>
+              <TableRow>
+                <TableCell colSpan={columns.length + 1} className="p-8 text-center text-[var(--text-muted)]">No data found.</TableCell>
+              </TableRow>
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
     )
   }
@@ -225,20 +226,21 @@ export default function AdminSettings() {
   }
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto">
-      <div className="page-header mb-8">
+    <>
+      <div className="sticky top-0 z-10 flex items-center justify-between gap-4 px-6 py-4 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur supports-[backdrop-filter]:bg-[var(--surface)]/80">
         <div>
-          <h2 className="page-title text-3xl font-bold bg-gradient-to-r from-[var(--accent)] to-[#3a7bd5] bg-clip-text text-transparent">Admin Settings</h2>
-          <p className="page-subtitle">Manage users, branches, and system preferences</p>
+          <h1 className="text-lg font-semibold text-[var(--text-primary)] leading-none">Admin Settings</h1>
+          <p className="text-sm text-[var(--text-muted)] mt-1">Manage users, branches, and system preferences</p>
         </div>
       </div>
+      <div className="flex-1 p-6 space-y-6 min-h-0 flex flex-col overflow-auto">
 
-      <div className="flex gap-4 mb-8 border-b border-[var(--border)] overflow-x-auto whitespace-nowrap scrollbar-hide">
+      <div className="flex gap-4 border-b border-[var(--border)] overflow-x-auto whitespace-nowrap scrollbar-hide">
         {tabs.map(tab => (
           <button 
             key={tab.id}
             onClick={() => setActiveTab(tab.id as Tab)}
-            className={`pb-4 px-4 font-semibold transition-colors ${activeTab === tab.id ? 'text-[var(--accent)] border-b-2 border-[var(--accent)]' : 'text-[var(--text-secondary)] hover:text-white'}`}
+            className={`pb-4 px-4 font-semibold transition-colors ${activeTab === tab.id ? 'text-[var(--accent)] border-b-2 border-[var(--accent)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
           >
             {tab.label}
           </button>
@@ -277,5 +279,6 @@ export default function AdminSettings() {
         </div>
       )}
     </div>
+    </>
   )
 }

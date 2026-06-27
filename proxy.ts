@@ -74,7 +74,7 @@ export async function proxy(req: NextRequest) {
       }
     }
 
-    if (role === 'AUDITOR' || role === 'AREA_MANAGER') {
+    if (role === 'AUDITOR' || role === 'AREA_MANAGER' || role === 'ACCOUNTS') {
       if (
         pathname.startsWith('/admin/users') ||
         pathname.startsWith('/admin/settings') ||

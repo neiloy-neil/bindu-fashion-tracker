@@ -197,6 +197,13 @@ export default function AdminRequestsPage() {
               <p className="text-sm text-white bg-[var(--bg-card)] p-3 rounded border border-[var(--border)] whitespace-pre-wrap">
                 {activeReq.description}
               </p>
+              {activeReq.attachmentUrl && (
+                <div className="mt-2">
+                  <a href={activeReq.attachmentUrl} target="_blank" rel="noopener noreferrer" className="text-[var(--accent)] hover:underline text-sm font-medium flex items-center gap-1">
+                    🔗 View Attachment
+                  </a>
+                </div>
+              )}
             </div>
 
             <form onSubmit={handleUpdate} className="p-5 flex flex-col gap-4">

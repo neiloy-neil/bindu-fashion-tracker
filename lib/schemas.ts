@@ -39,11 +39,12 @@ export const userSchema = z.object({
   username: z.string().min(1),
   email: z.string().email().optional().or(z.literal('')),
   password: z.string().min(6),
-  role: z.enum(['ADMIN', 'BRANCH', 'AUDITOR', 'AREA_MANAGER', 'HR_ADMIN', 'SUPER_ADMIN']),
+  role: z.enum(['ADMIN', 'BRANCH', 'AUDITOR', 'AREA_MANAGER', 'HR_ADMIN', 'SUPER_ADMIN', 'ACCOUNTS']),
   branchId: z.union([z.string(), z.number()]).optional().nullable(),
   isActive: z.boolean().optional(),
   managedBranchIds: z.array(z.number()).optional(),
-  employeeId: z.union([z.string(), z.number()]).optional().nullable()
+  employeeId: z.union([z.string(), z.number()]).optional().nullable(),
+  phoneNumber: z.string().optional().nullable()
 })
 
 export const branchRequestSchema = z.object({

@@ -22,7 +22,7 @@ type User = {
 type Employee = { id: number; name: string; employeeId: string }
 type Branch = { id: number; name: string }
 
-const ROLES = ['BRANCH', 'AREA_MANAGER', 'AUDITOR', 'HR_ADMIN', 'ADMIN', 'SUPER_ADMIN'] as const
+const ROLES = ['BRANCH', 'AREA_MANAGER', 'AUDITOR', 'HR_ADMIN', 'ADMIN', 'SUPER_ADMIN', 'ACCOUNTS'] as const
 
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([])

@@ -7,7 +7,7 @@ const userUpdateSchema = z.object({
   username: z.string().min(2).optional(),
   email: z.string().email().optional().nullable(),
   phoneNumber: z.string().optional().nullable(),
-  role: z.enum(['ADMIN', 'BRANCH', 'AUDITOR', 'AREA_MANAGER', 'HR_ADMIN']).optional(),
+  role: z.enum(['ADMIN', 'BRANCH', 'AUDITOR', 'AREA_MANAGER', 'HR_ADMIN', 'SUPER_ADMIN', 'ACCOUNTS']).optional(),
   branchId: z.union([z.string(), z.number()]).transform(v => Number(v)).optional().nullable(),
   isActive: z.boolean().optional(),
   password: z.string().min(6).optional().nullable(),
@@ -16,7 +16,7 @@ const userUpdateSchema = z.object({
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const userRole = req.headers.get('x-user-role')
-  if (userRole !== 'ADMIN') {
+  if (userRole !== 'ADMIN' && userRole !== 'SUPER_ADMIN') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
   }
 
@@ -80,7 +80,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const userRole = req.headers.get('x-user-role')
-  if (userRole !== 'ADMIN') {
+  if (userRole !== 'ADMIN' && userRole !== 'SUPER_ADMIN') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
   }
 

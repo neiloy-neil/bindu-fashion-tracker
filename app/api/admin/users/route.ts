@@ -5,7 +5,7 @@ import { userSchema } from '@/lib/schemas'
 
 export async function GET(req: NextRequest) {
   const userRole = req.headers.get('x-user-role')
-  if (userRole !== 'ADMIN') {
+  if (userRole !== 'ADMIN' && userRole !== 'SUPER_ADMIN') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
   }
 
@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const userRole = req.headers.get('x-user-role')
-  if (userRole !== 'ADMIN') {
+  if (userRole !== 'ADMIN' && userRole !== 'SUPER_ADMIN') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
   }
 
@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) {
     return NextResponse.json({ error: 'Invalid input', details: parsed.error.format() }, { status: 400 })
   }
-  const { username, email, password, role, branchId, isActive, managedBranchIds, employeeId } = parsed.data
+  const { username, email, phoneNumber, password, role, branchId, isActive, managedBranchIds, employeeId } = parsed.data
 
   try {
     const existing = await prisma.user.findUnique({ where: { username } })
@@ -60,6 +60,7 @@ export async function POST(req: NextRequest) {
       data: {
         username,
         email: email || null,
+        phoneNumber: phoneNumber || null,
         passwordHash,
         role,
         ...(branchId && role === 'BRANCH' ? { branch: { connect: { id: parseInt(String(branchId)) } } } : {}),

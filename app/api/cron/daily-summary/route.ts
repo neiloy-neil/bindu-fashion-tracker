@@ -15,37 +15,44 @@ export async function GET(req: NextRequest) {
   tomorrow.setDate(tomorrow.getDate() + 1)
 
   const entries = await prisma.dailyEntry.findMany({
-    where: {
-      date: {
-        gte: today,
-        lt: tomorrow
-      }
-    },
-    include: { branch: true }
+    where: { date: { gte: today, lt: tomorrow } },
+    include: {
+      branch: true,
+      items: { include: { category: true } },
+      expenseEntries: true,
+      transfers: true,
+      payments: { include: { cheque: true } },
+      advanceSalaries: true,
+    }
   })
 
   let totalSales = 0
   let totalExpenses = 0
 
   const branchSummaries = entries.map(entry => {
-    const incomeFields = [
-      'cashSale', 'dueReceived', 'conditionRec', 'bkashIncome', 'nagadIncome',
-      'rocketIncome', 'posPubali', 'posCity', 'posBrac', 'posDbbl',
-      'acBindu', 'bindu2Transfer', 'receivedAziz1'
-    ] as const
+    let branchSale = 0
+    let branchExp = 0
 
-    const expenseFields = [
-      'advanceTk', 'conditionChange', 'partyPayment', 'aziz2Transfer', 'bankDeposit',
-      'dmcb', 'saleBonus', 'courierLbrBill', 'snacksTea', 'lunch', 'conveyance',
-      'otherExpense', 'donation', 'stationary', 'netWife', 'utilities', 'waterBill',
-      'dailySomity', 'electricRecharge', 'petrolMobil', 'phoneBill', 'shopRent',
-      'salary', 'returnExp', 'bkashExpense', 'nagadExpense', 'posExpense',
-      'rocketDbbl', 'bossPersonalAll', 'acBinduExpense', 'vat', 'vatExp',
-      'emgFund', 'bossGift'
-    ] as const
+    for (const item of entry.items) {
+      if (item.category.type === 'INCOME') branchSale += item.amount
+    }
 
-    const branchSale = incomeFields.reduce((s, f) => s + (entry[f as keyof typeof entry] as number || 0), 0)
-    const branchExp = expenseFields.reduce((s, f) => s + (entry[f as keyof typeof entry] as number || 0), 0)
+    for (const e of entry.expenseEntries) {
+      branchExp += e.amount
+    }
+
+    for (const t of entry.transfers) {
+      branchExp += t.amount
+    }
+
+    for (const p of entry.payments) {
+      if (p.method === 'CHEQUE' && p.cheque?.status !== 'APPROVED') continue
+      branchExp += p.amount
+    }
+
+    for (const a of entry.advanceSalaries) {
+      if (a.type === 'CASH') branchExp += a.amount || 0
+    }
 
     totalSales += branchSale
     totalExpenses += branchExp
@@ -67,9 +74,6 @@ export async function GET(req: NextRequest) {
     message: 'Summary generated successfully'
   }
 
-  // TODO: Send email or WhatsApp here.
-  // Example with Resend:
-  // await resend.emails.send({ ... })
   logger.info('cron.daily_summary_generated', {
     date: summary.date,
     totalSales,

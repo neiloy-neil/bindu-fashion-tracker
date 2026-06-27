@@ -2,9 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const userRole = req.headers.get('x-user-role')
+  if (!userRole) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   const resolvedParams = await params
   const id = parseInt(resolvedParams.id)
-  
+
   try {
     const party = await prisma.party.findUnique({
       where: { id },

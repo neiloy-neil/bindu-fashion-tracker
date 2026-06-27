@@ -22,6 +22,7 @@ export default function BranchesPage() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editingBranch, setEditingBranch] = useState<any | null>(null)
   const [branchName, setBranchName] = useState('')
+  const [branchCode, setBranchCode] = useState('')
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -38,12 +39,14 @@ export default function BranchesPage() {
   const openAddModal = () => {
     setEditingBranch(null)
     setBranchName('')
+    setBranchCode('')
     setModalOpen(true)
   }
 
   const openEditModal = (branch: any) => {
     setEditingBranch(branch)
     setBranchName(branch.name)
+    setBranchCode(branch.code)
     setModalOpen(true)
   }
 
@@ -52,11 +55,12 @@ export default function BranchesPage() {
       toast.error('Branch name is required')
       return
     }
+    const code = branchCode.trim() || branchName.substring(0, 3).toUpperCase()
     setSaving(true)
     try {
-      const payload = editingBranch 
-        ? { name: branchName, code: editingBranch.code }
-        : { name: branchName, code: branchName.substring(0, 3).toUpperCase() }
+      const payload = editingBranch
+        ? { name: branchName, code }
+        : { name: branchName, code }
 
       const url = editingBranch ? `/api/branches/${editingBranch.id}` : '/api/branches'
       const method = editingBranch ? 'PUT' : 'POST'
@@ -181,8 +185,23 @@ export default function BranchesPage() {
               <Input
                 id="name"
                 value={branchName}
-                onChange={(e) => setBranchName(e.target.value)}
+                onChange={(e) => {
+                  setBranchName(e.target.value)
+                  if (!editingBranch && !branchCode) {
+                    setBranchCode(e.target.value.substring(0, 3).toUpperCase())
+                  }
+                }}
                 placeholder="e.g. Uttara Branch"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="code">Branch Code</Label>
+              <Input
+                id="code"
+                value={branchCode}
+                onChange={(e) => setBranchCode(e.target.value.toUpperCase())}
+                placeholder="e.g. UTT"
+                maxLength={10}
               />
             </div>
           </div>

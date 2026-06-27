@@ -5,6 +5,8 @@ export async function GET(req: NextRequest) {
   const userRole = req.headers.get('x-user-role')
   const userBranchId = req.headers.get('x-user-branch-id')
 
+  if (!userRole) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   const entryWhere: any = {}
   const requestWhere: any = {}
 

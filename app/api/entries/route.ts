@@ -18,6 +18,8 @@ export async function GET(req: NextRequest) {
   const userBranchId = req.headers.get('x-user-branch-id')
   const userManagedBranches = req.headers.get('x-user-managed-branches')
 
+  if (!userRole) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   const where: Record<string, unknown> = {}
 
   if (year && month) {
@@ -188,7 +190,7 @@ export async function POST(req: NextRequest) {
       try {
         await fetch(`${appUrl}/api/hr/sync/advance`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'x-user-role': 'ADMIN' },
           body: JSON.stringify({
             month: entryDate.getMonth() + 1,
             year: entryDate.getFullYear(),

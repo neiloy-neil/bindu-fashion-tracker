@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
+import { sendEmail, leaveRequestEmail } from '@/lib/email'
 
 const leaveSchema = z.object({
   employeeId: z.number(),
@@ -84,6 +85,24 @@ export async function POST(req: NextRequest) {
         employee: { select: { name: true } }
       }
     })
+
+    // Notify HR admins and admins (fire-and-forget)
+    void (async () => {
+      try {
+        const recipients = await prisma.user.findMany({
+          where: { role: { in: ['ADMIN', 'HR_ADMIN'] }, isActive: true, email: { not: null } },
+          select: { email: true }
+        })
+        const tpl = leaveRequestEmail(
+          leave.employee.name,
+          leave.type,
+          leave.startDate.toISOString().split('T')[0],
+          leave.endDate.toISOString().split('T')[0],
+          leave.reason ?? null
+        )
+        await Promise.all(recipients.map(r => sendEmail({ to: r.email!, ...tpl })))
+      } catch {}
+    })()
 
     return NextResponse.json(leave, { status: 201 })
   } catch (error: any) {

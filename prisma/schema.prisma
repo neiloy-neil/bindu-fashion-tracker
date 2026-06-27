@@ -46,6 +46,8 @@ model User {
   salaryRecords         SalaryRecord[]
   approvedLeaves        LeaveRecord[]   @relation("LeaveApprover")
 
+  phoneNumber String?
+
   employeeId Int?      @unique
   employee   Employee? @relation(fields: [employeeId], references: [id], onDelete: SetNull)
 }
@@ -275,14 +277,15 @@ model Purchase {
 }
 
 model Payment {
-  id            Int      @id @default(autoincrement())
-  dailyEntryId  Int?
-  partyId       Int
-  method        String
-  amount        Float
-  note          String?
-  attachmentUrl String?
-  createdAt     DateTime @default(now())
+  id             Int      @id @default(autoincrement())
+  dailyEntryId   Int?
+  partyId        Int
+  method         String
+  amount         Float
+  note           String?
+  attachmentUrl  String?
+  approvalStatus String   @default("APPROVED")
+  createdAt      DateTime @default(now())
 
   dailyEntry DailyEntry? @relation(fields: [dailyEntryId], references: [id])
   party      Party       @relation(fields: [partyId], references: [id], onDelete: Cascade)

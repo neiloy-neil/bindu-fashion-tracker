@@ -4,6 +4,9 @@ import bcrypt from 'bcryptjs'
 import { z } from 'zod'
 
 const userUpdateSchema = z.object({
+  username: z.string().min(2).optional(),
+  email: z.string().email().optional().nullable(),
+  phoneNumber: z.string().optional().nullable(),
   role: z.enum(['ADMIN', 'BRANCH', 'AUDITOR', 'AREA_MANAGER', 'HR_ADMIN']).optional(),
   branchId: z.union([z.string(), z.number()]).transform(v => Number(v)).optional().nullable(),
   isActive: z.boolean().optional(),
@@ -24,9 +27,12 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   if (!parsed.success) {
     return NextResponse.json({ error: 'Invalid input', details: parsed.error.flatten() }, { status: 400 })
   }
-  const { role, branchId, isActive, password, managedBranchIds } = parsed.data
+  const { username, email, phoneNumber, role, branchId, isActive, password, managedBranchIds } = parsed.data
 
   const dataToUpdate: any = {}
+  if (username !== undefined) dataToUpdate.username = username
+  if (email !== undefined) dataToUpdate.email = email ?? null
+  if (phoneNumber !== undefined) dataToUpdate.phoneNumber = phoneNumber ?? null
   if (role !== undefined) dataToUpdate.role = role
   if (branchId !== undefined && branchId !== null) {
     if (role === 'BRANCH' || (!role && dataToUpdate.role === 'BRANCH')) dataToUpdate.branch = { connect: { id: branchId } }
@@ -56,9 +62,13 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       select: {
         id: true,
         username: true,
+        email: true,
+        phoneNumber: true,
         role: true,
         isActive: true,
         branchId: true,
+        branch: { select: { id: true, name: true } },
+        managedBranches: { select: { id: true, name: true } },
       }
     })
     return NextResponse.json(user)

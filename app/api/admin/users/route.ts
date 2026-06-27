@@ -15,6 +15,7 @@ export async function GET(req: NextRequest) {
         id: true,
         username: true,
         email: true,
+        phoneNumber: true,
         role: true,
         isActive: true,
         branchId: true,

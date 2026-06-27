@@ -1,31 +1,27 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { PlusCircle } from 'lucide-react'
+import { PlusCircle, Pencil, ToggleLeft, ToggleRight } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 type User = {
   id: number
   username: string
   email?: string | null
+  phoneNumber?: string | null
   role: string
+  isActive: boolean
   branchId: number | null
-  branch: { name: string } | null
-  managedBranches?: { id: number, name: string }[]
+  branch: { id: number; name: string } | null
+  managedBranches?: { id: number; name: string }[]
   employeeId?: number | null
-  employee?: { id: number, name: string } | null
+  employee?: { id: number; name: string } | null
 }
 
-type Employee = {
-  id: number
-  name: string
-  employeeId: string
-}
+type Employee = { id: number; name: string; employeeId: string }
+type Branch = { id: number; name: string }
 
-type Branch = {
-  id: number
-  name: string
-}
+const ROLES = ['BRANCH', 'AREA_MANAGER', 'AUDITOR', 'HR_ADMIN', 'ADMIN'] as const
 
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([])
@@ -33,20 +29,32 @@ export default function UsersPage() {
   const [employees, setEmployees] = useState<Employee[]>([])
   const [loading, setLoading] = useState(true)
 
-  // Form
-  const [username, setUsername] = useState('')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [role, setRole] = useState('BRANCH')
-  const [branchId, setBranchId] = useState('')
-  const [employeeId, setEmployeeId] = useState('')
-  const [managedBranchIds, setManagedBranchIds] = useState<number[]>([])
+  // Create form
+  const [createUsername, setCreateUsername] = useState('')
+  const [createEmail, setCreateEmail] = useState('')
+  const [createPhone, setCreatePhone] = useState('')
+  const [createPassword, setCreatePassword] = useState('')
+  const [createRole, setCreateRole] = useState<string>('BRANCH')
+  const [createBranchId, setCreateBranchId] = useState('')
+  const [createEmployeeId, setCreateEmployeeId] = useState('')
+  const [createManagedBranchIds, setCreateManagedBranchIds] = useState<number[]>([])
+
+  // Edit modal
+  const [editUser, setEditUser] = useState<User | null>(null)
+  const [editUsername, setEditUsername] = useState('')
+  const [editEmail, setEditEmail] = useState('')
+  const [editPhone, setEditPhone] = useState('')
+  const [editPassword, setEditPassword] = useState('')
+  const [editRole, setEditRole] = useState('')
+  const [editBranchId, setEditBranchId] = useState('')
+  const [editManagedBranchIds, setEditManagedBranchIds] = useState<number[]>([])
+  const [editSaving, setEditSaving] = useState(false)
 
   useEffect(() => {
     Promise.all([
       fetch('/api/admin/users').then(r => r.json()),
       fetch('/api/branches').then(r => r.json()),
-      fetch('/api/hr/employees?active=true').then(r => r.json())
+      fetch('/api/hr/employees?active=true').then(r => r.json()),
     ]).then(([uData, bData, eData]) => {
       if (Array.isArray(uData)) setUsers(uData)
       if (Array.isArray(bData)) setBranches(bData)
@@ -55,144 +63,154 @@ export default function UsersPage() {
     })
   }, [])
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
-    
-    if (role === 'BRANCH' && !branchId) {
-      toast.error('Please select a branch for BRANCH role')
-      return
-    }
-
-    if (role === 'AREA_MANAGER' && managedBranchIds.length === 0) {
-      toast.error('Please select at least one branch for AREA_MANAGER')
-      return
-    }
+    if (createRole === 'BRANCH' && !createBranchId) { toast.error('Select a branch'); return }
+    if (createRole === 'AREA_MANAGER' && createManagedBranchIds.length === 0) { toast.error('Select at least one branch'); return }
 
     const res = await fetch('/api/admin/users', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        username, 
-        email: email || undefined,
-        password, 
-        role, 
-        branchId: role === 'BRANCH' ? branchId : undefined,
-        employeeId: employeeId || undefined,
-        managedBranchIds: role === 'AREA_MANAGER' ? managedBranchIds : undefined
+      body: JSON.stringify({
+        username: createUsername,
+        email: createEmail || undefined,
+        phoneNumber: createPhone || undefined,
+        password: createPassword,
+        role: createRole,
+        branchId: createRole === 'BRANCH' ? createBranchId : undefined,
+        employeeId: createEmployeeId || undefined,
+        managedBranchIds: createRole === 'AREA_MANAGER' ? createManagedBranchIds : undefined,
       }),
     })
-    
     const data = await res.json()
     if (res.ok) {
-      setUsers([data, ...users])
-      setUsername('')
-      setEmail('')
-      setPassword('')
-      setRole('BRANCH')
-      setBranchId('')
-      setEmployeeId('')
-      setManagedBranchIds([])
-      toast.success('User created successfully!')
+      setUsers(prev => [data, ...prev])
+      setCreateUsername(''); setCreateEmail(''); setCreatePhone(''); setCreatePassword('')
+      setCreateRole('BRANCH'); setCreateBranchId(''); setCreateEmployeeId(''); setCreateManagedBranchIds([])
+      toast.success('User created')
     } else {
       toast.error(data.error || 'Failed to create user')
+    }
+  }
+
+  const openEdit = (u: User) => {
+    setEditUser(u)
+    setEditUsername(u.username)
+    setEditEmail(u.email ?? '')
+    setEditPhone(u.phoneNumber ?? '')
+    setEditPassword('')
+    setEditRole(u.role)
+    setEditBranchId(u.branchId ? String(u.branchId) : '')
+    setEditManagedBranchIds(u.managedBranches?.map(b => b.id) ?? [])
+  }
+
+  const handleEditSave = async () => {
+    if (!editUser) return
+    setEditSaving(true)
+    try {
+      const body: any = {
+        username: editUsername,
+        email: editEmail || null,
+        phoneNumber: editPhone || null,
+        role: editRole,
+        isActive: editUser.isActive,
+        branchId: editRole === 'BRANCH' ? (editBranchId ? parseInt(editBranchId) : null) : null,
+        managedBranchIds: editRole === 'AREA_MANAGER' ? editManagedBranchIds : [],
+      }
+      if (editPassword.trim()) body.password = editPassword.trim()
+
+      const res = await fetch(`/api/admin/users/${editUser.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to update')
+      setUsers(prev => prev.map(u => u.id === editUser.id ? { ...u, ...data } : u))
+      setEditUser(null)
+      toast.success('User updated')
+    } catch (e: any) {
+      toast.error(e.message)
+    } finally {
+      setEditSaving(false)
+    }
+  }
+
+  const toggleActive = async (u: User) => {
+    const res = await fetch(`/api/admin/users/${u.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ isActive: !u.isActive }),
+    })
+    const data = await res.json()
+    if (res.ok) {
+      setUsers(prev => prev.map(x => x.id === u.id ? { ...x, isActive: data.isActive } : x))
+      toast.success(data.isActive ? 'User activated' : 'User deactivated')
+    } else {
+      toast.error(data.error || 'Failed to update')
     }
   }
 
   if (loading) return <div className="p-8">Loading...</div>
 
   return (
-    <div className="p-8 max-w-5xl">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">User Management</h1>
-      </div>
+    <div className="p-8 max-w-6xl">
+      <h1 className="text-2xl font-bold mb-6">User Management</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        {/* Create Form */}
         <div className="md:col-span-1">
-          <form onSubmit={handleSubmit} className="bg-[var(--bg-card)] p-6 rounded-lg border border-[var(--border)] space-y-4">
+          <form onSubmit={handleCreate} className="bg-[var(--bg-card)] p-6 rounded-lg border border-[var(--border)] space-y-4">
             <h2 className="text-lg font-semibold border-b border-[var(--border)] pb-2 mb-4">Create User</h2>
 
-            <div>
-              <label className="block text-sm text-[var(--text-muted)] mb-1">Username</label>
-              <input 
-                required 
-                className="form-input w-full" 
-                value={username} 
-                onChange={e => setUsername(e.target.value)} 
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm text-[var(--text-muted)] mb-1">
-                Email {role === 'HR_ADMIN' && <span className="text-red-500">*</span>}
-              </label>
-              <input 
-                type="email"
-                required={role === 'HR_ADMIN'}
-                className="form-input w-full" 
-                value={email} 
-                onChange={e => setEmail(e.target.value)} 
-                placeholder="Optional for most, required for HR_ADMIN"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm text-[var(--text-muted)] mb-1">Password</label>
-              <input 
-                required 
-                type="password" 
-                className="form-input w-full" 
-                value={password} 
-                onChange={e => setPassword(e.target.value)} 
-              />
-            </div>
+            {[
+              { label: 'Username', value: createUsername, set: setCreateUsername, type: 'text', required: true },
+              { label: `Email${createRole === 'HR_ADMIN' ? ' *' : ''}`, value: createEmail, set: setCreateEmail, type: 'email', required: createRole === 'HR_ADMIN' },
+              { label: 'Phone Number', value: createPhone, set: setCreatePhone, type: 'tel', required: false },
+              { label: 'Password', value: createPassword, set: setCreatePassword, type: 'password', required: true },
+            ].map(f => (
+              <div key={f.label}>
+                <label className="block text-sm text-[var(--text-muted)] mb-1">{f.label}</label>
+                <input required={f.required} type={f.type} className="form-input w-full" value={f.value}
+                  onChange={e => f.set(e.target.value)} />
+              </div>
+            ))}
 
             <div>
               <label className="block text-sm text-[var(--text-muted)] mb-1">Role</label>
-              <select className="form-input form-select w-full" value={role} onChange={e => setRole(e.target.value)}>
-                <option value="BRANCH">BRANCH</option>
-                <option value="AREA_MANAGER">AREA_MANAGER</option>
-                <option value="AUDITOR">AUDITOR</option>
-                <option value="HR_ADMIN">HR_ADMIN</option>
-                <option value="ADMIN">ADMIN</option>
+              <select className="form-input form-select w-full" value={createRole} onChange={e => setCreateRole(e.target.value)}>
+                {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
               </select>
             </div>
 
-            {role === 'BRANCH' && (
+            {createRole === 'BRANCH' && (
               <>
                 <div>
                   <label className="block text-sm text-[var(--text-muted)] mb-1">Branch</label>
-                  <select className="form-input form-select w-full" value={branchId} onChange={e => setBranchId(e.target.value)}>
+                  <select className="form-input form-select w-full" value={createBranchId} onChange={e => setCreateBranchId(e.target.value)}>
                     <option value="">-- Select Branch --</option>
                     {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="block text-sm text-[var(--text-muted)] mb-1">Linked Employee (Optional)</label>
-                  <select className="form-input form-select w-full" value={employeeId} onChange={e => setEmployeeId(e.target.value)}>
-                    <option value="">-- No Employee Linked --</option>
+                  <select className="form-input form-select w-full" value={createEmployeeId} onChange={e => setCreateEmployeeId(e.target.value)}>
+                    <option value="">-- None --</option>
                     {employees.map(e => <option key={e.id} value={e.id}>{e.name} ({e.employeeId})</option>)}
                   </select>
                 </div>
               </>
             )}
 
-            {role === 'AREA_MANAGER' && (
+            {createRole === 'AREA_MANAGER' && (
               <div>
                 <label className="block text-sm text-[var(--text-muted)] mb-1">Managed Branches</label>
                 <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-lg p-3 max-h-48 overflow-y-auto space-y-2">
                   {branches.map(b => (
                     <label key={b.id} className="flex items-center gap-3 cursor-pointer">
-                      <input 
-                        type="checkbox" 
-                        className="rounded border-[var(--border)] bg-[var(--bg-secondary)] text-[var(--accent)] focus:ring-[var(--accent)]"
-                        checked={managedBranchIds.includes(b.id)}
-                        onChange={(e) => {
-                          setManagedBranchIds(prev => 
-                            e.target.checked ? [...prev, b.id] : prev.filter(id => id !== b.id)
-                          )
-                        }}
-                      />
-                      <span className="text-sm text-[var(--text-primary)]">{b.name}</span>
+                      <input type="checkbox" className="rounded" checked={createManagedBranchIds.includes(b.id)}
+                        onChange={e => setCreateManagedBranchIds(prev => e.target.checked ? [...prev, b.id] : prev.filter(id => id !== b.id))} />
+                      <span className="text-sm">{b.name}</span>
                     </label>
                   ))}
                 </div>
@@ -200,42 +218,54 @@ export default function UsersPage() {
             )}
 
             <button type="submit" className="w-full mt-2 py-2 rounded font-medium flex items-center justify-center bg-[var(--accent)] hover:bg-[var(--accent)]/80 text-black">
-              <PlusCircle size={16} className="mr-2" />
-              Create User
+              <PlusCircle size={16} className="mr-2" /> Create User
             </button>
           </form>
         </div>
 
+        {/* User Table */}
         <div className="md:col-span-2">
           <div className="bg-[var(--bg-card)] rounded-lg border border-[var(--border)] overflow-hidden">
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-left border-collapse text-sm">
               <thead>
-                <tr className="bg-[var(--border)]/50 border-b border-[var(--border)] text-sm text-[var(--text-muted)]">
-                  <th className="p-3">Username</th>
-                  <th className="p-3">Email</th>
+                <tr className="bg-[var(--border)]/50 border-b border-[var(--border)] text-[var(--text-muted)]">
+                  <th className="p-3">User</th>
                   <th className="p-3">Role</th>
-                  <th className="p-3">Assigned Branch</th>
-                  <th className="p-3">Linked Employee</th>
+                  <th className="p-3">Branch</th>
+                  <th className="p-3">Status</th>
+                  <th className="p-3 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {users.map(u => (
-                  <tr key={u.id} className="border-b border-[var(--border)] hover:bg-[var(--border)]/30">
-                    <td className="p-3 font-medium">{u.username}</td>
-                    <td className="p-3 text-sm text-[var(--text-muted)]">{u.email || '-'}</td>
+                  <tr key={u.id} className="border-b border-[var(--border)] hover:bg-[var(--border)]/20">
+                    <td className="p-3">
+                      <div className="font-medium">{u.username}</div>
+                      {u.email && <div className="text-xs text-[var(--text-muted)]">{u.email}</div>}
+                      {u.phoneNumber && <div className="text-xs text-[var(--text-muted)]">{u.phoneNumber}</div>}
+                    </td>
                     <td className="p-3">
                       <span className={`text-xs px-2 py-1 rounded ${u.role === 'ADMIN' ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/20 text-blue-400'}`}>
                         {u.role}
                       </span>
                     </td>
-                    <td className="p-3 text-[var(--text-muted)] text-sm">
-                      {u.role === 'ADMIN' ? 'All Branches' : 
-                       u.role === 'AUDITOR' ? 'All Branches (Read-Only)' :
+                    <td className="p-3 text-[var(--text-muted)] text-xs">
+                      {u.role === 'ADMIN' ? 'All Branches' :
+                       u.role === 'AUDITOR' ? 'Read-Only' :
                        u.role === 'AREA_MANAGER' ? (u.managedBranches?.map(b => b.name).join(', ') || 'None') :
                        u.branch?.name || 'Unassigned'}
                     </td>
-                    <td className="p-3 text-[var(--text-muted)] text-sm">
-                      {u.employee?.name || '-'}
+                    <td className="p-3">
+                      <button onClick={() => toggleActive(u)} title={u.isActive ? 'Deactivate' : 'Activate'}
+                        className={`flex items-center gap-1 text-xs font-medium ${u.isActive ? 'text-[var(--success)]' : 'text-[var(--danger)]'}`}>
+                        {u.isActive ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
+                        {u.isActive ? 'Active' : 'Inactive'}
+                      </button>
+                    </td>
+                    <td className="p-3 text-right">
+                      <button onClick={() => openEdit(u)} className="btn btn-secondary text-xs px-3 h-8 flex items-center gap-1.5 ml-auto">
+                        <Pencil size={13} /> Edit
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -244,6 +274,80 @@ export default function UsersPage() {
           </div>
         </div>
       </div>
+
+      {/* Edit Modal */}
+      {editUser && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl w-full max-w-lg shadow-2xl">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border)]">
+              <h2 className="text-lg font-semibold">Edit User — {editUser.username}</h2>
+              <button onClick={() => setEditUser(null)} className="text-[var(--text-muted)] hover:text-foreground text-xl leading-none">×</button>
+            </div>
+            <div className="px-6 py-4 space-y-4 max-h-[70vh] overflow-y-auto">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm text-[var(--text-muted)] mb-1">Username</label>
+                  <input className="form-input w-full" value={editUsername} onChange={e => setEditUsername(e.target.value)} />
+                </div>
+                <div>
+                  <label className="block text-sm text-[var(--text-muted)] mb-1">Phone Number</label>
+                  <input className="form-input w-full" type="tel" value={editPhone} onChange={e => setEditPhone(e.target.value)} placeholder="Optional" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm text-[var(--text-muted)] mb-1">Email</label>
+                <input className="form-input w-full" type="email" value={editEmail} onChange={e => setEditEmail(e.target.value)} placeholder="Optional" />
+              </div>
+              <div>
+                <label className="block text-sm text-[var(--text-muted)] mb-1">New Password <span className="text-[var(--text-muted)] font-normal">(leave blank to keep current)</span></label>
+                <input className="form-input w-full" type="password" value={editPassword} onChange={e => setEditPassword(e.target.value)} placeholder="Min 6 characters" />
+              </div>
+              <div>
+                <label className="block text-sm text-[var(--text-muted)] mb-1">Role</label>
+                <select className="form-input form-select w-full" value={editRole} onChange={e => setEditRole(e.target.value)}>
+                  {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+                </select>
+              </div>
+              {editRole === 'BRANCH' && (
+                <div>
+                  <label className="block text-sm text-[var(--text-muted)] mb-1">Branch</label>
+                  <select className="form-input form-select w-full" value={editBranchId} onChange={e => setEditBranchId(e.target.value)}>
+                    <option value="">-- Select Branch --</option>
+                    {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                  </select>
+                </div>
+              )}
+              {editRole === 'AREA_MANAGER' && (
+                <div>
+                  <label className="block text-sm text-[var(--text-muted)] mb-1">Managed Branches</label>
+                  <div className="border border-[var(--border)] rounded-lg p-3 max-h-40 overflow-y-auto space-y-2">
+                    {branches.map(b => (
+                      <label key={b.id} className="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" checked={editManagedBranchIds.includes(b.id)}
+                          onChange={e => setEditManagedBranchIds(prev => e.target.checked ? [...prev, b.id] : prev.filter(id => id !== b.id))} />
+                        <span className="text-sm">{b.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div className="flex items-center gap-3 pt-1">
+                <button onClick={() => setEditUser(u => u ? { ...u, isActive: !u.isActive } : u)}
+                  className={`flex items-center gap-1.5 text-sm font-medium ${editUser.isActive ? 'text-[var(--success)]' : 'text-[var(--danger)]'}`}>
+                  {editUser.isActive ? <ToggleRight size={20} /> : <ToggleLeft size={20} />}
+                  {editUser.isActive ? 'Active' : 'Inactive'} — click to toggle
+                </button>
+              </div>
+            </div>
+            <div className="px-6 py-4 border-t border-[var(--border)] flex justify-end gap-3">
+              <button onClick={() => setEditUser(null)} className="btn btn-secondary px-4">Cancel</button>
+              <button onClick={handleEditSave} disabled={editSaving} className="btn bg-[var(--accent)] text-black px-6 hover:bg-[var(--accent)]/80">
+                {editSaving ? 'Saving…' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

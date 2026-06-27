@@ -5,6 +5,7 @@ import { dateOnlyToUtc, newEntryPayloadSchema } from '@/lib/new-entry'
 import { logAudit } from '@/lib/audit'
 import { logger } from '@/lib/logger'
 import { signEntryAttachments } from '@/lib/storage'
+import { sendEmail, partyPaymentPendingEmail } from '@/lib/email'
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
@@ -140,17 +141,21 @@ export async function POST(req: NextRequest) {
         },
       })
 
+      const branchPaymentNeedsApproval = userRole === 'BRANCH'
       for (const payment of body.payments) {
-        await tx.payment.create({
+        const needsApproval = payment.method !== 'CHEQUE' && branchPaymentNeedsApproval
+        await (tx.payment.create as any)({
           data: {
             dailyEntryId: created.id, partyId: payment.partyId, method: payment.method,
             amount: payment.amount, note: payment.note || null, attachmentUrl: payment.attachmentKey || null,
+            approvalStatus: needsApproval ? 'PENDING' : 'APPROVED',
             cheque: payment.method === 'CHEQUE' ? { create: {
               issueDate: dateOnlyToUtc(payment.issueDate!), withdrawDate: dateOnlyToUtc(payment.withdrawDate!), status: 'PENDING',
             } } : undefined,
           },
         })
-        if (payment.method !== 'CHEQUE') {
+        // Only decrement balance immediately for approved payments
+        if (payment.method !== 'CHEQUE' && !needsApproval) {
           await tx.party.update({ where: { id: payment.partyId }, data: { balance: { decrement: payment.amount } } })
         }
       }
@@ -180,6 +185,25 @@ export async function POST(req: NextRequest) {
       paymentCount: body.payments.length,
       advanceCount: body.advanceSalaries.length,
     })
+
+    // Notify admins of pending party payments (fire-and-forget)
+    const pendingPayments = body.payments.filter(p => p.method !== 'CHEQUE' && userRole === 'BRANCH')
+    if (pendingPayments.length > 0) {
+      void (async () => {
+        try {
+          const [admins, parties] = await Promise.all([
+            prisma.user.findMany({ where: { role: 'ADMIN', isActive: true, email: { not: null } }, select: { email: true } }),
+            prisma.party.findMany({ where: { id: { in: pendingPayments.map(p => p.partyId) } }, select: { id: true, name: true } }),
+          ])
+          const partyMap = new Map(parties.map(p => [p.id, p.name]))
+          await Promise.all(
+            pendingPayments.flatMap(p =>
+              admins.map(a => sendEmail({ to: a.email!, ...partyPaymentPendingEmail(entry.branch.name, partyMap.get(p.partyId) ?? `Party #${p.partyId}`, p.amount, p.method) }))
+            )
+          )
+        } catch {}
+      })()
+    }
 
     // Trigger async advance salary sync
     if (body.advanceSalaries && body.advanceSalaries.length > 0) {

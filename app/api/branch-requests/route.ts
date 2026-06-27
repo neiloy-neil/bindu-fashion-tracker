@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { branchRequestSchema } from '@/lib/schemas'
 import { logger } from '@/lib/logger'
+import { sendEmail, supportTicketEmail } from '@/lib/email'
 
 export async function GET(req: NextRequest) {
   const userRole = req.headers.get('x-user-role')
@@ -72,6 +73,16 @@ export async function POST(req: NextRequest) {
       type: newRequest.type,
       priority: newRequest.priority,
     })
+
+    // Notify all admins by email (fire-and-forget)
+    void (async () => {
+      try {
+        const branch = await prisma.branch.findUnique({ where: { id: newRequest.branchId } })
+        const admins = await prisma.user.findMany({ where: { role: 'ADMIN', isActive: true, email: { not: null } }, select: { email: true } })
+        const tpl = supportTicketEmail(branch?.name ?? `Branch ${newRequest.branchId}`, newRequest.type, newRequest.description)
+        await Promise.all(admins.map(a => sendEmail({ to: a.email!, ...tpl })))
+      } catch {}
+    })()
 
     return NextResponse.json(newRequest, { status: 201 })
   } catch (error: any) {

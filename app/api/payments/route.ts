@@ -2,6 +2,21 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { directPaymentSchema } from '@/lib/schemas'
 
+export async function GET(req: NextRequest) {
+  const userRole = req.headers.get('x-user-role')
+  if (userRole !== 'ADMIN') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+  const { searchParams } = new URL(req.url)
+  const approvalStatus = searchParams.get('approvalStatus') || 'PENDING'
+
+  const payments = await prisma.payment.findMany({
+    where: { approvalStatus, method: { not: 'CHEQUE' } } as any,
+    include: { party: true, dailyEntry: { include: { branch: true } } },
+    orderBy: { createdAt: 'desc' },
+  })
+  return NextResponse.json(payments)
+}
+
 export async function POST(req: NextRequest) {
   const userRole = req.headers.get('x-user-role')
   const userBranchId = req.headers.get('x-user-branch-id')

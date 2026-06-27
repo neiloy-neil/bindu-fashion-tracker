@@ -330,9 +330,8 @@ function Dashboard() {
             <>
               {/* Admin Widgets */}
               {userRole === 'ADMIN' && (
-                <div style={{ marginBottom: '24px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                <div style={{ marginBottom: '24px' }}>
                   <AdminEditRequests />
-                  <RecentActivity />
                 </div>
               )}
 
@@ -517,6 +516,12 @@ function Dashboard() {
                       </table>
                     </div>
                   </div>
+
+                  {userRole === 'ADMIN' && (
+                    <div style={{ marginTop: 16 }}>
+                      <RecentActivity />
+                    </div>
+                  )}
                 </>
               )}
             </>

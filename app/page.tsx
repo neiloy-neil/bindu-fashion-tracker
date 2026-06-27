@@ -1,28 +1,64 @@
 'use client'
 
 import { useState, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import useSWR from 'swr'
-import { formatCurrency } from '@/lib/utils'
+import Link from 'next/link'
+import { formatCurrency, cn } from '@/lib/utils'
 import { SummaryStats, Branch } from '@/lib/types'
 import AdminEditRequests from '@/components/dashboard/AdminEditRequests'
 import RecentActivity from '@/components/dashboard/RecentActivity'
 import PdfGenerator from '@/components/dashboard/PdfGenerator'
 import ExcelExport from '@/components/dashboard/ExcelExport'
+import { BrandSpinner } from '@/components/ui/BrandSpinner'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Input } from '@/components/ui/input'
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from 'recharts'
+import {
+  FileText, Users, DollarSign, AlertCircle, CheckCircle,
+  Clock, ChevronRight, BarChart2,
+} from 'lucide-react'
 
 const COLORS = ['#F4881F', '#2A356E', '#2F9E6B', '#FA9A3E', '#4A537A', '#11162B', '#E8E2D5']
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+
+const TOOLTIP_STYLE = {
+  background: 'var(--surface-raised)',
+  border: '1px solid var(--border-strong)',
+  borderRadius: '8px',
+  fontSize: '12px',
+  color: 'var(--text-primary)',
+}
 
 function formatDate(dateStr: string) {
   if (!dateStr) return ''
   return new Date(dateStr).toLocaleDateString('en-BD', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
+function StatCard({
+  label, value, context, valueClass = 'text-[var(--text-primary)]',
+}: {
+  label: string
+  value: React.ReactNode
+  context: string
+  valueClass?: string
+}) {
+  return (
+    <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5 space-y-1.5 hover:border-[var(--border-strong)] transition-colors duration-150">
+      <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wide">{label}</p>
+      <p className={cn('text-2xl font-bold tabular-nums leading-none', valueClass)}>{value}</p>
+      <p className="text-xs text-[var(--text-muted)]">{context}</p>
+    </div>
+  )
+}
+
 function DateFilter({
-  month, year, startDate, endDate, viewMode, onChange, branches, branchId, onBranchChange, userRole
+  month, year, startDate, endDate, viewMode, onChange,
+  branches, branchId, onBranchChange, userRole,
 }: {
   month: number
   year: number
@@ -36,156 +72,205 @@ function DateFilter({
   userRole: string
 }) {
   return (
-    <div className="filters-bar" style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+    <div className="flex flex-wrap items-center gap-2">
       {userRole === 'ADMIN' && (
-        <select
-          className="form-input form-select"
-          style={{ width: 140, borderColor: 'var(--accent)', color: 'var(--accent)', fontWeight: 'bold' }}
-          value={branchId}
-          onChange={(e) => onBranchChange(e.target.value)}
-        >
-          <option value="all">All Branches</option>
-          {branches.map(b => (
-            <option key={b.id} value={String(b.id)}>{b.name}</option>
-          ))}
-        </select>
+        <Select value={branchId} onValueChange={onBranchChange}>
+          <SelectTrigger className="h-8 w-[140px] text-sm">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Branches</SelectItem>
+            {branches.map(b => (
+              <SelectItem key={b.id} value={String(b.id)}>{b.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       )}
-      <select
-        className="form-input form-select"
-        style={{ width: 140 }}
-        value={viewMode}
-        onChange={(e) => onChange(month, year, startDate, endDate, e.target.value as any)}
-      >
-        <option value="daily">Daily View</option>
-        <option value="month">Monthly View</option>
-        <option value="custom">Custom Range</option>
-      </select>
+      <Select value={viewMode} onValueChange={(v) => onChange(month, year, startDate, endDate, v as 'daily' | 'month' | 'custom')}>
+        <SelectTrigger className="h-8 w-[140px] text-sm">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="daily">Daily View</SelectItem>
+          <SelectItem value="month">Monthly View</SelectItem>
+          <SelectItem value="custom">Custom Range</SelectItem>
+        </SelectContent>
+      </Select>
 
       {viewMode === 'custom' ? (
         <>
-          <input
+          <Input
             type="date"
-            className="form-input"
+            className="h-8 w-[150px] text-sm"
             value={startDate}
             onChange={(e) => onChange(month, year, e.target.value, endDate, viewMode)}
           />
-          <span style={{ color: 'var(--text-muted)' }}>to</span>
-          <input
+          <span className="text-xs text-[var(--text-muted)]">to</span>
+          <Input
             type="date"
-            className="form-input"
+            className="h-8 w-[150px] text-sm"
             value={endDate}
             onChange={(e) => onChange(month, year, startDate, e.target.value, viewMode)}
           />
         </>
       ) : viewMode === 'daily' ? (
-        <input
+        <Input
           type="date"
-          className="form-input"
+          className="h-8 w-[150px] text-sm"
           value={startDate}
           onChange={(e) => onChange(month, year, e.target.value, e.target.value, viewMode)}
         />
       ) : (
         <>
-          <select
-            className="form-input form-select"
-            style={{ width: 140 }}
-            value={month}
-            onChange={(e) => onChange(parseInt(e.target.value), year, startDate, endDate, viewMode)}
-          >
-            {['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].map((m, i) => (
-              <option key={i + 1} value={i + 1}>{m}</option>
-            ))}
-          </select>
-          <select
-            className="form-input form-select"
-            style={{ width: 100 }}
-            value={year}
-            onChange={(e) => onChange(month, parseInt(e.target.value), startDate, endDate, viewMode)}
-          >
-            {[2024, 2025, 2026, 2027].map((y) => (
-              <option key={y} value={y}>{y}</option>
-            ))}
-          </select>
+          <Select value={String(month)} onValueChange={(v) => onChange(parseInt(v), year, startDate, endDate, viewMode)}>
+            <SelectTrigger className="h-8 w-[110px] text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {MONTHS.map((m, i) => (
+                <SelectItem key={i + 1} value={String(i + 1)}>{m}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={String(year)} onValueChange={(v) => onChange(month, parseInt(v), startDate, endDate, viewMode)}>
+            <SelectTrigger className="h-8 w-[90px] text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {[2024, 2025, 2026, 2027].map((y) => (
+                <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </>
       )}
     </div>
   )
 }
 
-import { useSearchParams } from 'next/navigation'
-import { BrandSpinner } from '@/components/ui/BrandSpinner'
-
-
-import Link from 'next/link'
-import { FileText, Users, DollarSign, AlertCircle, CheckCircle, Clock } from 'lucide-react'
-
-function PayrollSummary({ data, role }: { data: any, role: string }) {
-  if (!data) return null;
+function PayrollSummary({ data }: { data: any }) {
+  if (!data) return null
   return (
-    <div className="card" style={{ marginBottom: 24, marginTop: 24 }}>
-      <div style={{ marginBottom: 16, fontWeight: 700, fontSize: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span>Payroll Summary ({data.month}/{data.year})</span>
-        <Link href="/hr/salary" style={{ fontSize: 12, color: 'var(--brand-orange)', textDecoration: 'none' }}>Go to Processing →</Link>
+    <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-sm font-semibold text-[var(--text-primary)]">
+          Payroll Summary — {data.month}/{data.year}
+        </h3>
+        <Link href="/hr/salary" className="text-xs text-[var(--accent)] hover:underline font-medium">
+          Go to processing →
+        </Link>
       </div>
-      <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
-        <div className="stat-card">
-          <div className="stat-label flex items-center gap-2"><Users size={14}/> Active Employees</div>
-          <div className="stat-value">{data.activeEmployees}</div>
-          <div className="stat-change">Total in system</div>
+      <div className="grid grid-cols-3 gap-4">
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 space-y-1.5 hover:border-[var(--border-strong)] transition-colors duration-150">
+          <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wide flex items-center gap-1.5">
+            <Users size={11} /> Active Employees
+          </p>
+          <p className="text-xl font-bold text-[var(--text-primary)] tabular-nums leading-none">
+            {data.activeEmployees}
+          </p>
+          <p className="text-xs text-[var(--text-muted)]">Total in system</p>
         </div>
-        <div className="stat-card">
-          <div className="stat-label flex items-center gap-2"><CheckCircle size={14}/> Processed</div>
-          <div className={`stat-value ${data.processedCount === data.activeEmployees && data.activeEmployees > 0 ? 'success' : ''}`}>
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 space-y-1.5 hover:border-[var(--border-strong)] transition-colors duration-150">
+          <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wide flex items-center gap-1.5">
+            <CheckCircle size={11} /> Processed
+          </p>
+          <p className={cn(
+            'text-xl font-bold tabular-nums leading-none',
+            data.processedCount === data.activeEmployees && data.activeEmployees > 0
+              ? 'text-[var(--success)]'
+              : 'text-[var(--text-primary)]'
+          )}>
             {data.processedCount} / {data.activeEmployees}
-          </div>
-          <div className="stat-change">{data.isLocked ? <span className="text-red-500 font-semibold">Locked</span> : 'Unlocked'}</div>
+          </p>
+          <p className="text-xs text-[var(--text-muted)]">
+            {data.isLocked
+              ? <span className="text-[var(--danger)] font-semibold">Locked</span>
+              : 'Unlocked'}
+          </p>
         </div>
-        <div className="stat-card">
-          <div className="stat-label flex items-center gap-2"><DollarSign size={14}/> Payroll Bill</div>
-          <div className="stat-value font-display text-blue-700">৳{formatCurrency(data.totalNetPayable)}</div>
-          <div className="stat-change">Total net payable</div>
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 space-y-1.5 hover:border-[var(--border-strong)] transition-colors duration-150">
+          <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wide flex items-center gap-1.5">
+            <DollarSign size={11} /> Payroll Bill
+          </p>
+          <p className="text-xl font-bold text-[var(--info)] tabular-nums leading-none">
+            ৳{formatCurrency(data.totalNetPayable)}
+          </p>
+          <p className="text-xs text-[var(--text-muted)]">Total net payable</p>
         </div>
       </div>
     </div>
   )
 }
 
-function PendingItems({ payroll, transfersCount, chequesCount }: { payroll: any, transfersCount: number, chequesCount: number }) {
+function PendingItems({
+  payroll, transfersCount, chequesCount,
+}: {
+  payroll: any
+  transfersCount: number
+  chequesCount: number
+}) {
+  const allClear = chequesCount === 0 && transfersCount === 0 && payroll?.processedCount > 0
+
   return (
-    <div className="card" style={{ marginBottom: 24 }}>
-      <div style={{ marginBottom: 16, fontWeight: 700, fontSize: 16 }}>Pending Actions</div>
-      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+    <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
+      <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-4">Pending Actions</h3>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {chequesCount > 0 && (
-          <Link href="/admin/cheques" style={{ flex: 1, minWidth: 200, padding: 16, background: 'var(--warning-glow)', borderRadius: 8, border: '1px solid var(--warning)', display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none', color: 'inherit' }}>
-            <Clock className="text-amber-600" />
-            <div>
-              <div style={{ fontWeight: 600 }}>{chequesCount} Pending Cheques</div>
-              <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Require clearance</div>
+          <Link
+            href="/admin/cheques"
+            className="flex items-center gap-4 p-4 rounded-xl border border-[var(--border)] bg-[var(--surface)] hover:border-[var(--border-strong)] hover:bg-[var(--surface-raised)] transition-all duration-150 no-underline group"
+          >
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-[var(--warning-subtle)] text-[var(--warning)]">
+              <Clock className="w-5 h-5" />
             </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-[var(--text-primary)]">{chequesCount} Pending Cheques</p>
+              <p className="text-xs text-[var(--text-muted)] mt-0.5 truncate">Require clearance</p>
+            </div>
+            <ChevronRight className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--text-secondary)] transition-colors flex-shrink-0" />
           </Link>
         )}
         {transfersCount > 0 && (
-          <Link href="/transfers/incoming" style={{ flex: 1, minWidth: 200, padding: 16, background: 'var(--info-glow)', borderRadius: 8, border: '1px solid var(--info)', display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none', color: 'inherit' }}>
-            <AlertCircle className="text-blue-600" />
-            <div>
-              <div style={{ fontWeight: 600 }}>{transfersCount} Pending Transfers</div>
-              <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Awaiting receipt</div>
+          <Link
+            href="/transfers/incoming"
+            className="flex items-center gap-4 p-4 rounded-xl border border-[var(--border)] bg-[var(--surface)] hover:border-[var(--border-strong)] hover:bg-[var(--surface-raised)] transition-all duration-150 no-underline group"
+          >
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-[var(--info-subtle)] text-[var(--info)]">
+              <AlertCircle className="w-5 h-5" />
             </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-[var(--text-primary)]">{transfersCount} Pending Transfers</p>
+              <p className="text-xs text-[var(--text-muted)] mt-0.5 truncate">Awaiting receipt</p>
+            </div>
+            <ChevronRight className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--text-secondary)] transition-colors flex-shrink-0" />
           </Link>
         )}
         {payroll && payroll.processedCount === 0 && (
-          <Link href="/hr/salary" style={{ flex: 1, minWidth: 200, padding: 16, background: 'var(--danger-glow)', borderRadius: 8, border: '1px solid var(--danger)', display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none', color: 'inherit' }}>
-            <Users className="text-red-600" />
-            <div>
-              <div style={{ fontWeight: 600 }}>Unprocessed Payroll</div>
-              <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{payroll.month}/{payroll.year} has no records</div>
+          <Link
+            href="/hr/salary"
+            className="flex items-center gap-4 p-4 rounded-xl border border-[var(--border)] bg-[var(--surface)] hover:border-[var(--border-strong)] hover:bg-[var(--surface-raised)] transition-all duration-150 no-underline group"
+          >
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-[var(--danger-subtle)] text-[var(--danger)]">
+              <Users className="w-5 h-5" />
             </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-[var(--text-primary)]">Unprocessed Payroll</p>
+              <p className="text-xs text-[var(--text-muted)] mt-0.5 truncate">
+                {payroll.month}/{payroll.year} has no records
+              </p>
+            </div>
+            <ChevronRight className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--text-secondary)] transition-colors flex-shrink-0" />
           </Link>
         )}
-        {chequesCount === 0 && transfersCount === 0 && payroll?.processedCount > 0 && (
-          <div style={{ flex: 1, padding: 16, background: 'var(--success-glow)', borderRadius: 8, border: '1px solid var(--success)', display: 'flex', alignItems: 'center', gap: 12 }}>
-            <CheckCircle className="text-green-600" />
-            <div style={{ fontWeight: 600 }}>All caught up!</div>
+        {allClear && (
+          <div className="flex items-center gap-4 p-4 rounded-xl border border-[var(--border)] bg-[var(--surface)]">
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-[var(--success-subtle)] text-[var(--success)]">
+              <CheckCircle className="w-5 h-5" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-[var(--text-primary)]">All caught up!</p>
+              <p className="text-xs text-[var(--text-muted)] mt-0.5">No pending actions</p>
+            </div>
           </div>
         )}
       </div>
@@ -193,23 +278,30 @@ function PendingItems({ payroll, transfersCount, chequesCount }: { payroll: any,
   )
 }
 
-function BranchSlipStatus({ month, year }: { month: number, year: number }) {
-  const { data, isLoading } = useSWR(`/api/hr/slips?month=${month}&year=${year}`, (url) => fetch(url).then(r => r.ok ? r.json() : null))
-  if (isLoading || !data) return null;
+function BranchSlipStatus({ month, year }: { month: number; year: number }) {
+  const { data, isLoading } = useSWR(
+    `/api/hr/slips?month=${month}&year=${year}`,
+    (url) => fetch(url).then(r => r.ok ? r.json() : null)
+  )
+  if (isLoading || !data) return null
 
   return (
-    <div className="card" style={{ marginBottom: 24, marginTop: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-elevated)', borderLeft: '4px solid var(--brand-orange)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-        <div style={{ background: 'var(--brand-orange)', color: 'white', padding: 12, borderRadius: '50%' }}>
-          <FileText size={20} />
+    <div className="flex items-center justify-between p-5 rounded-xl border border-[var(--border)] bg-[var(--surface)]">
+      <div className="flex items-center gap-4">
+        <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-[var(--accent-subtle)] text-[var(--accent)]">
+          <FileText className="w-5 h-5" />
         </div>
         <div>
-          <div style={{ fontWeight: 600, fontSize: 16 }}>Salary Slip: {MONTHS[month - 1]} {year}</div>
-          <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{data.length > 0 ? 'Your salary slip is ready.' : 'Not generated yet.'}</div>
+          <p className="text-sm font-semibold text-[var(--text-primary)]">
+            Salary Slip: {MONTHS[month - 1]} {year}
+          </p>
+          <p className="text-xs text-[var(--text-muted)] mt-0.5">
+            {data.length > 0 ? 'Your salary slip is ready.' : 'Not generated yet.'}
+          </p>
         </div>
       </div>
-      <Link href="/hr/slips" className="btn btn-outline" style={{ textDecoration: 'none' }}>
-        View Slip
+      <Link href="/hr/slips" className="text-xs font-semibold text-[var(--accent)] hover:underline">
+        View Slip →
       </Link>
     </div>
   )
@@ -218,7 +310,7 @@ function BranchSlipStatus({ month, year }: { month: number, year: number }) {
 function Dashboard() {
   const searchParams = useSearchParams()
   const now = new Date()
-  
+
   const initialMonth = searchParams.get('month') ? parseInt(searchParams.get('month')!) : now.getMonth() + 1
   const initialYear = searchParams.get('year') ? parseInt(searchParams.get('year')!) : now.getFullYear()
   const initialBranchId = searchParams.get('branchId') || 'all'
@@ -226,7 +318,7 @@ function Dashboard() {
   const [month, setMonth] = useState(initialMonth)
   const [year, setYear] = useState(initialYear)
   const [branchId, setBranchId] = useState(initialBranchId)
-  
+
   const todayStr = now.toISOString().split('T')[0]
   const [startDate, setStartDate] = useState(todayStr)
   const [endDate, setEndDate] = useState(todayStr)
@@ -234,15 +326,12 @@ function Dashboard() {
 
   const fetcher = (url: string) => fetch(url).then((res) => res.json())
 
-  // SWR for user session
   const { data: session } = useSWR('/api/auth/session', fetcher)
   const userRole = session?.user?.role || ''
 
-  // SWR for branches
   const { data: branchesData } = useSWR<Branch[]>('/api/branches', fetcher)
   const branches = branchesData || []
 
-  // SWR for dashboard data
   let url = `/api/summary?`
   if (viewMode === 'custom') {
     url += `startDate=${startDate}&endDate=${endDate}`
@@ -255,42 +344,54 @@ function Dashboard() {
     url += `&branchId=${branchId}`
   }
 
-  const { data, isLoading: loading } = useSWR<SummaryStats>(userRole !== 'HR_ADMIN' ? url : null, fetcher, {
-    keepPreviousData: true,
-    revalidateOnFocus: false,
-  })
+  const { data, isLoading: loading } = useSWR<SummaryStats>(
+    userRole !== 'HR_ADMIN' ? url : null,
+    fetcher,
+    { keepPreviousData: true, revalidateOnFocus: false }
+  )
 
-  // SWR for Payroll
-  const { data: payrollData } = useSWR((userRole === 'ADMIN' || userRole === 'HR_ADMIN') ? '/api/dashboard/payroll' : null, fetcher)
-  const { data: transfersCountData } = useSWR(userRole === 'ADMIN' ? '/api/transfers/pending-count' : null, fetcher)
-  const { data: chequesCountData } = useSWR(userRole === 'ADMIN' ? '/api/admin/cheques?status=PENDING' : null, fetcher)
-
+  const { data: payrollData } = useSWR(
+    (userRole === 'ADMIN' || userRole === 'HR_ADMIN') ? '/api/dashboard/payroll' : null,
+    fetcher
+  )
+  const { data: transfersCountData } = useSWR(
+    userRole === 'ADMIN' ? '/api/transfers/pending-count' : null,
+    fetcher
+  )
+  const { data: chequesCountData } = useSWR(
+    userRole === 'ADMIN' ? '/api/admin/cheques?status=PENDING' : null,
+    fetcher
+  )
 
   if (!session) return <BrandSpinner />
 
+  const subtitle =
+    viewMode === 'daily'
+      ? `Overview for ${formatDate(startDate)}`
+      : viewMode === 'custom'
+      ? `Overview for ${formatDate(startDate)} to ${formatDate(endDate)}`
+      : `Overview for ${MONTHS[month - 1]} ${year}`
+
   return (
     <>
-      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      {/* Sticky header */}
+      <div className="sticky top-0 z-10 flex items-center justify-between gap-4 px-6 py-4 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur supports-[backdrop-filter]:bg-[var(--surface)]/80">
         <div>
-          <h2 className="page-title">Dashboard</h2>
-          <p className="page-subtitle">
-            {viewMode === 'daily' 
-              ? `Overview for ${formatDate(startDate)}`
-              : viewMode === 'custom' 
-              ? `Overview for ${formatDate(startDate)} to ${formatDate(endDate)}` 
-              : `Overview for ${MONTHS[month - 1]} ${year}`}
-          </p>
+          <h1 className="text-lg font-semibold text-[var(--text-primary)] leading-none">
+            Dashboard
+          </h1>
+          <p className="text-sm text-[var(--text-muted)] mt-1">{subtitle}</p>
         </div>
         {userRole !== 'HR_ADMIN' && (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 12 }}>
+          <div className="flex items-center gap-2">
             <DateFilter
               month={month}
               year={year}
               startDate={startDate}
               endDate={endDate}
               viewMode={viewMode}
-              onChange={(m, y, sd, ed, mode) => { 
-                setMonth(m); setYear(y); setStartDate(sd); setEndDate(ed); setViewMode(mode) 
+              onChange={(m, y, sd, ed, mode) => {
+                setMonth(m); setYear(y); setStartDate(sd); setEndDate(ed); setViewMode(mode)
               }}
               branches={branches}
               branchId={branchId}
@@ -298,86 +399,116 @@ function Dashboard() {
               userRole={userRole}
             />
             {data && (
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <ExcelExport data={data} month={month} year={year} branchName={userRole === 'BRANCH' ? branches[0]?.name : branchId !== 'all' ? branches.find(b => String(b.id) === branchId)?.name : undefined} />
-                <PdfGenerator data={data} month={month} year={year} branchName={userRole === 'BRANCH' ? branches[0]?.name : branchId !== 'all' ? branches.find(b => String(b.id) === branchId)?.name : undefined} />
-              </div>
+              <>
+                <ExcelExport
+                  data={data}
+                  month={month}
+                  year={year}
+                  branchName={
+                    userRole === 'BRANCH'
+                      ? branches[0]?.name
+                      : branchId !== 'all'
+                      ? branches.find(b => String(b.id) === branchId)?.name
+                      : undefined
+                  }
+                />
+                <PdfGenerator
+                  data={data}
+                  month={month}
+                  year={year}
+                  branchName={
+                    userRole === 'BRANCH'
+                      ? branches[0]?.name
+                      : branchId !== 'all'
+                      ? branches.find(b => String(b.id) === branchId)?.name
+                      : undefined
+                  }
+                />
+              </>
             )}
           </div>
         )}
       </div>
 
-      <div className="page-body">
-        {userRole === 'ADMIN' && <PendingItems payroll={payrollData} transfersCount={transfersCountData?.count || 0} chequesCount={chequesCountData?.length || 0} />}
-        
-        {userRole === 'HR_ADMIN' && payrollData && (
-          <PayrollSummary data={payrollData} role={userRole} />
+      {/* Body */}
+      <div className="flex-1 p-6 space-y-6 min-h-0">
+
+        {userRole === 'ADMIN' && (
+          <PendingItems
+            payroll={payrollData}
+            transfersCount={transfersCountData?.count || 0}
+            chequesCount={chequesCountData?.length || 0}
+          />
         )}
 
-        {userRole === 'BRANCH' && <BranchSlipStatus month={month} year={year} />}
+        {userRole === 'HR_ADMIN' && payrollData && (
+          <PayrollSummary data={payrollData} />
+        )}
+
+        {userRole === 'BRANCH' && (
+          <BranchSlipStatus month={month} year={year} />
+        )}
 
         {userRole !== 'HR_ADMIN' && (
           loading ? (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '300px', gap: 12 }}>
-              <BrandSpinner />
-              <span style={{ color: 'var(--text-secondary)' }}>Loading data…</span>
+            <div className="flex items-center justify-center h-64 gap-3">
+              <div className="w-5 h-5 rounded-full border-2 border-[var(--border-strong)] border-t-[var(--accent)] animate-spin" />
+              <span className="text-sm text-[var(--text-muted)]">Loading data…</span>
             </div>
           ) : !data ? (
-            <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '60px 0' }}>
-              No data found. Import an Excel file or add entries to get started.
+            <div className="flex flex-col items-center justify-center h-64 gap-3">
+              <div className="w-12 h-12 rounded-full bg-[var(--surface-raised)] flex items-center justify-center">
+                <BarChart2 className="w-5 h-5 text-[var(--text-muted)]" />
+              </div>
+              <p className="text-sm font-medium text-[var(--text-muted)]">No data for this period</p>
+              <p className="text-xs text-[var(--text-disabled)]">Add entries or adjust the date range</p>
             </div>
           ) : (
             <>
-              {/* Admin Widgets */}
               {userRole === 'ADMIN' && (
-                <div style={{ marginBottom: '24px' }}>
+                <div>
                   <AdminEditRequests />
                 </div>
               )}
 
-              {/* Stat Cards */}
-              <div className="stats-grid">
-                <div className="stat-card">
-                  <div className="stat-label">Total Sales</div>
-                  <div className="stat-value success">৳{formatCurrency(data.totalSales)}</div>
-                  <div className="stat-change">{MONTHS[month - 1]} {year}</div>
-                </div>
-                <div className="stat-card">
-                  <div className="stat-label">Total Expenses</div>
-                  <div className="stat-value">৳{formatCurrency(data.totalExpenses)}</div>
-                  <div className="stat-change">{MONTHS[month - 1]} {year}</div>
-                </div>
-                <div className={`stat-card ${data.netBalance >= 0 ? '' : 'danger'}`} style={{ overflow: 'hidden', position: 'relative' }}>
-                  <svg className="absolute top-0 right-0 -mr-4 -mt-4 w-32 h-32 opacity-10 pointer-events-none" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C16.84 22 20.86 18.55 21.8 14H19.74C18.84 17.43 15.7 20 12 20C7.58 20 4 16.42 4 12C4 7.58 7.58 4 12 4C14.7 4 17.08 5.34 18.5 7.4L15 7.4V9.4H22V2.4H20V5.13C18.17 2.58 15.26 1 12 2V2Z" fill="var(--brand-orange)"/>
-                  </svg>
-                  <div className="stat-label" style={{ position: 'relative', zIndex: 10 }}>Net Balance</div>
-                  <div className={`stat-value font-display ${data.netBalance >= 0 ? 'success' : 'red'}`} style={{ position: 'relative', zIndex: 10, fontSize: '36px' }}>
-                    ৳{formatCurrency(Math.abs(data.netBalance))}
-                  </div>
-                  <div className="stat-change" style={{ position: 'relative', zIndex: 10 }}>{data.netBalance >= 0 ? 'Profit' : 'Loss'}</div>
-                </div>
-                <div className="stat-card info">
-                  <div className="stat-label">Active Branches</div>
-                  <div className="stat-value" style={{ color: 'var(--text-primary)' }}>
-                    {data.branchStats.length}
-                  </div>
-                  <div className="stat-change">With activity this month</div>
-                </div>
-                <div className="stat-card warning">
-                  <div className="stat-label">Total Physical Cash</div>
-                  <div className="stat-value" style={{ color: 'var(--warning)' }}>
-                    ৳{formatCurrency(data.branchStats.reduce((sum, b) => sum + (b.physicalCash || 0), 0))}
-                  </div>
-                  <div className="stat-change">In branch drawers</div>
-                </div>
+              {/* Stat cards */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <StatCard
+                  label="Total Sales"
+                  value={`৳${formatCurrency(data.totalSales)}`}
+                  context={`${MONTHS[month - 1]} ${year}`}
+                  valueClass="text-[var(--success)]"
+                />
+                <StatCard
+                  label="Total Expenses"
+                  value={`৳${formatCurrency(data.totalExpenses)}`}
+                  context={`${MONTHS[month - 1]} ${year}`}
+                />
+                <StatCard
+                  label="Net Balance"
+                  value={`৳${formatCurrency(Math.abs(data.netBalance))}`}
+                  context={data.netBalance >= 0 ? 'Profit' : 'Loss'}
+                  valueClass={data.netBalance >= 0 ? 'text-[var(--success)]' : 'text-[var(--danger)]'}
+                />
+                <StatCard
+                  label="Active Branches"
+                  value={data.branchStats.length}
+                  context="With activity this period"
+                />
+                <StatCard
+                  label="Total Physical Cash"
+                  value={`৳${formatCurrency(data.branchStats.reduce((sum, b) => sum + (b.physicalCash || 0), 0))}`}
+                  context="In branch drawers"
+                  valueClass="text-[var(--warning)]"
+                />
               </div>
 
-              {/* Charts Row 1 */}
-              <div className="charts-grid">
-                {/* Daily Trend */}
-                <div className="card">
-                  <div style={{ marginBottom: 16, fontWeight: 700, fontSize: 14 }}>Daily Sales vs Expenses</div>
+              {/* Charts row */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <div className="lg:col-span-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
+                  <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-4">
+                    Daily Sales vs Expenses
+                  </h3>
                   <ResponsiveContainer width="100%" height={240}>
                     <LineChart data={data.dailyTrend} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
@@ -393,27 +524,31 @@ function Dashboard() {
                         axisLine={{ stroke: 'var(--border)' }}
                       />
                       <Tooltip
-                        contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12 }}
+                        contentStyle={TOOLTIP_STYLE}
                         formatter={(v: any) => [`৳${formatCurrency(v)}`, undefined]}
                         labelFormatter={(l) => new Date(l).toLocaleDateString('en-BD', { day: 'numeric', month: 'short' })}
                       />
-                      <Legend wrapperStyle={{ fontSize: 12 }} />
+                      <Legend className="text-xs" />
                       <Line type="monotone" dataKey="totalSale" stroke="var(--success)" strokeWidth={2} dot={false} name="Sales" />
                       <Line type="monotone" dataKey="totalExpense" stroke="var(--text-secondary)" strokeWidth={2} dot={false} name="Expenses" />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
 
-                {/* Expense Breakdown */}
-                <div className="card">
-                  <div style={{ marginBottom: 16, fontWeight: 700, fontSize: 14 }}>
+                <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
+                  <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-2">
                     Expense Breakdown
-                    {data.expenseBreakdown.filter(eb => eb.amount > (data.totalExpenses * 0.3) && eb.amount > 0).length > 0 && (
-                      <div style={{ marginTop: 8, padding: '6px 10px', background: 'var(--danger-glow)', color: 'var(--text-secondary)', borderRadius: 6, fontSize: 11, fontWeight: 600 }}>
-                        ⚠️ Anomaly: {data.expenseBreakdown.filter(eb => eb.amount > (data.totalExpenses * 0.3) && eb.amount > 0).map(eb => eb.category).join(', ')} exceed 30% of total expenses.
-                      </div>
-                    )}
-                  </div>
+                  </h3>
+                  {data.expenseBreakdown.filter(eb => eb.amount > (data.totalExpenses * 0.3) && eb.amount > 0).length > 0 && (
+                    <div className="mb-3 px-3 py-2 rounded-lg bg-[var(--danger-subtle)] text-xs font-semibold text-[var(--text-secondary)]">
+                      ⚠️ Anomaly:{' '}
+                      {data.expenseBreakdown
+                        .filter(eb => eb.amount > (data.totalExpenses * 0.3) && eb.amount > 0)
+                        .map(eb => eb.category)
+                        .join(', ')}{' '}
+                      exceed 30% of total expenses.
+                    </div>
+                  )}
                   <ResponsiveContainer width="100%" height={240}>
                     <PieChart>
                       <Pie
@@ -430,30 +565,30 @@ function Dashboard() {
                         ))}
                       </Pie>
                       <Tooltip
-                        contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12 }}
+                        contentStyle={TOOLTIP_STYLE}
                         formatter={(v: any) => [`৳${formatCurrency(v || 0)}`, undefined]}
                       />
                       <Legend
                         layout="vertical"
                         align="right"
                         verticalAlign="middle"
-                        wrapperStyle={{ fontSize: 11, color: 'var(--text-secondary)' }}
+                        className="text-[11px] text-[var(--text-secondary)]"
                       />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
               </div>
 
-              {/* Branch Comparison & Table - Hidden for Branch Users */}
+              {/* Branch section — hidden for BRANCH role */}
               {userRole !== 'BRANCH' && (
                 <>
-                  <div className="card">
-                    <div style={{ marginBottom: 16, fontWeight: 700, fontSize: 14 }}>Branch-wise Performance</div>
+                  {/* Branch performance bar chart */}
+                  <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
+                    <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-4">
+                      Branch-wise Performance
+                    </h3>
                     <ResponsiveContainer width="100%" height={220}>
-                      <BarChart
-                        data={data.branchStats}
-                        margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
-                      >
+                      <BarChart data={data.branchStats} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
                         <XAxis
                           dataKey="branchName"
@@ -466,59 +601,94 @@ function Dashboard() {
                           axisLine={{ stroke: 'var(--border)' }}
                         />
                         <Tooltip
-                          contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12 }}
+                          contentStyle={TOOLTIP_STYLE}
                           formatter={(v: any) => [`৳${formatCurrency(v)}`, undefined]}
                         />
-                        <Legend wrapperStyle={{ fontSize: 12 }} />
+                        <Legend className="text-xs" />
                         <Bar dataKey="totalSale" fill="var(--success)" name="Sales" radius={[4, 4, 0, 0]} />
                         <Bar dataKey="totalExpense" fill="var(--text-secondary)" name="Expenses" radius={[4, 4, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
 
+                  {/* Payroll summary (admin) */}
                   {userRole === 'ADMIN' && payrollData && (
-                    <PayrollSummary data={payrollData} role={userRole} />
+                    <PayrollSummary data={payrollData} />
                   )}
 
-                  <div className="card" style={{ marginTop: 16 }}>
-                    <div style={{ marginBottom: 16, fontWeight: 700, fontSize: 14 }}>Branch Summary</div>
-                    <div style={{ overflowX: 'auto' }}>
-                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-                        <thead>
-                          <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                            {['Branch', 'Total Sales', 'Total Expenses', 'Net Balance', 'Physical Cash', 'Status'].map((h) => (
-                              <th key={h} style={{ padding: '10px 14px', textAlign: h === 'Branch' ? 'left' : 'right', color: 'var(--text-secondary)', fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{h}</th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {[...data.branchStats]
-                            .sort((a, b) => b.totalSale - a.totalSale)
-                            .map((b) => (
-                              <tr key={b.branchName} style={{ borderBottom: '1px solid var(--border)', transition: 'background 0.1s' }}>
-                                <td style={{ padding: '10px 14px', fontWeight: 600 }}>{b.branchName}</td>
-                                <td style={{ padding: '10px 14px', textAlign: 'right', color: 'var(--text-primary)' }}>৳{formatCurrency(b.totalSale)}</td>
-                                <td style={{ padding: '10px 14px', textAlign: 'right', color: 'var(--text-secondary)' }}>৳{formatCurrency(b.totalExpense)}</td>
-                                <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: b.netBalance >= 0 ? 'var(--success)' : 'var(--text-primary)' }}>
-                                  ৳{formatCurrency(Math.abs(b.netBalance))}
-                                </td>
-                                <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 600, color: 'var(--warning)' }}>
-                                  ৳{formatCurrency(b.physicalCash || 0)}
-                                </td>
-                                <td style={{ padding: '10px 14px', textAlign: 'right' }}>
-                                  <span className={`badge ${b.netBalance >= 0 ? 'badge-green' : 'badge-red'}`}>
-                                    {b.netBalance >= 0 ? '▲ Profit' : '▼ Loss'}
-                                  </span>
-                                </td>
-                              </tr>
-                            ))}
-                        </tbody>
-                      </table>
+                  {/* Branch summary table */}
+                  <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] overflow-hidden">
+                    <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border)]">
+                      <h3 className="text-sm font-semibold text-[var(--text-primary)]">Branch Summary</h3>
                     </div>
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="hover:bg-transparent border-[var(--border)]">
+                          <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide w-[180px]">
+                            Branch
+                          </TableHead>
+                          <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-right">
+                            Total Sales
+                          </TableHead>
+                          <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-right">
+                            Total Expenses
+                          </TableHead>
+                          <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-right">
+                            Net Balance
+                          </TableHead>
+                          <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-right">
+                            Physical Cash
+                          </TableHead>
+                          <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-right">
+                            Status
+                          </TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {[...data.branchStats]
+                          .sort((a, b) => b.totalSale - a.totalSale)
+                          .map((b) => (
+                            <TableRow
+                              key={b.branchName}
+                              className="border-[var(--border)] hover:bg-[var(--surface-raised)] transition-colors"
+                            >
+                              <TableCell className="font-medium text-[var(--text-primary)]">
+                                {b.branchName}
+                              </TableCell>
+                              <TableCell className="text-right tabular-nums text-[var(--text-secondary)]">
+                                ৳{formatCurrency(b.totalSale)}
+                              </TableCell>
+                              <TableCell className="text-right tabular-nums text-[var(--text-secondary)]">
+                                ৳{formatCurrency(b.totalExpense)}
+                              </TableCell>
+                              <TableCell className={cn(
+                                'text-right tabular-nums font-semibold',
+                                b.netBalance >= 0 ? 'text-[var(--success)]' : 'text-[var(--danger)]'
+                              )}>
+                                ৳{formatCurrency(Math.abs(b.netBalance))}
+                              </TableCell>
+                              <TableCell className="text-right tabular-nums font-semibold text-[var(--warning)]">
+                                ৳{formatCurrency(b.physicalCash || 0)}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <span className={cn(
+                                  'inline-flex items-center gap-1 px-2 py-0.5 rounded-full',
+                                  'text-[11px] font-semibold tabular-nums',
+                                  b.netBalance >= 0
+                                    ? 'bg-[var(--success-subtle)] text-[var(--success)]'
+                                    : 'bg-[var(--danger-subtle)] text-[var(--danger)]'
+                                )}>
+                                  {b.netBalance >= 0 ? '▲' : '▼'} {b.netBalance >= 0 ? 'Profit' : 'Loss'}
+                                </span>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                      </TableBody>
+                    </Table>
                   </div>
 
                   {userRole === 'ADMIN' && (
-                    <div style={{ marginTop: 16 }}>
+                    <div>
                       <RecentActivity />
                     </div>
                   )}
@@ -535,9 +705,9 @@ function Dashboard() {
 export default function DashboardPage() {
   return (
     <Suspense fallback={
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', gap: 12 }}>
-        <BrandSpinner />
-        <span style={{ color: 'var(--text-secondary)' }}>Loading Dashboard…</span>
+      <div className="flex items-center justify-center h-screen gap-3">
+        <div className="w-5 h-5 rounded-full border-2 border-[var(--border-strong)] border-t-[var(--accent)] animate-spin" />
+        <span className="text-sm text-[var(--text-muted)]">Loading Dashboard…</span>
       </div>
     }>
       <Dashboard />

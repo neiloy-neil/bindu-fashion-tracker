@@ -32,8 +32,11 @@ export default function BranchesPage() {
   }, [reloadNonce])
 
   const BRANCH_COLORS = [
-    'var(--success)', 'var(--accent)', 'var(--warning)', 'var(--danger)', '#8b5cf6',
-    '#06b6d4', '#ec4899', '#84cc16', '#f97316', '#14b8a6', 'var(--accent)',
+    'bg-[var(--success-subtle)] text-[var(--success)]',
+    'bg-[var(--accent-subtle)] text-[var(--accent)]',
+    'bg-[var(--warning-subtle)] text-[var(--warning)]',
+    'bg-[var(--danger-subtle)] text-[var(--danger)]',
+    'bg-[var(--info-subtle)] text-[var(--info)]',
   ]
 
   const openAddModal = () => {
@@ -104,68 +107,63 @@ export default function BranchesPage() {
 
   return (
     <>
-      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div className="sticky top-0 z-10 flex items-center justify-between gap-4 px-6 py-4 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur">
         <div>
-          <h2 className="page-title">Branches</h2>
-          <p className="page-subtitle">{branches.length} active branches</p>
+          <h1 className="text-lg font-semibold text-[var(--text-primary)] leading-none">Branches</h1>
+          <p className="text-sm text-[var(--text-muted)] mt-1">{branches.length} active branches</p>
         </div>
-        {isAdmin && (
-          <Button onClick={openAddModal} className="bg-[var(--brand-orange)] hover:bg-orange-600 text-white gap-2">
-            <Plus size={16} /> Add Branch
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {isAdmin && (
+            <Button onClick={openAddModal} className="gap-2">
+              <Plus size={16} /> Add Branch
+            </Button>
+          )}
+        </div>
       </div>
 
-      <div className="page-body">
+      <div className="flex-1 p-6 space-y-6">
         {loading ? (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '200px', gap: 12 }}>
-            <BrandSpinner />
-            <span style={{ color: 'var(--text-secondary)' }}>Loading…</span>
+          <div className="flex items-center justify-center h-64 gap-3">
+            <div className="w-5 h-5 rounded-full border-2 border-[var(--border-strong)] border-t-[var(--accent)] animate-spin" />
+            <span className="text-sm text-[var(--text-muted)]">Loading…</span>
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16 }}>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {branches.map((branch, i) => (
-              <div key={branch.id} className="card relative group flex flex-col" style={{ borderTop: `3px solid ${BRANCH_COLORS[i % BRANCH_COLORS.length]}` }}>
+              <div key={branch.id} className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5 relative group flex flex-col hover:border-[var(--border-strong)] transition-colors duration-150">
                 {isAdmin && (
                   <div className="absolute top-3 right-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-500 hover:text-blue-600 hover:bg-blue-50" onClick={() => openEditModal(branch)}>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-[var(--text-muted)] hover:text-[var(--info)] hover:bg-[var(--info-subtle)]" onClick={() => openEditModal(branch)}>
                       <Pencil size={14} />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-500 hover:text-red-600 hover:bg-red-50" onClick={() => handleDelete(branch.id)}>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-[var(--text-muted)] hover:text-[var(--danger)] hover:bg-[var(--danger-subtle)]" onClick={() => handleDelete(branch.id)}>
                       <Trash2 size={14} />
                     </Button>
                   </div>
                 )}
-                <div style={{
-                  width: 40, height: 40,
-                  background: `${BRANCH_COLORS[i % BRANCH_COLORS.length]}22`,
-                  border: `1px solid ${BRANCH_COLORS[i % BRANCH_COLORS.length]}44`,
-                  borderRadius: 10,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 16, fontWeight: 800,
-                  color: BRANCH_COLORS[i % BRANCH_COLORS.length],
-                  marginBottom: 12,
-                }}>
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-base font-extrabold mb-3 ${BRANCH_COLORS[i % BRANCH_COLORS.length]}`}>
                   {branch.name.charAt(0).toUpperCase()}
                 </div>
-                <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>{branch.name}</div>
-                <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'monospace', letterSpacing: 1, marginBottom: 8 }}>
+                <div className="font-bold text-[15px] mb-1 text-[var(--text-primary)]">{branch.name}</div>
+                <div className="text-[11px] text-[var(--text-muted)] font-mono tracking-widest mb-2">
                   {branch.code}
                 </div>
                 {branch._count?.employees !== undefined && (
-                  <div className="text-xs text-gray-500 mb-3 flex items-center gap-1.5">
-                    <div className="w-1.5 h-1.5 rounded-full bg-gray-400"></div>
+                  <div className="text-xs text-[var(--text-muted)] mb-3 flex items-center gap-1.5">
+                    <div className="w-1.5 h-1.5 rounded-full bg-[var(--text-disabled)]"></div>
                     {branch._count.employees} Employee{branch._count.employees !== 1 ? 's' : ''}
                   </div>
                 )}
-                <div style={{ marginTop: 'auto', paddingTop: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div className="mt-auto pt-3 flex justify-between items-center">
                   {branch.isActive ? (
-                    <span className="badge badge-green">● Active</span>
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[var(--success-subtle)] text-[var(--success)]">● Active</span>
                   ) : (
-                    <span className="badge" style={{ background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)', border: '1px solid rgba(239, 68, 68, 0.2)' }}>● Inactive</span>
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[var(--danger-subtle)] text-[var(--danger)]">● Inactive</span>
                   )}
-                  <Link href={`/?branchId=${branch.id}`} className="btn btn-secondary btn-sm" style={{ padding: '4px 10px', fontSize: 12 }}>
-                    Dashboard →
+                  <Link href={`/?branchId=${branch.id}`}>
+                    <Button variant="outline" size="sm" className="h-7 text-xs px-2.5">
+                      Dashboard →
+                    </Button>
                   </Link>
                 </div>
               </div>
@@ -177,10 +175,10 @@ export default function BranchesPage() {
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>{editingBranch ? 'Edit Branch' : 'Add Branch'}</DialogTitle>
+            <DialogTitle className="text-[var(--text-primary)]">{editingBranch ? 'Edit Branch' : 'Add Branch'}</DialogTitle>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="space-y-2">
+          <div className="grid grid-cols-1 gap-4 py-4">
+            <div className="space-y-1.5">
               <Label htmlFor="name">Branch Name</Label>
               <Input
                 id="name"
@@ -194,7 +192,7 @@ export default function BranchesPage() {
                 placeholder="e.g. Uttara Branch"
               />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label htmlFor="code">Branch Code</Label>
               <Input
                 id="code"
@@ -205,12 +203,12 @@ export default function BranchesPage() {
               />
             </div>
           </div>
-          <DialogFooter>
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-[var(--border)] mt-4">
             <Button variant="outline" onClick={() => setModalOpen(false)} disabled={saving}>Cancel</Button>
-            <Button onClick={handleSave} disabled={saving} className="bg-[var(--brand-orange)] hover:bg-orange-600 text-white">
-              {saving ? 'Saving...' : 'Save'}
+            <Button onClick={handleSave} disabled={saving}>
+              {saving ? 'Saving…' : 'Save'}
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
     </>

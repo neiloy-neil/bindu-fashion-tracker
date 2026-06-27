@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { name, isActive, contactPerson, contactNumber, secondaryNumber, address, openingDueAmount, openingDueDate } = await req.json()
+    const { name, isActive, contactPerson, contactNumber, secondaryNumber, email, address, openingDueAmount, openingDueDate } = await req.json()
     
     // The user requested that everything is strictly required
     if (!name || !contactPerson || !contactNumber || !secondaryNumber || !address) {
@@ -51,6 +51,7 @@ export async function POST(req: NextRequest) {
           contactPerson,
           contactNumber,
           secondaryNumber,
+          email,
           address,
           isActive: isActive !== undefined ? isActive : true,
           balance: initialBalance,

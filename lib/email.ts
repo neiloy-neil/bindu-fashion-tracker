@@ -88,3 +88,47 @@ export function chequeApprovalEmail(partyName: string, amount: number, withdrawD
     `,
   }
 }
+
+export function dailySummaryEmail(date: string, totalSales: number, totalExpenses: number, netBalance: number, branchSummaries: any[]) {
+  return {
+    subject: `[Daily Summary] Register Closed — ${date}`,
+    html: `
+      <h2>Daily Summary for ${date}</h2>
+      <div style="display:flex;gap:16px;margin-bottom:24px">
+        <div style="padding:16px;background:#f0fdf4;border-radius:8px">
+          <div style="font-size:12px;color:#166534;font-weight:bold;text-transform:uppercase">Total Sales</div>
+          <div style="font-size:24px;color:#15803d;font-weight:bold">৳${totalSales.toLocaleString()}</div>
+        </div>
+        <div style="padding:16px;background:#fef2f2;border-radius:8px">
+          <div style="font-size:12px;color:#991b1b;font-weight:bold;text-transform:uppercase">Total Expenses</div>
+          <div style="font-size:24px;color:#b91c1c;font-weight:bold">৳${totalExpenses.toLocaleString()}</div>
+        </div>
+        <div style="padding:16px;background:#f8fafc;border-radius:8px">
+          <div style="font-size:12px;color:#334155;font-weight:bold;text-transform:uppercase">Net Balance</div>
+          <div style="font-size:24px;color:${netBalance >= 0 ? '#15803d' : '#b91c1c'};font-weight:bold">৳${netBalance.toLocaleString()}</div>
+        </div>
+      </div>
+      <table style="border-collapse:collapse;width:100%;font-family:sans-serif;text-align:left">
+        <thead>
+          <tr style="background:#f1f5f9;border-bottom:2px solid #cbd5e1">
+            <th style="padding:12px 8px">Branch</th>
+            <th style="padding:12px 8px;text-align:right">Sales</th>
+            <th style="padding:12px 8px;text-align:right">Expenses</th>
+            <th style="padding:12px 8px;text-align:right">Net</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${branchSummaries.map(b => `
+            <tr style="border-bottom:1px solid #e2e8f0">
+              <td style="padding:12px 8px;font-weight:500">${escapeHtml(b.branch)}</td>
+              <td style="padding:12px 8px;text-align:right">৳${b.sales.toLocaleString()}</td>
+              <td style="padding:12px 8px;text-align:right">৳${b.expenses.toLocaleString()}</td>
+              <td style="padding:12px 8px;text-align:right;color:${b.net >= 0 ? '#15803d' : '#b91c1c'};font-weight:bold">৳${b.net.toLocaleString()}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+      <p style="margin-top:24px"><a href="${process.env.NEXT_PUBLIC_APP_URL}">View full dashboard →</a></p>
+    `,
+  }
+}

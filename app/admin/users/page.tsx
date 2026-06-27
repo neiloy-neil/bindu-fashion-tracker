@@ -22,7 +22,7 @@ type User = {
 type Employee = { id: number; name: string; employeeId: string }
 type Branch = { id: number; name: string }
 
-const ROLES = ['BRANCH', 'AREA_MANAGER', 'AUDITOR', 'HR_ADMIN', 'ADMIN'] as const
+const ROLES = ['BRANCH', 'AREA_MANAGER', 'AUDITOR', 'HR_ADMIN', 'ADMIN', 'SUPER_ADMIN'] as const
 
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([])
@@ -252,12 +252,12 @@ export default function UsersPage() {
                       {u.phoneNumber && <div className="text-xs text-[var(--text-muted)]">{u.phoneNumber}</div>}
                     </TableCell>
                     <TableCell>
-                      <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${u.role === 'ADMIN' ? 'bg-[var(--info-subtle)]/30 text-[var(--info)]' : 'bg-[var(--success-subtle)]/30 text-[var(--success)]'}`}>
-                        {u.role}
+                      <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${u.role === 'ADMIN' || u.role === 'SUPER_ADMIN' ? 'bg-[var(--info-subtle)]/30 text-[var(--info)]' : 'bg-[var(--success-subtle)]/30 text-[var(--success)]'}`}>
+                        {u.role.replace('_', ' ')}
                       </span>
                     </TableCell>
                     <TableCell className="text-[var(--text-secondary)] text-sm">
-                      {u.role === 'ADMIN' ? 'All Branches' :
+                      {u.role === 'ADMIN' || u.role === 'SUPER_ADMIN' ? 'All Branches' :
                        u.role === 'AUDITOR' ? 'Read-Only' :
                        u.role === 'AREA_MANAGER' ? (u.managedBranches?.map(b => b.name).join(', ') || 'None') :
                        u.branch?.name || 'Unassigned'}

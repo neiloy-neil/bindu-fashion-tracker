@@ -69,6 +69,22 @@ export async function GET(req: NextRequest) {
       }
     })
 
+    const attendances = await prisma.attendance.findMany({
+      where: {
+        date: { gte: startOfMonth, lte: endOfMonth },
+        ...(branchId ? { branchId: parseInt(branchId) } : {})
+      }
+    })
+
+    const calculatedAttendance: Record<number, { lateDays: number, absentDays: number }> = {}
+    attendances.forEach(att => {
+      if (!calculatedAttendance[att.employeeId]) {
+        calculatedAttendance[att.employeeId] = { lateDays: 0, absentDays: 0 }
+      }
+      if (att.status === 'LATE') calculatedAttendance[att.employeeId].lateDays++
+      if (att.status === 'ABSENT') calculatedAttendance[att.employeeId].absentDays++
+    })
+
     // Fetch BRANCH users to map branchId -> username
     const branchUsers = await prisma.user.findMany({
       where: { role: 'BRANCH' },
@@ -91,7 +107,7 @@ export async function GET(req: NextRequest) {
       return { ...r, advances: empAdvances }
     })
 
-    return NextResponse.json({ records: recordsWithAdvances, calculatedLeaves })
+    return NextResponse.json({ records: recordsWithAdvances, calculatedLeaves, calculatedAttendance })
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }

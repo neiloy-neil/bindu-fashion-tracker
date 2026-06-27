@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { BrandSpinner } from '@/components/ui/BrandSpinner'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 
@@ -62,14 +63,7 @@ export default function AuditLogsPage() {
     }
   }, [page, filterAction, filterEntity])
 
-  const renderJsonViewer = (dataStr: string | null) => {
-    if (!dataStr) return <span className="text-[var(--text-muted)]">-</span>
-    try {
-      const parsed = JSON.parse(dataStr)
-      return (
-        <div className="bg-[var(--bg-card)] p-2 rounded text-xs text-[var(--accent-light)] max-h-32 overflow-y-auto whitespace-pre-wrap font-mono border border-[var(--border)]">
-          {JSON.stringify(parsed, null, 2)}
-        </div>
+
 
   const renderJsonViewer = (dataStr: string | null) => {
     if (!dataStr) return <span className="text-[var(--text-muted)]">-</span>
@@ -153,7 +147,7 @@ export default function AuditLogsPage() {
                     No audit logs found.
                   </TableCell>
                 </TableRow>
-              ) : logs.map(log => (
+              ) : logs.map((log: AuditLog) => (
                 <TableRow key={log.id} className="border-b border-[var(--border)] hover:bg-[var(--surface-raised)] transition-colors align-top">
                   <TableCell className="text-[var(--text-secondary)] whitespace-nowrap">
                     {new Date(log.createdAt).toLocaleString()}
@@ -217,21 +211,21 @@ export default function AuditLogsPage() {
               <button 
                 className="btn btn-secondary py-1 px-3" 
                 disabled={page <= 1}
-                onClick={() => setPage(p => p - 1)}
+                onClick={() => setPage((p: number) => p - 1)}
               >
                 Previous
               </button>
               <button 
                 className="btn btn-secondary py-1 px-3"
                 disabled={page >= totalPages}
-                onClick={() => setPage(p => p + 1)}
+                onClick={() => setPage((p: number) => p + 1)}
               >
                 Next
               </button>
             </div>
           </div>
         </div>
-      )}
+      }
     </div>
     </>
   )

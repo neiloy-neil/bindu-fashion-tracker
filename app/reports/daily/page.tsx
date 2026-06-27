@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Branch } from '@/lib/types'
 import { toPng, toJpeg } from 'html-to-image'
 import toast from 'react-hot-toast'
-import { Download } from 'lucide-react'
+import { Download, Share2 } from 'lucide-react'
 import DailyReportTemplate from '@/components/reports/DailyReportTemplate'
 
 export default function DailyReportPage() {
@@ -92,38 +92,52 @@ export default function DailyReportPage() {
 
   const exportAsPdf = async () => {
     if (!entryData) return
-
-  const exportAsImage = async (type: 'png' | 'jpeg') => {
-    if (!reportRef.current) return
-    const el = reportRef.current
-    
-    // add some padding or white background if needed
-    const oldBg = el.style.background
-    el.style.background = 'var(--bg-card)' // match dark theme
-    
-    try {
-      const dataUrl = type === 'png' 
-        ? await toPng(el, { quality: 1, backgroundColor: 'var(--bg-card)', pixelRatio: 2 })
-        : await toJpeg(el, { quality: 1, backgroundColor: 'var(--bg-card)', pixelRatio: 2 })
-      
-      const link = document.createElement('a')
-      const branchName = branches.find(b => b.id === parseInt(selectedBranchId))?.name || 'Branch'
-      link.download = `DailyReport_${branchName.replace(/\s+/g, '_')}_${selectedDate}.${type}`
-      link.href = dataUrl
-      link.click()
-    } catch (err) {
-      console.error('Export failed', err)
-      toast.error('Failed to export image')
-    } finally {
-      el.style.background = oldBg
-    }
-  }
-
-  const exportAsPdf = async () => {
-    if (!entryData) return
     const branchName = branches.find(b => b.id === parseInt(selectedBranchId))?.name || 'Branch'
     const { exportReportAsPdf } = await import('@/lib/exportPdf')
     await exportReportAsPdf(entryData, branchName, selectedDate)
+  }
+
+  const shareToWhatsApp = async () => {
+    if (!reportRef.current) return
+    const el = reportRef.current
+    const oldBg = el.style.background
+    el.style.background = 'var(--bg-card)'
+    
+    const toastId = toast.loading('Preparing image for WhatsApp...')
+    
+    try {
+      const dataUrl = await toJpeg(el, { quality: 1, backgroundColor: 'var(--bg-card)', pixelRatio: 2 })
+      const blob = await (await fetch(dataUrl)).blob()
+      
+      const branchName = branches.find(b => b.id === parseInt(selectedBranchId))?.name || 'Branch'
+      const fileName = `DailyReport_${branchName.replace(/\s+/g, '_')}_${selectedDate}.jpeg`
+      const file = new File([blob], fileName, { type: 'image/jpeg' })
+
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: `Daily Report - ${branchName}`,
+          text: `Daily Report for ${selectedDate}`
+        })
+        toast.success('Shared successfully', { id: toastId })
+      } else {
+        // Fallback: download image
+        const link = document.createElement('a')
+        link.download = fileName
+        link.href = dataUrl
+        link.click()
+        toast.success('Downloaded image (Sharing not supported on this device)', { id: toastId })
+      }
+    } catch (err: any) {
+      if (err.name !== 'AbortError') {
+        console.error('Share failed', err)
+        toast.error('Failed to share', { id: toastId })
+      } else {
+        toast.dismiss(toastId)
+      }
+    } finally {
+      el.style.background = oldBg
+    }
   }
 
           
@@ -182,8 +196,11 @@ export default function DailyReportPage() {
               <button className="btn btn-secondary flex items-center gap-2" onClick={() => exportAsImage('png')}>
                 <Download size={16} /> Export PNG
               </button>
-              <button className="btn btn-secondary flex items-center gap-2" onClick={() => exportAsImage('jpeg')}>
-                <Download size={16} /> Export JPEG
+              <button 
+                className="btn text-white bg-green-600 hover:bg-green-700 border-none flex items-center gap-2 font-semibold shadow-md shadow-green-900/20 transition-all" 
+                onClick={shareToWhatsApp}
+              >
+                <Share2 size={16} /> Share to WhatsApp
               </button>
             </div>
 

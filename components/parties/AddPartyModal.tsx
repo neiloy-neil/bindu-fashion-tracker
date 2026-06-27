@@ -16,6 +16,7 @@ export function AddPartyModal({ isOpen, onClose, onSuccess }: AddPartyModalProps
     contactPerson: '',
     contactNumber: '',
     secondaryNumber: '',
+    email: '',
     address: '',
     openingDueAmount: '',
     openingDueDate: new Date().toISOString().split('T')[0]
@@ -60,6 +61,7 @@ export function AddPartyModal({ isOpen, onClose, onSuccess }: AddPartyModalProps
         contactPerson: '',
         contactNumber: '',
         secondaryNumber: '',
+        email: '',
         address: '',
         openingDueAmount: '',
         openingDueDate: new Date().toISOString().split('T')[0]
@@ -165,6 +167,20 @@ export function AddPartyModal({ isOpen, onClose, onSuccess }: AddPartyModalProps
                     value={formData.secondaryNumber}
                     onChange={e => setFormData({ ...formData, secondaryNumber: e.target.value })}
                     placeholder="e.g. 01800000000"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Email Address</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">@</span>
+                  <input
+                    type="email"
+                    className="w-full pl-9 pr-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    value={formData.email}
+                    onChange={e => setFormData({ ...formData, email: e.target.value })}
+                    placeholder="e.g. contact@party.com"
                   />
                 </div>
               </div>

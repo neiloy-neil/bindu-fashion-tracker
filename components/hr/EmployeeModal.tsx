@@ -88,10 +88,14 @@ function EmployeeModalForm({
   onOpenChange,
   onSuccess,
 }: Omit<Props, 'open'>) {
-  const [tab, setTab] = useState<'basic' | 'hr'>('basic')
+  const [tab, setTab] = useState<'basic' | 'hr' | 'transfer'>('basic')
   const [saving, setSaving] = useState(false)
   const [formData, setFormData] = useState<EmployeeFormData>(() => createInitialFormData(employee))
   const [photoFile, setPhotoFile] = useState<File | null>(null)
+  
+  const [transferBranchId, setTransferBranchId] = useState<string>('')
+  const [transferReason, setTransferReason] = useState<string>('')
+  const [transferring, setTransferring] = useState(false)
 
   const handleChange = <K extends keyof EmployeeFormData>(field: K, value: EmployeeFormData[K]) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -172,6 +176,39 @@ function EmployeeModalForm({
     }
   }
 
+  const handleTransfer = async () => {
+    if (!employee) return
+    if (!transferBranchId) {
+      toast.error('Please select a destination branch')
+      return
+    }
+
+    setTransferring(true)
+    try {
+      const res = await fetch(`/api/hr/employees/${employee.id}/transfer`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          toBranchId: transferBranchId,
+          reason: transferReason
+        })
+      })
+
+      if (!res.ok) {
+        const d = await res.json()
+        throw new Error(d.error || 'Failed to transfer employee')
+      }
+
+      toast.success('Employee transferred successfully')
+      onSuccess()
+      onOpenChange(false)
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, 'Failed to transfer employee'))
+    } finally {
+      setTransferring(false)
+    }
+  }
+
   return (
     <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
       <DialogHeader>
@@ -191,6 +228,14 @@ function EmployeeModalForm({
         >
           HR Details
         </button>
+        {employee && (
+          <button
+            className={`pb-2 px-1 text-sm font-medium ${tab === 'transfer' ? 'border-b-2 border-[var(--brand-orange)] text-[var(--brand-orange)]' : 'text-muted-foreground'}`}
+            onClick={() => setTab('transfer')}
+          >
+            Transfer
+          </button>
+        )}
       </div>
 
       <div className="space-y-4">
@@ -278,13 +323,42 @@ function EmployeeModalForm({
             </div>
           </div>
         )}
+
+        {tab === 'transfer' && employee && (
+          <div className="space-y-4">
+            <div className="bg-orange-50 border border-orange-200 text-orange-800 rounded p-4 text-sm">
+              Transferring this employee will update their current branch and create a historical transfer record.
+            </div>
+            <div className="space-y-1.5">
+              <Label>Destination Branch *</Label>
+              <Select value={transferBranchId} onValueChange={setTransferBranchId}>
+                <SelectTrigger><SelectValue placeholder="Select Destination Branch" /></SelectTrigger>
+                <SelectContent>
+                  {branches.filter(b => b.id !== employee.branchId).map(b => (
+                    <SelectItem key={b.id} value={String(b.id)}>{b.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Reason for Transfer</Label>
+              <Input value={transferReason} onChange={e => setTransferReason(e.target.value)} placeholder="Optional note about this transfer" />
+            </div>
+          </div>
+        )}
       </div>
 
       <DialogFooter className="mt-6">
-        <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>Cancel</Button>
-        <Button onClick={handleSave} disabled={saving} className="bg-[var(--brand-orange)] hover:bg-orange-600 text-white">
-          {saving ? 'Saving...' : 'Save Employee'}
-        </Button>
+        <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving || transferring}>Cancel</Button>
+        {tab === 'transfer' ? (
+          <Button onClick={handleTransfer} disabled={transferring} className="bg-[var(--brand-orange)] hover:bg-orange-600 text-white">
+            {transferring ? 'Transferring...' : 'Transfer Employee'}
+          </Button>
+        ) : (
+          <Button onClick={handleSave} disabled={saving} className="bg-[var(--brand-orange)] hover:bg-orange-600 text-white">
+            {saving ? 'Saving...' : 'Save Employee'}
+          </Button>
+        )}
       </DialogFooter>
     </DialogContent>
   )

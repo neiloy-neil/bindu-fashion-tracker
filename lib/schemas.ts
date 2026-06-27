@@ -39,7 +39,7 @@ export const userSchema = z.object({
   username: z.string().min(1),
   email: z.string().email().optional().or(z.literal('')),
   password: z.string().min(6),
-  role: z.enum(['ADMIN', 'BRANCH', 'AUDITOR', 'AREA_MANAGER', 'HR_ADMIN']),
+  role: z.enum(['ADMIN', 'BRANCH', 'AUDITOR', 'AREA_MANAGER', 'HR_ADMIN', 'SUPER_ADMIN']),
   branchId: z.union([z.string(), z.number()]).optional().nullable(),
   isActive: z.boolean().optional(),
   managedBranchIds: z.array(z.number()).optional(),
@@ -50,7 +50,9 @@ export const branchRequestSchema = z.object({
   requestedById: z.union([z.string(), z.number()]),
   type: z.string().min(1),
   description: z.string().min(1),
-  priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional()
+  priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional(),
+  attachmentUrl: z.string().optional().nullable(),
+  assignedToId: z.union([z.string(), z.number()]).optional().nullable()
 })
 
 export const editRequestSchema = z.object({

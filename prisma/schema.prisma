@@ -13,15 +13,23 @@ datasource db {
 model Branch {
   id             Int             @id @default(autoincrement())
   name           String          @unique
-  code           String          @unique
+  code           String?         @unique
+  type           String          @default("RETAIL") // RETAIL, WHOLESALE, FACTORY
+  address        String?         @db.Text
+  contactPerson  String?
+  phoneNumber    String?
   isActive       Boolean         @default(true)
+  shiftStartTime String          @default("09:00")
   createdAt      DateTime        @default(now())
   entries        DailyEntry[]
+  attendances    Attendance[]
   users          User[]          @relation("UserPrimaryBranch")
   requests       BranchRequest[]
   managedBy      User[]          @relation("UserManagedBranches")
   ledgerAccounts LedgerAccount[]
   employees      Employee[]
+  transfersOut   EmployeeTransfer[] @relation("BranchTransfersOut")
+  transfersIn    EmployeeTransfer[] @relation("BranchTransfersIn")
 }
 
 model User {
@@ -38,9 +46,11 @@ model User {
   accounts              Account[]
   sessions              Session[]
   branchRequests        BranchRequest[]
+  assignedRequests      BranchRequest[] @relation("AssignedBranchRequests")
   managedBranches       Branch[]        @relation("UserManagedBranches")
   approvedCheques       Cheque[]        @relation("ChequeApprover")
   auditLogs             AuditLog[]
+  employeeTransfers     EmployeeTransfer[]
   createdAt             DateTime        @default(now())
   acknowledgedTransfers Transfer[]      @relation("TransferAcknowledger")
   salaryRecords         SalaryRecord[]
@@ -186,9 +196,12 @@ model BranchRequest {
   status        String  @default("PENDING") // PENDING, IN_PROGRESS, RESOLVED, REJECTED
   priority      String  @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
   adminComment  String? @db.Text
+  attachmentUrl String?
+  assignedToId  Int?
 
   branch      Branch @relation(fields: [branchId], references: [id])
   requestedBy User   @relation(fields: [requestedById], references: [id])
+  assignedTo  User?  @relation("AssignedBranchRequests", fields: [assignedToId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -238,6 +251,7 @@ model Party {
   contactPerson   String?
   contactNumber   String?
   secondaryNumber String?
+  email           String?
   address         String?  @db.Text
   isActive        Boolean  @default(true)
   balance         Float    @default(0)
@@ -246,6 +260,26 @@ model Party {
   payments  Payment[]
   bankInfo  PartyBankInfo[]
   purchases Purchase[]
+}
+
+model EmployeeTransfer {
+  id              Int      @id @default(autoincrement())
+  employeeId      Int
+  fromBranchId    Int
+  toBranchId      Int
+  transferredById Int
+  transferDate    DateTime @default(now())
+  reason          String?  @db.Text
+  createdAt       DateTime @default(now())
+
+  employee        Employee @relation(fields: [employeeId], references: [id])
+  fromBranch      Branch   @relation("BranchTransfersOut", fields: [fromBranchId], references: [id])
+  toBranch        Branch   @relation("BranchTransfersIn", fields: [toBranchId], references: [id])
+  transferredBy   User     @relation(fields: [transferredById], references: [id])
+
+  @@index([employeeId])
+  @@index([fromBranchId])
+  @@index([toBranchId])
 }
 
 model PartyBankInfo {
@@ -357,7 +391,28 @@ model Employee {
 
   user User?
 
+  attendances Attendance[]
+  transfers   EmployeeTransfer[]
+
   @@index([branchId])
+}
+
+model Attendance {
+  id          Int      @id @default(autoincrement())
+  date        DateTime
+  checkInTime DateTime
+  status      String   // PRESENT, ABSENT, LATE, LEAVE
+  note        String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  employeeId  Int
+  employee    Employee @relation(fields: [employeeId], references: [id])
+  branchId    Int
+  branch      Branch   @relation(fields: [branchId], references: [id])
+
+  @@unique([employeeId, date])
+  @@index([branchId, date])
 }
 
 model AdvanceSalary {

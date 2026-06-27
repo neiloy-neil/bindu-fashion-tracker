@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
+import { sendEmail, dailySummaryEmail } from '@/lib/email'
 
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get('authorization')
@@ -81,6 +82,36 @@ export async function GET(req: NextRequest) {
     netBalance: summary.netBalance,
     branchCount: branchSummaries.length,
   })
+
+  try {
+    const admins = await prisma.user.findMany({
+      where: { role: 'ADMIN', isActive: true, email: { not: null } },
+      select: { email: true }
+    })
+    
+    if (admins.length > 0) {
+      const emailContent = dailySummaryEmail(
+        summary.date,
+        summary.totalSales,
+        summary.totalExpenses,
+        summary.netBalance,
+        summary.branchSummaries
+      )
+      
+      await Promise.all(
+        admins.map(admin => 
+          sendEmail({
+            to: admin.email!,
+            subject: emailContent.subject,
+            html: emailContent.html
+          })
+        )
+      )
+      logger.info('cron.daily_summary_email_sent', { count: admins.length })
+    }
+  } catch (error) {
+    logger.error('cron.daily_summary_email_failed', error)
+  }
 
   return NextResponse.json(summary)
 }

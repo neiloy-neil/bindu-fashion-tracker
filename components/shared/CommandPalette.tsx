@@ -61,7 +61,9 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
   // Reset on open
   useEffect(() => {
     if (open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setQuery('')
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedIdx(0)
       setTimeout(() => inputRef.current?.focus(), 50)
     }
@@ -143,7 +145,7 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
           ))}
           {filtered.length === 0 && (
             <div className="py-10 text-center text-gray-400 text-sm">
-              No results for "{query}"
+              No results for &quot;{query}&quot;
             </div>
           )}
         </div>

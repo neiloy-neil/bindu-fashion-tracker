@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import Link from 'next/link'
-import { Search, Filter, Plus, Phone, MapPin, Building2, ChevronRight } from 'lucide-react'
+import { Search, Filter, Plus, Phone, MapPin, Building2, ChevronRight, Upload } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
+import toast from 'react-hot-toast'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { AddPartyModal } from '@/components/parties/AddPartyModal'
 import { useRouter } from 'next/navigation'
@@ -13,7 +14,43 @@ export default function PartyListClient({ initialParties }: { initialParties: an
   const [activeTab, setActiveTab] = useState<'ALL' | 'DUE'>('ALL')
   const [searchQuery, setSearchQuery] = useState('')
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [isImporting, setIsImporting] = useState(false)
   const router = useRouter()
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setIsImporting(true)
+    const toastId = toast.loading('Importing parties...')
+
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const res = await fetch('/api/parties/import', {
+        method: 'POST',
+        body: formData
+      })
+      const result = await res.json()
+
+      if (res.ok) {
+        toast.success(`Imported ${result.summary.created} parties. ${result.summary.errors.length > 0 ? 'Some errors occurred.' : ''}`, { id: toastId })
+        if (result.summary.errors.length > 0) {
+          console.warn('Import errors:', result.summary.errors)
+        }
+        handleSuccess()
+      } else {
+        throw new Error(result.error || 'Import failed')
+      }
+    } catch (error: any) {
+      toast.error(error.message, { id: toastId })
+    } finally {
+      setIsImporting(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
 
   const handleSuccess = async () => {
     router.refresh()
@@ -45,12 +82,28 @@ export default function PartyListClient({ initialParties }: { initialParties: an
             Manage suppliers, track purchases, and monitor due balances.
           </p>
         </div>
-        <button 
-          onClick={() => setIsAddModalOpen(true)}
-          className="btn btn-primary flex items-center gap-2"
-        >
-          <Plus size={16} /> Add Party
-        </button>
+        <div className="flex items-center gap-2">
+          <input 
+            type="file" 
+            accept=".xlsx, .xls" 
+            className="hidden" 
+            ref={fileInputRef} 
+            onChange={handleImport}
+          />
+          <button 
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isImporting}
+            className="btn btn-outline flex items-center gap-2"
+          >
+            <Upload size={16} /> {isImporting ? 'Importing...' : 'Import Excel'}
+          </button>
+          <button 
+            onClick={() => setIsAddModalOpen(true)}
+            className="btn btn-primary flex items-center gap-2"
+          >
+            <Plus size={16} /> Add Party
+          </button>
+        </div>
       </div>
       <div className="flex-1 p-6 space-y-6 min-h-0 flex flex-col overflow-auto">
 

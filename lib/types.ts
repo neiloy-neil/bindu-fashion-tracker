@@ -1,8 +1,13 @@
 export interface Branch {
   id: number
   name: string
-  code: string
+  code: string | null
+  type: string
+  address: string | null
+  contactPerson: string | null
+  phoneNumber: string | null
   isActive: boolean
+  shiftStartTime?: string | null
 }
 
 export interface Category {
@@ -129,6 +134,8 @@ export interface SummaryStats {
   totalSales: number
   totalExpenses: number
   netBalance: number
+  totalPayable: number
+  pettyCash: number
   branchStats: {
     branchName: string
     totalSale: number

@@ -105,6 +105,9 @@ export function NewEntryForm({ initialData, userId }: Props) {
     return computeTotals(fakeEntry)
   }, [incomeAmounts, incomeCategories, expenseAmounts, transferAmounts, paymentAmounts, paymentMethods, advanceAmounts, advanceTypes, categories])
 
+  const selectedBranchObj = useMemo(() => branches.find(b => String(b.id) === branchId), [branches, branchId])
+  const isFactory = selectedBranchObj?.type === 'FACTORY'
+
   useEffect(() => {
     let timeoutId: NodeJS.Timeout
     const subscription = form.watch((value) => {
@@ -283,10 +286,11 @@ export function NewEntryForm({ initialData, userId }: Props) {
       <div className="sticky top-0 z-10 flex items-center justify-between gap-4 px-6 py-4 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur supports-[backdrop-filter]:bg-[var(--surface)]/80">
         <div>
           <h1 className="text-lg font-semibold text-[var(--text-primary)] leading-none flex items-center gap-2">
-            📝 Daily Entry
+            📝 {isFactory ? 'Factory Daily Entry' : 'Daily Entry'}
+            {isFactory && <span className="text-xs bg-brand text-white px-2 py-0.5 rounded-full font-medium ml-2">FACTORY</span>}
           </h1>
           <p className="text-sm text-[var(--text-muted)] mt-1">
-            Submit the end-of-day financial report for your branch.
+            Submit the end-of-day financial report for {isFactory ? 'your factory.' : 'your branch.'}
           </p>
         </div>
       </div>

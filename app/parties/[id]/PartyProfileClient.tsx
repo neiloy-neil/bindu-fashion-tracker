@@ -81,6 +81,13 @@ export default function PartyProfileClient({ party: initialParty }: { party: any
                     <span className="font-semibold w-[76px]">Alt Phone:</span> {party.secondaryNumber}
                   </div>
                 )}
+                {party.email && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground/70">@</span>
+                    <span className="font-semibold w-[76px]">Email:</span> 
+                    <a href={`mailto:${party.email}`} className="text-primary hover:underline">{party.email}</a>
+                  </div>
+                )}
                 {party.address && (
                   <div className="flex items-start gap-2 pt-1">
                     <MapPin size={14} className="text-muted-foreground/70 mt-0.5" />

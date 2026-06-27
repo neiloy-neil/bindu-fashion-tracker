@@ -312,8 +312,6 @@ function Entries() {
 
   return (
     <>
-  return (
-    <>
       <div className="sticky top-0 z-20 flex flex-col lg:flex-row lg:items-center justify-between gap-4 px-6 py-4 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur supports-[backdrop-filter]:bg-[var(--surface)]/80">
         <div>
           <h1 className="text-lg font-semibold text-[var(--text-primary)] leading-none">Sheet View</h1>

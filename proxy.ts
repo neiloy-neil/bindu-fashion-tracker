@@ -39,6 +39,20 @@ export async function proxy(req: NextRequest) {
   if (token) {
     const role = token.role as string
 
+    // SUPER_ADMIN has full access to everything
+    if (role === 'SUPER_ADMIN') {
+      requestHeaders.set('x-user-id', String(token.id))
+      requestHeaders.set('x-user-role', role)
+      if (token.username) {
+        requestHeaders.set('x-user-username', String(token.username))
+      }
+      return NextResponse.next({
+        request: {
+          headers: requestHeaders,
+        },
+      })
+    }
+
     if (role === 'BRANCH') {
       if (
         pathname.startsWith('/branches') ||

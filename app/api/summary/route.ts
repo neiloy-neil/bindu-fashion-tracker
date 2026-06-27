@@ -205,10 +205,37 @@ export async function GET(req: NextRequest) {
     .map(([category, amount]) => ({ category, amount }))
     .sort((a, b) => b.amount - a.amount)
 
+  let pettyCash = 0;
+  let totalPayable = 0;
+
+  if (userRole === 'ADMIN' || userRole === 'SUPER_ADMIN') {
+    // Petty Cash
+    const latestEntries = await prisma.dailyEntry.groupBy({
+      by: ['branchId'],
+      _max: { date: true }
+    })
+    
+    for (const le of latestEntries) {
+      if (le._max.date) {
+        const entry = await prisma.dailyEntry.findFirst({
+          where: { branchId: le.branchId, date: le._max.date },
+          select: { actualPhysicalCash: true }
+        })
+        if (entry?.actualPhysicalCash) pettyCash += entry.actualPhysicalCash
+      }
+    }
+
+    // Total Payable
+    const parties = await prisma.party.findMany({ where: { balance: { gt: 0 } }, select: { balance: true } })
+    totalPayable = parties.reduce((acc, p) => acc + p.balance, 0)
+  }
+
   return NextResponse.json({
     totalSales,
     totalExpenses,
     netBalance: totalSales - totalExpenses,
+    totalPayable,
+    pettyCash,
     branchStats,
     dailyTrend,
     expenseBreakdown: expenseBreakdownArr,

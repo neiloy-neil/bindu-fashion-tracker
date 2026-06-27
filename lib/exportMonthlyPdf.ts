@@ -21,8 +21,7 @@ export const exportMonthlyReportAsPdf = async (branchData: any[], month: number,
   doc.setTextColor(0, 0, 0)
   doc.setFontSize(12)
   doc.text(`Period: ${monthName} ${year}`, 14, 28)
-
-  let currentY = 40
+  const currentY = 40
 
   const head = [['Branch Name', 'Total Income', 'Total Expenses', 'Transfers', 'Party Payments', 'Salary Advances', 'Net Cash Flow']]
   const body = branchData.map(b => [

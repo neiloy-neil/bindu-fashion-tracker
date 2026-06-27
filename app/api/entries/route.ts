@@ -110,6 +110,21 @@ export async function POST(req: NextRequest) {
         throw new Error('One or more transfer accounts are invalid')
       }
 
+      const openingBalanceCategory = categories.find(c => c.name === 'Opening Balance')
+      if (openingBalanceCategory) {
+        const openingBalanceItem = body.items.find(item => item.categoryId === openingBalanceCategory.id)
+        if (openingBalanceItem) {
+          const lastEntry = await tx.dailyEntry.findFirst({
+            where: { branchId: finalBranchId, date: { lt: dateOnlyToUtc(body.date) } },
+            orderBy: { date: 'desc' },
+          })
+          const expectedOpeningBalance = lastEntry?.actualPhysicalCash || 0
+          if (openingBalanceItem.amount !== expectedOpeningBalance) {
+            throw new Error(`Opening balance mismatch. Expected ৳${expectedOpeningBalance}, but got ৳${openingBalanceItem.amount}.`)
+          }
+        }
+      }
+
       const income = body.items.reduce((sum, item) => sum + item.amount, 0)
       const expenses = body.expenseEntries.reduce((sum, item) => sum + item.amount, 0)
       const transfers = body.transfers.reduce((sum, item) => sum + item.amount, 0)

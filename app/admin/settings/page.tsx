@@ -196,10 +196,34 @@ export default function AdminSettings() {
         </div>
 
         {activeTab === 'BRANCHES' && (
-          <div>
-            <label className="text-sm text-[var(--text-secondary)] mb-1 block">Code</label>
-            <input type="text" name="code" defaultValue={selectedItem?.code} className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded p-2 text-white focus:outline-none focus:border-[var(--accent)]" required />
-          </div>
+          <>
+            <div>
+              <label className="text-sm text-[var(--text-secondary)] mb-1 block">Code</label>
+              <input type="text" name="code" defaultValue={selectedItem?.code} className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded p-2 text-white focus:outline-none focus:border-[var(--accent)]" required />
+            </div>
+            <div>
+              <label className="text-sm text-[var(--text-secondary)] mb-1 block">Branch Type</label>
+              <select name="type" defaultValue={selectedItem?.type || 'RETAIL'} className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded p-2 text-white focus:outline-none focus:border-[var(--accent)]" required>
+                <option value="RETAIL">Retail</option>
+                <option value="WHOLESALE">Wholesale</option>
+                <option value="FACTORY">Factory</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-sm text-[var(--text-secondary)] mb-1 block">Address</label>
+              <textarea name="address" defaultValue={selectedItem?.address} className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded p-2 text-white focus:outline-none focus:border-[var(--accent)]" rows={2}></textarea>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm text-[var(--text-secondary)] mb-1 block">Contact Person</label>
+                <input type="text" name="contactPerson" defaultValue={selectedItem?.contactPerson} className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded p-2 text-white focus:outline-none focus:border-[var(--accent)]" />
+              </div>
+              <div>
+                <label className="text-sm text-[var(--text-secondary)] mb-1 block">Phone Number</label>
+                <input type="text" name="phoneNumber" defaultValue={selectedItem?.phoneNumber} className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded p-2 text-white focus:outline-none focus:border-[var(--accent)]" />
+              </div>
+            </div>
+          </>
         )}
 
         {activeTab === 'ACCOUNTS' && (

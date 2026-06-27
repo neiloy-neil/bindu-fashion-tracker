@@ -12,6 +12,9 @@ export default function AdminRequestsPage() {
   const lastSeenIdRef = useRef<number | null>(null)
   const initialLoadRef = useRef<boolean>(true)
 
+  const { data: usersData } = useSWR('/api/admin/users', fetcher)
+  const admins = usersData?.users?.filter((u: any) => u.role === 'ADMIN' || u.role === 'SUPER_ADMIN') || []
+
   // Use SWR for auto-polling every 10 seconds to catch new requests in real-time
   const { data, error, mutate, isLoading } = useSWR('/api/branch-requests', fetcher, {
     refreshInterval: 10000, 
@@ -40,6 +43,7 @@ export default function AdminRequestsPage() {
   const [modalStatus, setModalStatus] = useState('PENDING')
   const [modalPriority, setModalPriority] = useState('MEDIUM')
   const [modalComment, setModalComment] = useState('')
+  const [modalAssignedTo, setModalAssignedTo] = useState<string>('')
   const [submitting, setSubmitting] = useState(false)
 
   const handleManageClick = (req: any) => {
@@ -47,6 +51,7 @@ export default function AdminRequestsPage() {
     setModalStatus(req.status)
     setModalPriority(req.priority || 'MEDIUM')
     setModalComment(req.adminComment || '')
+    setModalAssignedTo(req.assignedToId ? String(req.assignedToId) : '')
   }
 
   const handleUpdate = async (e: React.FormEvent) => {
@@ -61,7 +66,8 @@ export default function AdminRequestsPage() {
           requestId: activeReq.id, 
           status: modalStatus,
           priority: modalPriority,
-          adminComment: modalComment 
+          adminComment: modalComment,
+          assignedToId: modalAssignedTo || null
         })
       })
       if (!res.ok) throw new Error('Failed to update request')
@@ -157,6 +163,9 @@ export default function AdminRequestsPage() {
                   )}
                   
                   <p className="text-xs text-[var(--text-secondary)] mt-3">Requested by: {req.requestedBy?.username}</p>
+                  {req.assignedToId && (
+                    <p className="text-xs text-[var(--text-secondary)] mt-1">Assigned to: {admins.find((a: any) => a.id === req.assignedToId)?.username || req.assignedToId}</p>
+                  )}
                 </div>
                 
                 <div className="flex flex-col items-end gap-3 min-w-[140px]">
@@ -228,6 +237,20 @@ export default function AdminRequestsPage() {
                   value={modalComment}
                   onChange={e => setModalComment(e.target.value)}
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">Assign To</label>
+                <select 
+                  className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-lg px-3 py-2 text-white font-bold focus:outline-none focus:border-[var(--accent)]"
+                  value={modalAssignedTo}
+                  onChange={e => setModalAssignedTo(e.target.value)}
+                >
+                  <option value="">-- Unassigned --</option>
+                  {admins.map((a: any) => (
+                    <option key={a.id} value={a.id}>{a.username}</option>
+                  ))}
+                </select>
               </div>
               
               <div className="flex justify-end gap-3 mt-2">

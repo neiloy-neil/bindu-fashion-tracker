@@ -7,7 +7,7 @@ const leaveSchema = z.object({
   employeeId: z.number(),
   startDate: z.string().transform(v => new Date(v)),
   endDate: z.string().transform(v => new Date(v)),
-  type: z.enum(['SICK', 'CASUAL', 'UNPAID', 'ANNUAL']),
+  type: z.enum(['SICK', 'CASUAL', 'UNPAID', 'ANNUAL', 'MARRIAGE']),
   reason: z.string().optional()
 })
 

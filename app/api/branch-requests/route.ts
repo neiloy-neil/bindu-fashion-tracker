@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json({ error: 'Invalid input', details: parsed.error.format() }, { status: 400 })
     }
-    const { requestedById, type, description, priority = 'MEDIUM' } = parsed.data
+    const { requestedById, type, description, priority = 'MEDIUM', attachmentUrl, assignedToId } = parsed.data
 
     if (!userBranchId) throw new Error('Branch ID missing')
 
@@ -62,6 +62,8 @@ export async function POST(req: NextRequest) {
         type,
         description,
         priority,
+        attachmentUrl,
+        assignedToId: assignedToId ? parseInt(String(assignedToId)) : null,
         status: 'PENDING'
       }
     })
@@ -101,11 +103,16 @@ export async function PATCH(req: NextRequest) {
   }
 
   try {
-    const { requestId, status, adminComment, priority } = await req.json()
+    const { requestId, status, adminComment, priority, assignedToId } = await req.json()
 
     const updated = await prisma.branchRequest.update({
       where: { id: requestId },
-      data: { status, adminComment, priority }
+      data: { 
+        status, 
+        adminComment, 
+        priority,
+        assignedToId: assignedToId ? parseInt(String(assignedToId)) : undefined
+      }
     })
 
     logger.info('branch_request.updated', {

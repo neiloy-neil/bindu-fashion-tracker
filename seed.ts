@@ -89,7 +89,7 @@ async function main() {
   })
 
   for (const branch of branchRecords) {
-    const username = `${branch.code.toLowerCase()}_branch`
+    const username = `${(branch.code || 'BR').toLowerCase()}_branch`
     await prisma.user.upsert({
       where: { username },
       update: {},

@@ -11,6 +11,7 @@ import RecentActivity from '@/components/dashboard/RecentActivity'
 import PdfGenerator from '@/components/dashboard/PdfGenerator'
 import ExcelExport from '@/components/dashboard/ExcelExport'
 import { BrandSpinner } from '@/components/ui/BrandSpinner'
+import { MorningCheckInWidget } from '@/components/hr/MorningCheckInWidget'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
@@ -446,7 +447,10 @@ function Dashboard() {
         )}
 
         {userRole === 'BRANCH' && (
-          <BranchSlipStatus month={month} year={year} />
+          <>
+            <MorningCheckInWidget branchId={parseInt(branchId === 'all' && branches.length > 0 ? String(branches[0].id) : branchId)} />
+            <BranchSlipStatus month={month} year={year} />
+          </>
         )}
 
         {userRole !== 'HR_ADMIN' && (
@@ -472,7 +476,7 @@ function Dashboard() {
               )}
 
               {/* Stat cards */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
                 <StatCard
                   label="Total Sales"
                   value={`৳${formatCurrency(data.totalSales)}`}
@@ -495,6 +499,22 @@ function Dashboard() {
                   value={data.branchStats.length}
                   context="With activity this period"
                 />
+                {(userRole === 'ADMIN' || userRole === 'SUPER_ADMIN') && (
+                  <>
+                    <StatCard
+                      label="Petty Cash"
+                      value={`৳${formatCurrency(data.pettyCash || 0)}`}
+                      context="Latest physical cash"
+                      valueClass="text-[var(--info)]"
+                    />
+                    <StatCard
+                      label="Total Payable"
+                      value={`৳${formatCurrency(data.totalPayable || 0)}`}
+                      context="Owed to parties"
+                      valueClass="text-[var(--warning)]"
+                    />
+                  </>
+                )}
                 <StatCard
                   label="Total Physical Cash"
                   value={`৳${formatCurrency(data.branchStats.reduce((sum, b) => sum + (b.physicalCash || 0), 0))}`}

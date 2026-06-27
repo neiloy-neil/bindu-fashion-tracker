@@ -14,6 +14,7 @@ export default function BranchRequestsPage() {
   const [type, setType] = useState('MAINTENANCE')
   const [priority, setPriority] = useState('MEDIUM')
   const [description, setDescription] = useState('')
+  const [attachment, setAttachment] = useState<File | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
@@ -59,10 +60,20 @@ export default function BranchRequestsPage() {
 
     setSubmitting(true)
     try {
+      let attachmentUrl = null
+      if (attachment) {
+        const formData = new FormData()
+        formData.append('file', attachment)
+        const uploadRes = await fetch('/api/upload?bucket=requests', { method: 'POST', body: formData })
+        if (!uploadRes.ok) throw new Error('Failed to upload attachment')
+        const { url } = await uploadRes.json()
+        attachmentUrl = url
+      }
+
       const res = await fetch('/api/branch-requests', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ requestedById: userId, type, description, priority })
+        body: JSON.stringify({ requestedById: userId, type, description, priority, attachmentUrl })
       })
       if (!res.ok) throw new Error('Failed to submit request')
       toast.success('Request submitted successfully')
@@ -78,6 +89,7 @@ export default function BranchRequestsPage() {
           status: 'PENDING',
           createdAt: new Date().toISOString(),
           adminComment: '',
+          attachmentUrl
         },
       ])
     } catch (e: any) {
@@ -142,6 +154,11 @@ export default function BranchRequestsPage() {
                     </span>
                   </div>
                   <p className="text-white whitespace-pre-wrap">{req.description}</p>
+                  {req.attachmentUrl && (
+                    <a href={req.attachmentUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-[var(--accent)] hover:underline mt-2 inline-block">
+                      📎 View Attachment
+                    </a>
+                  )}
                   {req.adminComment && (
                     <div className="mt-4 p-3 bg-[var(--border)]/50 border border-[var(--border)] rounded-lg">
                       <p className="text-xs text-[var(--text-secondary)] mb-1 font-bold">Admin Comment:</p>
@@ -200,6 +217,14 @@ export default function BranchRequestsPage() {
                   value={description}
                   onChange={e => setDescription(e.target.value)}
                   required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">Attachment (Optional)</label>
+                <input
+                  type="file"
+                  onChange={e => setAttachment(e.target.files?.[0] || null)}
+                  className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-lg px-3 py-2 text-white focus:outline-none focus:border-[var(--accent)]"
                 />
               </div>
               <div className="flex justify-end gap-3 mt-2">

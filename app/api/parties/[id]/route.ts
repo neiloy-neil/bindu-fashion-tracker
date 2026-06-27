@@ -30,7 +30,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   const id = parseInt(resolvedParams.id)
   
   try {
-    const { name, isActive, contactPerson, contactNumber, secondaryNumber, address } = await req.json()
+    const { name, isActive, contactPerson, contactNumber, secondaryNumber, email, address } = await req.json()
     
     if (name) {
       const existing = await prisma.party.findFirst({ where: { name, id: { not: id } } })
@@ -47,6 +47,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         ...(contactPerson !== undefined && { contactPerson }),
         ...(contactNumber !== undefined && { contactNumber }),
         ...(secondaryNumber !== undefined && { secondaryNumber }),
+        ...(email !== undefined && { email }),
         ...(address !== undefined && { address }),
       }
     })

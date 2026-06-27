@@ -2,12 +2,15 @@
  * Direct Excel import script - bypasses HTTP upload
  * Run with: npx ts-node scripts/import-excel.ts
  */
+import 'dotenv/config'
 import ExcelJS from 'exceljs'
 import { PrismaClient } from '@prisma/client'
-import { PrismaLibSql } from '@prisma/adapter-libsql'
+import { Pool } from 'pg'
+import { PrismaPg } from '@prisma/adapter-pg'
 import * as fs from 'fs'
 
-const adapter = new PrismaLibSql({ url: 'file:./prisma/dev.db' })
+const pool = new Pool({ connectionString: process.env.DATABASE_URL })
+const adapter = new PrismaPg(pool)
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const prisma = new PrismaClient({ adapter } as any)
 

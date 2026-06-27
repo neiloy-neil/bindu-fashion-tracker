@@ -15,11 +15,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   try {
     const payment = await prisma.payment.findUnique({ where: { id: paymentId } })
     if (!payment) return NextResponse.json({ error: 'Payment not found' }, { status: 404 })
-    if ((payment as any).approvalStatus !== 'PENDING') return NextResponse.json({ error: 'Payment is already processed' }, { status: 409 })
+    if (payment.approvalStatus !== 'PENDING') return NextResponse.json({ error: 'Payment is already processed' }, { status: 409 })
 
     const updated = await prisma.payment.update({
       where: { id: paymentId },
-      data: { approvalStatus: 'REJECTED' } as any,
+      data: { approvalStatus: 'REJECTED' },
     })
 
     await logAudit({ userId, action: 'UPDATE', entityType: 'Payment', entityId: paymentId, newValues: updated, reason: 'Party payment rejected' })

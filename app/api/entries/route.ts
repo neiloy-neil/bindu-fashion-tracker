@@ -149,7 +149,7 @@ export async function POST(req: NextRequest) {
       const branchPaymentNeedsApproval = userRole === 'BRANCH'
       for (const payment of body.payments) {
         const needsApproval = payment.method !== 'CHEQUE' && branchPaymentNeedsApproval
-        await (tx.payment.create as any)({
+        await tx.payment.create({
           data: {
             dailyEntryId: created.id, partyId: payment.partyId, method: payment.method,
             amount: payment.amount, note: payment.note || null, attachmentUrl: payment.attachmentKey || null,

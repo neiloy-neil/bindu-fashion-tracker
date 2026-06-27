@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
   const approvalStatus = searchParams.get('approvalStatus') || 'PENDING'
 
   const payments = await prisma.payment.findMany({
-    where: { approvalStatus, method: { not: 'CHEQUE' } } as any,
+    where: { approvalStatus, method: { not: 'CHEQUE' } },
     include: { party: true, dailyEntry: { include: { branch: true } } },
     orderBy: { createdAt: 'desc' },
   })
@@ -49,6 +49,8 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    const needsApproval = userRole === 'BRANCH' && method !== 'CHEQUE'
+
     const result = await prisma.$transaction(async (tx) => {
       const payment = await tx.payment.create({
         data: {
@@ -58,11 +60,11 @@ export async function POST(req: NextRequest) {
           amount,
           note: note || null,
           attachmentUrl: attachmentUrl || null,
+          approvalStatus: needsApproval ? 'PENDING' : 'APPROVED',
         }
       })
 
       if (method === 'CHEQUE') {
-        // Create pending cheque
         // Party.balance is NOT updated here for cheques; it updates when the admin approves the cheque.
         await tx.cheque.create({
           data: {
@@ -72,8 +74,8 @@ export async function POST(req: NextRequest) {
             status: 'PENDING'
           }
         })
-      } else {
-        // Immediately decrement party balance for CASH/BANK (because payment reduces our debt to them)
+      } else if (!needsApproval) {
+        // Only decrement balance immediately for APPROVED payments (admin-created)
         await tx.party.update({
           where: { id: partyId },
           data: { balance: { decrement: amount } }

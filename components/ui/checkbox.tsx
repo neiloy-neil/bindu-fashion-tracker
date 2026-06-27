@@ -1,29 +1,44 @@
 "use client"
 
-import { Checkbox as CheckboxPrimitive } from "@base-ui/react/checkbox"
-
+import * as React from "react"
+import { Check } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { CheckIcon } from "lucide-react"
 
-function Checkbox({ className, ...props }: CheckboxPrimitive.Root.Props) {
-  return (
-    <CheckboxPrimitive.Root
-      data-slot="checkbox"
-      className={cn(
-        "peer relative flex size-4 shrink-0 items-center justify-center rounded-[4px] border border-input transition-colors outline-none group-has-disabled/field:opacity-50 after:absolute after:-inset-x-3 after:-inset-y-2 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 aria-invalid:aria-checked:border-primary dark:bg-input/30 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 data-checked:border-primary data-checked:bg-primary data-checked:text-primary-foreground dark:data-checked:bg-primary",
-        className
-      )}
-      {...props}
-    >
-      <CheckboxPrimitive.Indicator
-        data-slot="checkbox-indicator"
-        className="grid place-content-center text-current transition-none [&>svg]:size-3.5"
-      >
-        <CheckIcon
-        />
-      </CheckboxPrimitive.Indicator>
-    </CheckboxPrimitive.Root>
-  )
+export interface CheckboxProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "type"> {
+  onCheckedChange?: (checked: boolean) => void
 }
+
+const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
+  ({ className, onCheckedChange, onChange, checked, defaultChecked, ...props }, ref) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      onChange?.(e)
+      onCheckedChange?.(e.target.checked)
+    }
+
+    return (
+      <label className="relative inline-flex size-4 shrink-0 cursor-pointer">
+        <input
+          type="checkbox"
+          ref={ref}
+          checked={checked}
+          defaultChecked={defaultChecked}
+          onChange={handleChange}
+          className="peer sr-only"
+          {...props}
+        />
+        {/* peer-checked:* applies here because this div is a sibling of the peer input */}
+        <div
+          className={cn(
+            "flex size-4 items-center justify-center rounded-[4px] border border-input bg-background text-transparent transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-background peer-disabled:cursor-not-allowed peer-disabled:opacity-50 peer-checked:border-primary peer-checked:bg-primary peer-checked:text-primary-foreground",
+            className
+          )}
+        >
+          <Check className="size-3" />
+        </div>
+      </label>
+    )
+  }
+)
+Checkbox.displayName = "Checkbox"
 
 export { Checkbox }

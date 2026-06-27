@@ -55,7 +55,7 @@ export default function LeaveRequestsPage() {
           <p className="text-slate-500">Manage employee absences and leave approvals</p>
         </div>
         <div className="flex items-center gap-2">
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v ?? 'all')}>
             <SelectTrigger className="w-[150px]">
               <Filter className="w-4 h-4 mr-2" />
               <SelectValue placeholder="Status" />

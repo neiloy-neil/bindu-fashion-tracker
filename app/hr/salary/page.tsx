@@ -132,7 +132,7 @@ function SalaryContent() {
       lateDays: isNaN(Number(r.record.lateDays)) ? 0 : Math.round(Number(r.record.lateDays)),
       otDays: isNaN(Number(r.record.otDays)) ? 0 : Number(r.record.otDays),
       attendanceBonus: isNaN(Number(r.record.attendanceBonus)) ? 0 : Number(r.record.attendanceBonus),
-      conveyanceOverride: (r.record.conveyanceOverride === null || r.record.conveyanceOverride === '' || isNaN(Number(r.record.conveyanceOverride))) 
+      conveyanceOverride: (r.record.conveyanceOverride == null || isNaN(Number(r.record.conveyanceOverride))) 
         ? r.employee.conveyance 
         : Number(r.record.conveyanceOverride),
       notes: r.record.notes ?? '',

@@ -108,7 +108,7 @@ export async function GET(req: NextRequest) {
     })
 
     return NextResponse.json({ records: recordsWithAdvances, calculatedLeaves, calculatedAttendance })
-  } catch (error: any) {
+  } catch (error: any) { console.error("PRISMA ERROR:", error);
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
@@ -125,23 +125,23 @@ export async function POST(req: NextRequest) {
     const rawBody = await req.json()
     
     const salaryPayloadSchema = z.object({
-      month: z.union([z.string(), z.number()]).transform(v => Number(v)).refine(v => v >= 1 && v <= 12, 'Invalid month'),
-      year: z.union([z.string(), z.number()]).transform(v => Number(v)),
+      month: z.coerce.number().min(1).max(12),
+      year: z.coerce.number(),
       records: z.array(z.object({
         employeeId: z.number(),
-        hrAdvanceDeducted: z.number().nonnegative().optional(),
-        leaveDaysTaken: z.number().nonnegative().optional(),
-        leaveAdjustment: z.number().optional(),
-        lateDays: z.number().nonnegative().optional(),
-        otDays: z.number().nonnegative().optional(),
-        attendanceBonus: z.number().nonnegative().optional(),
-        conveyanceOverride: z.number().optional().nullable(),
-        notes: z.string().optional()
+        hrAdvanceDeducted: z.number().nullish(),
+        leaveDaysTaken: z.number().nullish(),
+        leaveAdjustment: z.number().nullish(),
+        lateDays: z.number().nullish(),
+        otDays: z.number().nullish(),
+        attendanceBonus: z.number().nullish(),
+        conveyanceOverride: z.number().nullish(),
+        notes: z.string().nullish()
       }))
     })
 
     const parsed = salaryPayloadSchema.safeParse(rawBody)
-    if (!parsed.success) {
+    if (!parsed.success) { console.error("ZOD ERROR:", parsed.error.flatten());
       return NextResponse.json({ error: 'Invalid payload', details: parsed.error.flatten() }, { status: 400 })
     }
 
@@ -167,14 +167,14 @@ export async function POST(req: NextRequest) {
             }
           },
           update: {
-            hrAdvanceDeducted: r.hrAdvanceDeducted !== undefined ? r.hrAdvanceDeducted : undefined,
-            leaveDaysTaken: r.leaveDaysTaken !== undefined ? r.leaveDaysTaken : undefined,
-            leaveAdjustment: r.leaveAdjustment !== undefined ? r.leaveAdjustment : undefined,
-            lateDays: r.lateDays !== undefined ? r.lateDays : undefined,
-            otDays: r.otDays !== undefined ? r.otDays : undefined,
-            attendanceBonus: r.attendanceBonus !== undefined ? r.attendanceBonus : undefined,
-            conveyanceOverride: r.conveyanceOverride !== undefined ? r.conveyanceOverride : undefined,
-            notes: r.notes !== undefined ? r.notes : undefined,
+            hrAdvanceDeducted: r.hrAdvanceDeducted ?? undefined,
+            leaveDaysTaken: r.leaveDaysTaken ?? undefined,
+            leaveAdjustment: r.leaveAdjustment ?? undefined,
+            lateDays: r.lateDays != null ? Math.round(r.lateDays) : undefined,
+            otDays: r.otDays ?? undefined,
+            attendanceBonus: r.attendanceBonus ?? undefined,
+            conveyanceOverride: r.conveyanceOverride ?? undefined,
+            notes: r.notes ?? undefined,
           },
           create: {
             employeeId: r.employeeId,
@@ -184,7 +184,7 @@ export async function POST(req: NextRequest) {
             trackerAdvanceTotal: 0,
             leaveDaysTaken: r.leaveDaysTaken ?? 0,
             leaveAdjustment: r.leaveAdjustment ?? 0,
-            lateDays: r.lateDays ?? 0,
+            lateDays: r.lateDays != null ? Math.round(r.lateDays) : 0,
             otDays: r.otDays ?? 0,
             attendanceBonus: r.attendanceBonus ?? 0,
             conveyanceOverride: r.conveyanceOverride ?? null,

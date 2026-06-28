@@ -1,5 +1,6 @@
 import React from 'react'
-import { Document, Page, StyleSheet, Text, View, pdf } from '@react-pdf/renderer'
+import { Document, Page, StyleSheet, Text, View, Image, pdf } from '@react-pdf/renderer'
+import { BINDU_LOGO } from '@/lib/logo-base64'
 import { saveAs } from 'file-saver'
 import type { SummaryStats } from '@/lib/types'
 import { formatCurrency, formatDate } from '@/lib/utils'
@@ -42,6 +43,15 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: '#4B5563',
     marginBottom: 2,
+  },
+  logoWrap: {
+    marginBottom: 10,
+    alignItems: 'center',
+  },
+  logo: {
+    width: 110,
+    height: 34,
+    objectFit: 'contain',
   },
   section: {
     marginTop: 14,
@@ -197,6 +207,9 @@ function DailyReportDocument({
   return (
     <Document>
       <Page size="A4" style={styles.page}>
+        <View style={styles.logoWrap}>
+          <Image src={BINDU_LOGO} style={styles.logo} />
+        </View>
         <Text style={styles.title}>Bindu Premium - Daily Report</Text>
         <Text style={styles.subtitle}>Branch: {branchName}</Text>
         <Text style={styles.subtitle}>Date: {formatDate(selectedDate)}</Text>
@@ -337,6 +350,9 @@ function MonthlyReportDocument({
   return (
     <Document>
       <Page size="A4" orientation="landscape" style={styles.page}>
+        <View style={styles.logoWrap}>
+          <Image src={BINDU_LOGO} style={styles.logo} />
+        </View>
         <Text style={styles.title}>
           Bindu Premium - {isConsolidated ? 'Consolidated Monthly Summary' : `Monthly Summary: ${branchData[0]?.branchName || '-'}`}
         </Text>
@@ -369,6 +385,9 @@ function SummaryReportDocument({
   return (
     <Document>
       <Page size="A4" style={styles.page}>
+        <View style={styles.logoWrap}>
+          <Image src={BINDU_LOGO} style={styles.logo} />
+        </View>
         <Text style={styles.title}>Bindu Premium - {branchName ? `${branchName} Summary` : 'Monthly Summary'}</Text>
         <Text style={styles.subtitle}>Period: {monthLabel} {year}</Text>
 

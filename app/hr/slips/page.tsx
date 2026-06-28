@@ -337,6 +337,7 @@ function SlipsContent() {
                       <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-right">Leave</TableHead>
                       <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-right">Late</TableHead>
                       <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-right">OT</TableHead>
+                      <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-right">Bonus</TableHead>
                       <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-right">Conveyance</TableHead>
                       <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-right">Net Payable</TableHead>
                       <TableHead className="w-8" />
@@ -354,6 +355,7 @@ function SlipsContent() {
                         <TableCell className="text-right text-[var(--danger)] tabular-nums">{calc.leaveDeduction > 0 ? `-${formatTaka(Math.round(calc.leaveDeduction))}` : '—'}</TableCell>
                         <TableCell className="text-right text-[var(--danger)] tabular-nums">{calc.lateDeduction > 0 ? `-${formatTaka(Math.round(calc.lateDeduction))}` : '—'}</TableCell>
                         <TableCell className="text-right text-[var(--success)] tabular-nums">{calc.otAddition > 0 ? `+${formatTaka(Math.round(calc.otAddition))}` : '—'}</TableCell>
+                        <TableCell className="text-right text-[var(--success)] tabular-nums">{calc.attendanceBonus > 0 ? `+${formatTaka(calc.attendanceBonus)}` : '—'}</TableCell>
                         <TableCell className="text-right text-[var(--success)] tabular-nums">+{formatTaka(calc.conveyance)}</TableCell>
                         <TableCell className="text-right font-bold text-[var(--info)] tabular-nums">{formatTaka(calc.netPayable)}</TableCell>
                         <TableCell>

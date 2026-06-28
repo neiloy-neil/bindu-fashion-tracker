@@ -84,7 +84,7 @@ function SlipsContent() {
             brs.set(bid, (calc.employee as any).branch)
           } else if (bid === 'unassigned') {
             brs.set(bid, { 
-              id: -1 as any, 
+              id: 'unassigned' as any, 
               name: 'Unassigned', 
               type: 'OTHER', 
               isActive: true, 

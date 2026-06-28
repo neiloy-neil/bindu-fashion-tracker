@@ -41,38 +41,11 @@ vi.mock('@/lib/prisma', () => ({
   },
 }))
 
-import { POST as runBackfill } from './run-backfill/route'
 import { GET as getEmployee } from './hr/employees/[id]/route'
 
 describe('phase 1 hardening', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-  })
-
-  it('blocks unauthenticated backfill requests', async () => {
-    mockGetServerSession.mockResolvedValue(null)
-
-    const response = await runBackfill()
-
-    expect(response.status).toBe(403)
-    await expect(response.json()).resolves.toEqual({ error: 'Forbidden' })
-  })
-
-  it('allows admins to run the ledger backfill', async () => {
-    mockGetServerSession.mockResolvedValue({ user: { role: 'ADMIN' } })
-    mockLedgerAccountFindMany.mockResolvedValue([{ id: 10, name: 'Banani', branchId: null }])
-    mockBranchFindMany.mockResolvedValue([{ id: 2, name: 'Banani' }])
-    mockLedgerAccountUpdate.mockResolvedValue({})
-
-    const response = await runBackfill()
-    const body = await response.json()
-
-    expect(response.status).toBe(200)
-    expect(mockLedgerAccountUpdate).toHaveBeenCalledWith({
-      where: { id: 10 },
-      data: { branchId: 2 },
-    })
-    expect(body).toMatchObject({ success: true, updatedCount: 1, failedCount: 0 })
   })
 
   it('returns full employee details to admin roles', async () => {

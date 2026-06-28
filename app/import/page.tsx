@@ -44,33 +44,6 @@ export default function ImportPage() {
     } catch (err: unknown) {
       setError((err as Error).message)
     } finally {
-    setFile(f)
-    setError('')
-    setResult(null)
-  }
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault()
-    setDragging(false)
-    const f = e.dataTransfer.files[0]
-    if (f) handleFile(f)
-  }
-
-  const handleImport = async () => {
-    if (!file) return
-    setLoading(true)
-    setError('')
-    setResult(null)
-    try {
-      const fd = new FormData()
-      fd.append('file', file)
-      const res = await fetch('/api/entries/import', { method: 'POST', body: fd })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Import failed')
-      setResult(data)
-    } catch (err: unknown) {
-      setError((err as Error).message)
-    } finally {
       setLoading(false)
     }
   }

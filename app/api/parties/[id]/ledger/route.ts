@@ -12,13 +12,32 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     const [purchases, payments] = await Promise.all([
       prisma.purchase.findMany({
         where: { partyId: id },
-        orderBy: { date: 'asc' }
+        select: {
+          id: true, date: true, amount: true,
+          invoiceNumber: true, note: true, attachmentUrl: true,
+          isOpeningDue: true, createdAt: true,
+        },
+        orderBy: { date: 'asc' },
+        take: 2000,
       }),
       prisma.payment.findMany({
         where: { partyId: id },
-        include: { cheque: true, dailyEntry: { include: { branch: true } } },
-        orderBy: { createdAt: 'asc' }
-      })
+        select: {
+          id: true, amount: true, method: true, approvalStatus: true,
+          note: true, attachmentUrl: true, createdAt: true,
+          cheque: {
+            select: { id: true, issueDate: true, withdrawDate: true, status: true },
+          },
+          dailyEntry: {
+            select: {
+              date: true,
+              branch: { select: { id: true, name: true } },
+            },
+          },
+        },
+        orderBy: { createdAt: 'asc' },
+        take: 2000,
+      }),
     ])
 
     // Interleave them by date

@@ -20,28 +20,35 @@ export async function GET(req: NextRequest) {
   const endDate = new Date(year, month, 0, 23, 59, 59, 999)
 
   try {
-    const branches = await prisma.branch.findMany({
-      where: branchId ? { id: parseInt(branchId) } : {}
-    })
-
-    const entries = await prisma.dailyEntry.findMany({
-      where: {
-        date: { gte: startDate, lte: endDate },
-        ...(branchId ? { branchId: parseInt(branchId) } : {})
-      },
-      include: {
-        items: { include: { category: { select: { name: true, type: true } } } },
-        expenseEntries: true,
-        transfers: true,
-        payments: true,
-        advanceSalaries: true
-      }
-    })
+    const [branches, entries] = await Promise.all([
+      prisma.branch.findMany({
+        where: branchId ? { id: parseInt(branchId) } : {},
+        select: { id: true, name: true },
+      }),
+      prisma.dailyEntry.findMany({
+        where: {
+          date: { gte: startDate, lte: endDate },
+          ...(branchId ? { branchId: parseInt(branchId) } : {})
+        },
+        select: {
+          branchId: true,
+          // Only pull income items, filtered at DB level — excludes Opening Balance
+          items: {
+            where: { category: { type: 'INCOME', name: { not: 'Opening Balance' } } },
+            select: { amount: true },
+          },
+          expenseEntries: { select: { amount: true } },
+          transfers: { select: { amount: true } },
+          payments: { select: { amount: true } },
+          advanceSalaries: { select: { amount: true, type: true } },
+        },
+      }),
+    ])
 
     // Group by branch
     const branchData = branches.map(b => {
       const branchEntries = entries.filter(e => e.branchId === b.id)
-      
+
       let totalIncome = 0
       let totalExpense = 0
       let totalTransfers = 0
@@ -49,9 +56,7 @@ export async function GET(req: NextRequest) {
       let totalAdvances = 0
 
       branchEntries.forEach(entry => {
-        totalIncome += entry.items
-          .filter(item => item.category?.type === 'INCOME' && item.category?.name !== 'Opening Balance')
-          .reduce((sum, item) => sum + item.amount, 0)
+        totalIncome += entry.items.reduce((sum, item) => sum + item.amount, 0)
         totalExpense += entry.expenseEntries.reduce((sum, exp) => sum + exp.amount, 0)
         totalTransfers += entry.transfers.reduce((sum, tr) => sum + tr.amount, 0)
         totalPayments += entry.payments.reduce((sum, p) => sum + p.amount, 0)

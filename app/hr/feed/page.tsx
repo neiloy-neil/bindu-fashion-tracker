@@ -2,9 +2,9 @@
 
 import { useEffect, useState, useMemo, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
-import type { SalaryUploadLog, Employee } from '@prisma/client'
+import type { Employee, SalaryRecord } from '@prisma/client'
 import { calcSalary } from '@/lib/hr/calculations'
-import { Users, FileSpreadsheet, ChevronRight, Clock, CheckCircle2, Circle } from 'lucide-react'
+import { Users, ChevronRight, Clock, CheckCircle2, Circle, Lock } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import Link from 'next/link'
 
@@ -15,8 +15,8 @@ type MonthData = {
   year: number
   records: number
   totalPayable: number
-  log: SalaryUploadLog | null
-  status: 'processed' | 'manual' | 'pending'
+  lastUpdatedAt: string | null
+  status: 'finalized' | 'in_progress' | 'pending'
   completion: number
 }
 
@@ -58,12 +58,10 @@ function FeedContent() {
     const load = async () => {
       setLoading(true)
       try {
-        const [logsRes, empsRes] = await Promise.all([
-          fetch(`/api/hr/upload-log?year=${year}`),
+        const [empsRes] = await Promise.all([
           fetch('/api/hr/employees?active=true')
         ])
 
-        const logs: SalaryUploadLog[] = logsRes.ok ? await logsRes.json() : []
         const emps: Employee[] = empsRes.ok ? await empsRes.json() : []
         
         const monthPromises = []
@@ -76,16 +74,16 @@ function FeedContent() {
 
         setTotalEmployees(emps.length)
 
-        const logMap = new Map((logs ?? []).map(l => [l.month, l]))
         const empMap = new Map((emps ?? []).map(e => [e.id, e]))
 
         const monthData: MonthData[] = []
         for (let m = 1; m <= 12; m++) {
-          const log = logMap.get(m) ?? null
-          const recs = allRecs[m - 1]
+          const recs = (allRecs[m - 1]?.records ?? []) as SalaryRecord[]
           
           let totalPayable = 0
           let recordsCount = 0
+          let lastUpdatedAt: string | null = null
+          let isFinalized = false
 
           for (const r of recs) {
             const emp = empMap.get(r.employeeId)
@@ -94,15 +92,21 @@ function FeedContent() {
               totalPayable += calc.netPayable
               recordsCount++
             }
+            if (!lastUpdatedAt || new Date(r.updatedAt) > new Date(lastUpdatedAt)) {
+              lastUpdatedAt = r.updatedAt.toString()
+            }
+            if (r.lockedAt) {
+              isFinalized = true
+            }
           }
 
           const completion = emps.length > 0 ? Math.round((recordsCount / emps.length) * 100) : 0
 
-          let status: 'processed' | 'manual' | 'pending' = 'pending'
-          if (log && recordsCount > 0) status = 'processed'
-          else if (recordsCount > 0) status = 'manual'
+          let status: 'finalized' | 'in_progress' | 'pending' = 'pending'
+          if (isFinalized && recordsCount > 0) status = 'finalized'
+          else if (recordsCount > 0) status = 'in_progress'
 
-          monthData.push({ month: m, year, records: recordsCount, totalPayable, log, status, completion })
+          monthData.push({ month: m, year, records: recordsCount, totalPayable, lastUpdatedAt, status, completion })
         }
 
         setMonths(monthData)
@@ -128,7 +132,7 @@ function FeedContent() {
   }, [months, statusFilter])
 
   const yearOptions = Array.from({ length: 5 }, (_, i) => currentYear - 2 + i)
-  const processedCount = months.filter(m => m.status !== 'pending').length
+  const processedCount = months.filter(m => m.status === 'finalized').length
   const totalRecords = months.reduce((s, m) => s + m.records, 0)
   const totalPayable = months.reduce((s, m) => s + m.totalPayable, 0)
 
@@ -174,8 +178,8 @@ function FeedContent() {
       <div className="flex items-center gap-1 mb-4 overflow-x-auto">
         {[
           { label: 'All', value: 'all', count: 12 },
-          { label: 'Processed', value: 'processed', count: months.filter(m => m.status === 'processed').length },
-          { label: 'Manual', value: 'manual', count: months.filter(m => m.status === 'manual').length },
+          { label: 'Finalized', value: 'finalized', count: months.filter(m => m.status === 'finalized').length },
+          { label: 'In Progress', value: 'in_progress', count: months.filter(m => m.status === 'in_progress').length },
           { label: 'Pending', value: 'pending', count: months.filter(m => m.status === 'pending').length },
         ].map(opt => (
           <button
@@ -212,10 +216,10 @@ function FeedContent() {
                   isCurrentMonth ? 'border-[var(--warning)]/40 ring-1 ring-[var(--warning)]/10' : 'border-[var(--border)]'
                 }`}>
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
-                    m.status === 'processed' ? 'bg-[var(--success-subtle)]/20' : m.status === 'manual' ? 'bg-[var(--info-subtle)]/20' : 'bg-[var(--border)]/30'
+                    m.status === 'finalized' ? 'bg-[var(--success-subtle)]/20' : m.status === 'in_progress' ? 'bg-[var(--info-subtle)]/20' : 'bg-[var(--border)]/30'
                   }`}>
-                    {m.status === 'processed' ? <CheckCircle2 size={20} className="text-[var(--success)]" /> :
-                     m.status === 'manual' ? <Circle size={20} className="text-[var(--info)]" /> :
+                    {m.status === 'finalized' ? <CheckCircle2 size={20} className="text-[var(--success)]" /> :
+                     m.status === 'in_progress' ? <Circle size={20} className="text-[var(--info)]" /> :
                      <Circle size={20} className="text-[var(--text-muted)] opacity-50" />}
                   </div>
 
@@ -223,16 +227,16 @@ function FeedContent() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-semibold text-[var(--text-primary)] text-sm sm:text-base">{MONTHS[m.month - 1]}</p>
                       {isCurrentMonth && <span className="text-[10px] font-bold uppercase tracking-wider bg-[var(--warning-subtle)]/30 text-[var(--warning)] px-2 py-0.5 rounded-full">Current</span>}
-                      {m.status === 'processed' && <span className="text-[10px] font-bold uppercase tracking-wider bg-[var(--success-subtle)]/30 text-[var(--success)] px-2 py-0.5 rounded-full hidden sm:inline">Uploaded</span>}
-                      {m.status === 'manual' && <span className="text-[10px] font-bold uppercase tracking-wider bg-[var(--info-subtle)]/30 text-[var(--info)] px-2 py-0.5 rounded-full hidden sm:inline">Manual</span>}
+                      {m.status === 'finalized' && <span className="text-[10px] font-bold uppercase tracking-wider bg-[var(--success-subtle)]/30 text-[var(--success)] px-2 py-0.5 rounded-full hidden sm:inline">Finalized</span>}
+                      {m.status === 'in_progress' && <span className="text-[10px] font-bold uppercase tracking-wider bg-[var(--info-subtle)]/30 text-[var(--info)] px-2 py-0.5 rounded-full hidden sm:inline">In Progress</span>}
                     </div>
                     <div className="flex items-center gap-3 mt-0.5 text-xs text-[var(--text-muted)] flex-wrap">
                       {m.records > 0 ? (
                         <>
                           <span className="flex items-center gap-1"><Users size={12} />{m.records} employee{m.records !== 1 ? 's' : ''}</span>
                           {m.totalPayable > 0 && <span className="font-medium text-[var(--text-secondary)]">{formatTaka(Math.round(m.totalPayable))}</span>}
-                          {m.log && <span className="flex items-center gap-1"><FileSpreadsheet size={12} /><span className="truncate max-w-[140px]">{m.log.fileName || 'Imported'}</span></span>}
-                          {m.log && <span className="flex items-center gap-1"><Clock size={12} />{formatRelative(m.log.uploadedAt)}</span>}
+                          {m.status === 'finalized' && <span className="flex items-center gap-1"><Lock size={12} />Locked</span>}
+                          {m.lastUpdatedAt && <span className="flex items-center gap-1"><Clock size={12} />{formatRelative(m.lastUpdatedAt)}</span>}
                         </>
                       ) : (
                         <span className="text-[var(--text-muted)] opacity-50">No records yet</span>
@@ -268,8 +272,8 @@ function FeedContent() {
       )}
 
       <div className="mt-6 flex flex-wrap items-center gap-4 text-xs text-[var(--text-muted)] px-1">
-        <span className="flex items-center gap-1.5"><CheckCircle2 size={14} className="text-[var(--success)]" /> Uploaded via Excel</span>
-        <span className="flex items-center gap-1.5"><Circle size={14} className="text-[var(--info)]" /> Manually entered</span>
+        <span className="flex items-center gap-1.5"><CheckCircle2 size={14} className="text-[var(--success)]" /> Finalized payroll month</span>
+        <span className="flex items-center gap-1.5"><Circle size={14} className="text-[var(--info)]" /> Payroll in progress</span>
         <span className="flex items-center gap-1.5"><Circle size={14} className="text-[var(--text-muted)] opacity-50" /> Not processed</span>
       </div>
     </div>

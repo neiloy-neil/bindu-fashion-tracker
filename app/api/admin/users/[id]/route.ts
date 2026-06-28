@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import { z } from 'zod'
 
 const userUpdateSchema = z.object({
   username: z.string().min(2).optional(),
-  email: z.string().email().optional().nullable(),
+  email: z.string().optional().nullable(),
   phoneNumber: z.string().optional().nullable(),
   role: z.enum(['ADMIN', 'BRANCH', 'AUDITOR', 'AREA_MANAGER', 'HR_ADMIN', 'SUPER_ADMIN', 'ACCOUNTS']).optional(),
   branchId: z.union([z.string(), z.number()]).transform(v => Number(v)).optional().nullable(),
@@ -15,8 +17,8 @@ const userUpdateSchema = z.object({
 })
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const userRole = req.headers.get('x-user-role')
-  if (userRole !== 'ADMIN' && userRole !== 'SUPER_ADMIN') {
+  const session = await getServerSession(authOptions)
+  if (!session?.user || !['ADMIN', 'SUPER_ADMIN'].includes((session.user as any).role)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
   }
 
@@ -25,7 +27,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   const rawBody = await req.json()
   const parsed = userUpdateSchema.safeParse(rawBody)
   if (!parsed.success) {
-    return NextResponse.json({ error: 'Invalid input', details: parsed.error.flatten() }, { status: 400 })
+    return NextResponse.json({ error: 'Invalid input', details: parsed.error.issues }, { status: 400 })
   }
   const { username, email, phoneNumber, role, branchId, isActive, password, managedBranchIds } = parsed.data
 
@@ -79,8 +81,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const userRole = req.headers.get('x-user-role')
-  if (userRole !== 'ADMIN' && userRole !== 'SUPER_ADMIN') {
+  const session = await getServerSession(authOptions)
+  if (!session?.user || !['ADMIN', 'SUPER_ADMIN'].includes((session.user as any).role)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
   }
 

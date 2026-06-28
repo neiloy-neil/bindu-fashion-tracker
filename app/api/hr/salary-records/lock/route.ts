@@ -1,37 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { prisma } from '@/lib/prisma'
 import { logAudit } from '@/lib/audit'
 
 export async function POST(req: NextRequest) {
-  const role = req.headers.get('x-user-role')
-  const username = req.headers.get('x-user-username')
-  
-  if (!role || !['ADMIN', 'SUPER_ADMIN'].includes(role)) {
+  const session = await getServerSession(authOptions)
+  const sessionUser = session?.user as { id?: number; role?: string } | undefined
+  if (!sessionUser || !['ADMIN', 'SUPER_ADMIN'].includes(sessionUser.role ?? '')) {
     return NextResponse.json({ error: 'Forbidden. Only ADMIN can lock payroll.' }, { status: 403 })
-  }
-
-  if (!username) {
-    return NextResponse.json({ error: 'Username missing from headers' }, { status: 400 })
   }
 
   try {
     const { month, year } = await req.json()
-    
+
     if (!month || !year) {
       return NextResponse.json({ error: 'month and year are required' }, { status: 400 })
     }
 
     const m = parseInt(month)
     const y = parseInt(year)
-
-    // Verify user exists and is admin
-    const user = await prisma.user.findUnique({
-      where: { username }
-    })
-
-    if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
+    const userId = sessionUser.id!
 
     // Check if already locked
     const existingLock = await prisma.salaryRecord.findFirst({
@@ -47,12 +36,12 @@ export async function POST(req: NextRequest) {
       where: { month: m, year: y },
       data: {
         lockedAt: new Date(),
-        lockedById: user.id
+        lockedById: userId
       }
     })
 
     await logAudit({
-      userId: user.id,
+      userId: userId,
       action: 'UPDATE',
       entityType: 'SalaryRecord_Lock',
       entityId: m, // Using month as entityId since it locks the whole month

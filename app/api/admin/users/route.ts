@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import { userSchema } from '@/lib/schemas'
@@ -35,15 +37,15 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const userRole = req.headers.get('x-user-role')
-  if (userRole !== 'ADMIN' && userRole !== 'SUPER_ADMIN') {
+  const session = await getServerSession(authOptions)
+  if (!session?.user || !['ADMIN', 'SUPER_ADMIN'].includes((session.user as any).role)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
   }
 
   const rawBody = await req.json()
   const parsed = userSchema.safeParse(rawBody)
   if (!parsed.success) {
-    return NextResponse.json({ error: 'Invalid input', details: parsed.error.format() }, { status: 400 })
+    return NextResponse.json({ error: 'Invalid input', details: parsed.error.issues }, { status: 400 })
   }
   const { username, email, phoneNumber, password, role, branchId, isActive, managedBranchIds, employeeId } = parsed.data
 

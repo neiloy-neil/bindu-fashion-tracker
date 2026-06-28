@@ -356,7 +356,7 @@ function Dashboard() {
     fetcher
   )
   const { data: transfersCountData } = useSWR(
-    userRole === 'ADMIN' ? '/api/transfers/pending-count' : null,
+    (userRole === 'ADMIN' || userRole === 'BRANCH') ? '/api/transfers/pending-count' : null,
     fetcher
   )
   const { data: chequesCountData } = useSWR(
@@ -434,11 +434,11 @@ function Dashboard() {
       {/* Body */}
       <div className="flex-1 p-6 space-y-6 min-h-0">
 
-        {userRole === 'ADMIN' && (
+        {(userRole === 'ADMIN' || userRole === 'BRANCH') && (
           <PendingItems
-            payroll={payrollData}
+            payroll={userRole === 'ADMIN' ? payrollData : null}
             transfersCount={transfersCountData?.count || 0}
-            chequesCount={chequesCountData?.length || 0}
+            chequesCount={userRole === 'ADMIN' ? (chequesCountData?.length || 0) : 0}
           />
         )}
 

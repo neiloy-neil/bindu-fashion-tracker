@@ -47,7 +47,6 @@ export default async function IncomingTransfersPage() {
     id: t.id,
     amount: t.amount,
     note: t.note,
-    attachmentUrl: t.attachmentUrl,
     createdAt: t.createdAt.toISOString(),
     senderBranch: t.dailyEntry.branch.name,
     targetAccount: t.account.name
@@ -57,13 +56,7 @@ export default async function IncomingTransfersPage() {
     <div className="p-6 max-w-6xl mx-auto">
       <h1 className="text-2xl font-bold mb-6 text-[var(--text-primary)]">Pending Incoming Transfers</h1>
       
-      {transfersForClient.length === 0 ? (
-        <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-8 text-center text-[var(--text-muted)] shadow-sm">
-          No pending transfers to acknowledge.
-        </div>
-      ) : (
-        <IncomingTransfersClient initialTransfers={transfersForClient} />
-      )}
+      <IncomingTransfersClient initialTransfers={transfersForClient} />
     </div>
   )
 }

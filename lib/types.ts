@@ -68,6 +68,11 @@ export interface Transfer {
   amount: number
   note?: string | null
   createdAt?: string | Date
+  status: 'PENDING' | 'ACKNOWLEDGED' | 'REJECTED' | 'NOT_APPLICABLE'
+  acknowledgedById?: number | null
+  acknowledgedAt?: string | Date | null
+  rejectionReason?: string | null
+  receivingEntryId?: number | null
 }
 
 export interface Party {

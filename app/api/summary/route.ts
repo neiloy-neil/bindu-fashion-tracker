@@ -58,7 +58,7 @@ export async function GET(req: NextRequest) {
         date: true,
         branchId: true,
         items: { select: { amount: true, category: { select: { name: true, type: true } } } },
-        transfers: { select: { amount: true } },
+        transfers: { select: { amount: true, status: true } },
         receivedTransfers: { select: { amount: true } },
         payments: { select: { amount: true, method: true, cheque: { select: { status: true } } } },
         expenseEntries: { select: { amount: true, category: { select: { name: true } } } },
@@ -108,6 +108,7 @@ export async function GET(req: NextRequest) {
 
     if (entry.transfers) {
       for (const t of entry.transfers) {
+        if (t.status === 'REJECTED') continue
         entryExp += t.amount
         physicalOut += t.amount
         expenseBreakdown['Transfers'] = (expenseBreakdown['Transfers'] || 0) + t.amount

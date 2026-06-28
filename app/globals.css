@@ -1,16 +1,14 @@
 @import "tailwindcss";
 
-/* ─── Brand tokens ─────────────────────────────── */
 :root {
+  /* ─── Brand tokens ─────────────────────────────── */
   --brand-orange:   #F4881F;
   --brand-navy:     #2A356E;
   --brand-red:      #ED4024;
   --brand-green:    #2F9E6B;
   --brand-ivory:    #FAF7F2;
-}
 
-/* ─── Dark theme (default) ──────────────────────── */
-:root {
+  /* ─── Dark theme (default) ──────────────────────── */
   --background:          #0D1117;
   --surface:             #161B27;
   --surface-raised:      #1C2333;
@@ -43,35 +41,14 @@
   --radius-lg:   12px;
   --radius-xl:   16px;
   --radius-full: 9999px;
-
-  /* shadcn semantic tokens */
-  --background-hsl:         220 29% 7%;
-  --foreground-hsl:         213 31% 95%;
-  --card-hsl:               222 26% 12%;
-  --card-foreground-hsl:    213 31% 95%;
-  --popover-hsl:            222 26% 14%;
-  --popover-foreground-hsl: 213 31% 95%;
-  --primary-hsl:            30 90% 54%;
-  --primary-foreground-hsl: 40 50% 97%;
-  --secondary-hsl:          222 26% 16%;
-  --secondary-foreground-hsl: 213 31% 95%;
-  --muted-hsl:              222 26% 16%;
-  --muted-foreground-hsl:   215 20% 57%;
-  --accent-hsl:             30 90% 54%;
-  --accent-foreground-hsl:  40 50% 97%;
-  --destructive-hsl:        13 84% 55%;
-  --destructive-foreground-hsl: 40 50% 97%;
-  --border-hsl:             222 26% 22%;
-  --input-hsl:              222 26% 22%;
-  --ring-hsl:               30 90% 54%;
   --radius:                 0.5rem;
-  --chart-1: 30 90% 54%;
-  --chart-2: 155 54% 40%;
-  --chart-3: 220 70% 60%;
-  --chart-4: 13 84% 55%;
-  --chart-5: 215 20% 65%;
+  --chart-1:                var(--accent);
+  --chart-2:                var(--success);
+  --chart-3:                #3B82F6;
+  --chart-4:                var(--danger);
+  --chart-5:                var(--text-secondary);
 
-  /* shadcn semantic aliases — point to existing custom tokens */
+  /* shadcn semantic aliases — map to existing hex tokens */
   --foreground:            var(--text-primary);
   --card:                  var(--surface);
   --card-foreground:       var(--text-primary);
@@ -94,8 +71,6 @@
   --bg-secondary:          var(--surface-raised);
   --bg-hover:              var(--surface-raised);
 }
-
-
 
 /* ─── Light theme ───────────────────────────────── */
 .light {
@@ -181,8 +156,8 @@
 *, *::before, *::after { box-sizing: border-box; }
 html { scroll-behavior: smooth; font-size: 16px; }
 body {
-  font-family: var(--font-body), 'Inter', system-ui, sans-serif;
   background-color: var(--background);
+  font-family: var(--font-body), 'Inter', system-ui, sans-serif;
   color: var(--text-primary);
   min-height: 100vh;
   margin: 0;

@@ -10,7 +10,6 @@ import AdminEditRequests from '@/components/dashboard/AdminEditRequests'
 import RecentActivity from '@/components/dashboard/RecentActivity'
 import PdfGenerator from '@/components/dashboard/PdfGenerator'
 import ExcelExport from '@/components/dashboard/ExcelExport'
-import { BrandSpinner } from '@/components/ui/BrandSpinner'
 import { MorningCheckInWidget } from '@/components/hr/MorningCheckInWidget'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -30,8 +29,8 @@ const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov
 const TOOLTIP_STYLE = {
   background: 'var(--surface-raised)',
   border: '1px solid var(--border-strong)',
-  borderRadius: '8px',
-  fontSize: '12px',
+  borderRadius: 8,
+  fontSize: 12,
   color: 'var(--text-primary)',
 }
 
@@ -73,10 +72,10 @@ function DateFilter({
   userRole: string
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
       {userRole === 'ADMIN' && (
         <Select value={branchId} onValueChange={onBranchChange}>
-          <SelectTrigger className="h-8 w-[140px] text-sm">
+          <SelectTrigger className="h-8 w-[160px] text-sm">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -88,7 +87,7 @@ function DateFilter({
         </Select>
       )}
       <Select value={viewMode} onValueChange={(v) => onChange(month, year, startDate, endDate, v as 'daily' | 'month' | 'custom')}>
-        <SelectTrigger className="h-8 w-[140px] text-sm">
+        <SelectTrigger className="h-8 w-[160px] text-sm">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -157,11 +156,11 @@ function PayrollSummary({ data }: { data: any }) {
         <h3 className="text-sm font-semibold text-[var(--text-primary)]">
           Payroll Summary — {data.month}/{data.year}
         </h3>
-        <Link href="/hr/salary" className="text-xs text-[var(--accent)] hover:underline font-medium">
+        <Link href="/hr/salary" className="text-xs font-medium text-[var(--accent)] hover:underline">
           Go to processing →
         </Link>
       </div>
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 space-y-1.5 hover:border-[var(--border-strong)] transition-colors duration-150">
           <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wide flex items-center gap-1.5">
             <Users size={11} /> Active Employees
@@ -219,7 +218,7 @@ function PendingItems({
         {chequesCount > 0 && (
           <Link
             href="/admin/cheques"
-            className="flex items-center gap-4 p-4 rounded-xl border border-[var(--border)] bg-[var(--surface)] hover:border-[var(--border-strong)] hover:bg-[var(--surface-raised)] transition-all duration-150 no-underline group"
+            className="flex items-center gap-4 p-4 rounded-xl border border-[var(--border)] bg-[var(--surface)] hover:border-[var(--border-strong)] hover:bg-[var(--surface-raised)] transition-all duration-150 group"
           >
             <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-[var(--warning-subtle)] text-[var(--warning)]">
               <Clock className="w-5 h-5" />
@@ -234,7 +233,7 @@ function PendingItems({
         {transfersCount > 0 && (
           <Link
             href="/transfers/incoming"
-            className="flex items-center gap-4 p-4 rounded-xl border border-[var(--border)] bg-[var(--surface)] hover:border-[var(--border-strong)] hover:bg-[var(--surface-raised)] transition-all duration-150 no-underline group"
+            className="flex items-center gap-4 p-4 rounded-xl border border-[var(--border)] bg-[var(--surface)] hover:border-[var(--border-strong)] hover:bg-[var(--surface-raised)] transition-all duration-150 group"
           >
             <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-[var(--info-subtle)] text-[var(--info)]">
               <AlertCircle className="w-5 h-5" />
@@ -249,7 +248,7 @@ function PendingItems({
         {payroll && payroll.processedCount === 0 && (
           <Link
             href="/hr/salary"
-            className="flex items-center gap-4 p-4 rounded-xl border border-[var(--border)] bg-[var(--surface)] hover:border-[var(--border-strong)] hover:bg-[var(--surface-raised)] transition-all duration-150 no-underline group"
+            className="flex items-center gap-4 p-4 rounded-xl border border-[var(--border)] bg-[var(--surface)] hover:border-[var(--border-strong)] hover:bg-[var(--surface-raised)] transition-all duration-150 group"
           >
             <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-[var(--danger-subtle)] text-[var(--danger)]">
               <Users className="w-5 h-5" />
@@ -364,7 +363,14 @@ function Dashboard() {
     fetcher
   )
 
-  if (!session) return <BrandSpinner />
+  if (!session) {
+    return (
+      <div className="flex items-center justify-center h-64 gap-3">
+        <div className="w-5 h-5 rounded-full border-2 border-[var(--border-strong)] border-t-[var(--accent)] animate-spin" />
+        <span className="text-sm text-[var(--text-muted)]">Loading…</span>
+      </div>
+    )
+  }
 
   const subtitle =
     viewMode === 'daily'
@@ -376,7 +382,7 @@ function Dashboard() {
   return (
     <>
       {/* Sticky header */}
-      <div className="sticky top-0 z-10 flex items-center justify-between gap-4 px-6 py-4 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur supports-[backdrop-filter]:bg-[var(--surface)]/80">
+      <div className="sticky top-0 z-10 flex items-center justify-between gap-4 px-6 py-4 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur">
         <div>
           <h1 className="text-lg font-semibold text-[var(--text-primary)] leading-none">
             Dashboard
@@ -457,7 +463,7 @@ function Dashboard() {
           loading ? (
             <div className="flex items-center justify-center h-64 gap-3">
               <div className="w-5 h-5 rounded-full border-2 border-[var(--border-strong)] border-t-[var(--accent)] animate-spin" />
-              <span className="text-sm text-[var(--text-muted)]">Loading data…</span>
+              <span className="text-sm text-[var(--text-muted)]">Loading…</span>
             </div>
           ) : !data ? (
             <div className="flex flex-col items-center justify-center h-64 gap-3">
@@ -465,7 +471,6 @@ function Dashboard() {
                 <BarChart2 className="w-5 h-5 text-[var(--text-muted)]" />
               </div>
               <p className="text-sm font-medium text-[var(--text-muted)]">No data for this period</p>
-              <p className="text-xs text-[var(--text-disabled)]">Add entries or adjust the date range</p>
             </div>
           ) : (
             <>
@@ -476,7 +481,7 @@ function Dashboard() {
               )}
 
               {/* Stat cards */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+              <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
                 <StatCard
                   label="Total Sales"
                   value={`৳${formatCurrency(data.totalSales)}`}
@@ -644,7 +649,7 @@ function Dashboard() {
                     <Table>
                       <TableHeader>
                         <TableRow className="hover:bg-transparent border-[var(--border)]">
-                          <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide w-[180px]">
+                          <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide">
                             Branch
                           </TableHead>
                           <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-right">
@@ -725,9 +730,9 @@ function Dashboard() {
 export default function DashboardPage() {
   return (
     <Suspense fallback={
-      <div className="flex items-center justify-center h-screen gap-3">
+      <div className="flex items-center justify-center h-64 gap-3">
         <div className="w-5 h-5 rounded-full border-2 border-[var(--border-strong)] border-t-[var(--accent)] animate-spin" />
-        <span className="text-sm text-[var(--text-muted)]">Loading Dashboard…</span>
+        <span className="text-sm text-[var(--text-muted)]">Loading…</span>
       </div>
     }>
       <Dashboard />

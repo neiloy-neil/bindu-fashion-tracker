@@ -1,17 +1,11 @@
 import ExcelJS from 'exceljs'
 import type { CellValue } from 'exceljs'
-import type { Employee, Branch, SalaryRecord } from '@prisma/client'
+import type { Employee, Branch } from '@prisma/client'
 import { downloadWorkbook } from '@/lib/excel-export'
-
-const MONTHS = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December'
-]
 
 const XLSX_EXTENSION = '.xlsx'
 const MAX_IMPORT_FILE_BYTES = 5 * 1024 * 1024
 const MAX_EMPLOYEE_IMPORT_ROWS = 1000
-const MAX_SALARY_IMPORT_ROWS = 2000
 
 const EMPLOYEE_COLUMNS = [
   { header: 'Employee ID', key: 'employeeId', width: 14 },
@@ -21,21 +15,6 @@ const EMPLOYEE_COLUMNS = [
   { header: 'Basic Salary', key: 'basicSalary', width: 14 },
   { header: 'Conveyance', key: 'conveyance', width: 14 },
   { header: 'Yearly Leave', key: 'yearlyLeaveAllowance', width: 14 },
-] as const
-
-const SALARY_COLUMNS = [
-  { header: 'Employee ID', key: 'employeeId', width: 14 },
-  { header: 'Name', key: 'name', width: 24 },
-  { header: 'Branch', key: 'branch', width: 22 },
-  { header: 'Basic Salary', key: 'basicSalary', width: 14 },
-  { header: 'Advance (৳)', key: 'hrAdvanceDeducted', width: 14 },
-  { header: 'Leave (days)', key: 'leaveDaysTaken', width: 14 },
-  { header: 'Leave Adjustment (±days)', key: 'leaveAdjustment', width: 20 },
-  { header: 'Late (days)', key: 'lateDays', width: 12 },
-  { header: 'OT (days)', key: 'otDays', width: 12 },
-  { header: 'Conveyance (৳)', key: 'conveyance', width: 16 },
-  { header: 'Attendance Bonus (৳)', key: 'attendanceBonus', width: 20 },
-  { header: 'Notes', key: 'notes', width: 30 },
 ] as const
 
 export type EmployeeSheetRow = {
@@ -55,21 +34,6 @@ export type EmployeeSheetRow = {
   nidNumber?: string
   oldIdCard?: string
   photoUrl?: string
-}
-
-export type SheetRow = {
-  employeeId: string
-  name: string
-  branch: string
-  basicSalary: number
-  hrAdvanceDeducted: number
-  leaveDaysTaken: number
-  leaveAdjustment: number
-  lateDays: number
-  otDays: number
-  conveyance: number
-  attendanceBonus: number
-  notes: string
 }
 
 type NormalizedSheetRow = Record<string, string>
@@ -261,109 +225,6 @@ export async function parseEmployeeSheet(
         nidNumber: ['nai', 'na', 'n/a', ''].includes(nidRaw.toLowerCase()) ? undefined : nidRaw,
         oldIdCard: String(row['old id'] ?? row['old id card'] ?? row['office id card number'] ?? '').trim() || undefined,
         photoUrl: String(row['photo'] ?? row['photo url'] ?? row['passport size photo'] ?? '').trim() || undefined,
-      })
-    }
-
-    if (rows.length === 0) {
-      return {
-        rows: [],
-        errors: [
-          `No valid rows found. Detected headers: ${worksheet.headers.join(', ')}. Make sure Employee ID or Name columns exist.`,
-        ],
-      }
-    }
-
-    return { rows, errors: [] }
-  } catch (error) {
-    return {
-      rows: [],
-      errors: [`Failed to parse file: ${error instanceof Error ? error.message : 'Unknown error'}`],
-    }
-  }
-}
-
-export async function downloadTemplate(
-  employees: Employee[],
-  month: number,
-  year: number,
-  existingRecords?: SalaryRecord[],
-) {
-  const recordMap = new Map((existingRecords ?? []).map((record) => [record.employeeId, record]))
-  const rows = employees.map((employee) => {
-    const record = recordMap.get(employee.id)
-    const branchName = (employee as Employee & { branch?: Branch }).branch?.name ?? ''
-
-    return {
-      employeeId: employee.employeeId,
-      name: employee.name,
-      branch: branchName,
-      basicSalary: employee.basicSalary,
-      hrAdvanceDeducted: (record?.hrAdvanceDeducted ?? 0) + (record?.trackerAdvanceTotal ?? 0),
-      leaveDaysTaken: record?.leaveDaysTaken ?? 0,
-      leaveAdjustment: record?.leaveAdjustment ?? 0,
-      lateDays: record?.lateDays ?? 0,
-      otDays: record?.otDays ?? 0,
-      conveyance: record?.conveyanceOverride ?? employee.conveyance,
-      attendanceBonus: record?.attendanceBonus ?? 0,
-      notes: record?.notes ?? '',
-    }
-  })
-
-  await downloadWorkbook(`Bindu_Salary_${MONTHS[month - 1]}_${year}.xlsx`, [
-    {
-      name: `${MONTHS[month - 1]} ${year}`,
-      columns: [...SALARY_COLUMNS],
-      rows,
-    },
-  ])
-}
-
-export async function parseSalarySheet(
-  file: File,
-): Promise<{ rows: SheetRow[]; errors: string[] }> {
-  const fileErrors = validateImportFile(file)
-  if (fileErrors.length > 0) {
-    return { rows: [], errors: fileErrors }
-  }
-
-  try {
-    const worksheet = await readNormalizedWorksheet(file, MAX_SALARY_IMPORT_ROWS)
-    if (worksheet.errors.length > 0) {
-      return { rows: [], errors: worksheet.errors }
-    }
-
-    const rows: SheetRow[] = []
-    for (const row of worksheet.rows) {
-      const employeeId = String(
-        row['employee id'] ?? row['employee_id'] ?? row['id'] ?? row['emp id'] ?? row['emp_id'] ?? ''
-      ).trim()
-      const name = String(
-        row['name'] ?? row['employee name'] ?? row['full name'] ?? ''
-      ).trim()
-
-      if (!employeeId && !name) {
-        continue
-      }
-
-      rows.push({
-        employeeId,
-        name,
-        branch: String(row['branch'] ?? row['branch name'] ?? '').trim(),
-        basicSalary: toNumber(String(row['basic salary'] ?? row['basic_salary'] ?? row['basic'] ?? '0')),
-        hrAdvanceDeducted: toNumber(
-          String(row['advance (৳)'] ?? row['advance'] ?? row['advance deducted'] ?? row['total advance'] ?? '0')
-        ),
-        leaveDaysTaken: toNumber(
-          String(row['leave (days)'] ?? row['leave'] ?? row['leave days'] ?? row['total leave'] ?? '0')
-        ),
-        leaveAdjustment: toNumber(String(row['leave adjustment (±days)'] ?? row['leave adjustment'] ?? row['leave adj'] ?? '0')),
-        lateDays: toNumber(String(row['late (days)'] ?? row['late'] ?? row['late days'] ?? row['total late'] ?? '0')),
-        otDays: toNumber(String(row['ot (days)'] ?? row['ot'] ?? row['ot days'] ?? row['total ot'] ?? '0')),
-        conveyance: toNumber(String(row['conveyance (৳)'] ?? row['conveyance'] ?? row['conv'] ?? '0')),
-        attendanceBonus: toNumber(
-          String(row['attendance bonus (৳)'] ?? row['attendance bonus'] ?? row['att bonus'] ?? '0')
-        ),
-        notes: String(row['notes'] ?? row['note'] ?? row['remarks'] ?? '').trim(),
       })
     }
 

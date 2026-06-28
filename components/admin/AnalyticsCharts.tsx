@@ -52,12 +52,12 @@ function AnalyticsTooltip({ active, payload, label }: ChartTooltipProps) {
   }
 
   return (
-    <div className="bg-[var(--bg-card)] border border-[var(--border)] p-3 rounded-lg shadow-xl">
+    <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-raised)] p-3 shadow-xl">
       <p className="text-[var(--text-secondary)] font-semibold mb-2">{label}</p>
       {payload.map((entry, index) => (
         <div key={`${entry.name ?? 'series'}-${index}`} className="flex items-center gap-2 text-sm">
-          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }} />
-          <span className="text-white">{entry.name}:</span>
+          <div className="h-2.5 w-2.5 rounded-full bg-[var(--accent)]" />
+          <span className="text-[var(--text-primary)]">{entry.name}:</span>
           <span className="font-mono text-[var(--accent)]">{formatCurrency(Number(entry.value ?? 0))}</span>
         </div>
       ))}
@@ -71,8 +71,8 @@ export default function AnalyticsCharts({ data }: { data: AnalyticsResponse | nu
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Trend Chart */}
-      <div className="bg-[var(--bg-card)] p-5 rounded-xl border border-[var(--border)] shadow-lg">
-        <h3 className="text-lg font-semibold text-white mb-6">Revenue vs Expenses Trend</h3>
+      <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
+        <h3 className="mb-4 text-sm font-semibold text-[var(--text-primary)]">Revenue vs Expenses Trend</h3>
         <div className="h-72 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={data?.trendData || []}>
@@ -89,8 +89,8 @@ export default function AnalyticsCharts({ data }: { data: AnalyticsResponse | nu
       </div>
 
       {/* Branch Comparison */}
-      <div className="bg-[var(--bg-card)] p-5 rounded-xl border border-[var(--border)] shadow-lg">
-        <h3 className="text-lg font-semibold text-white mb-6">Branch Sales Comparison</h3>
+      <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
+        <h3 className="mb-4 text-sm font-semibold text-[var(--text-primary)]">Branch Sales Comparison</h3>
         <div className="h-72 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data?.branchData || []} layout="vertical" margin={{ left: 20 }}>
@@ -109,8 +109,8 @@ export default function AnalyticsCharts({ data }: { data: AnalyticsResponse | nu
       </div>
 
       {/* Top Expenses Pie Chart */}
-      <div className="bg-[var(--bg-card)] p-5 rounded-xl border border-[var(--border)] shadow-lg lg:col-span-2">
-        <h3 className="text-lg font-semibold text-white mb-6">Top Expense Categories</h3>
+      <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5 lg:col-span-2">
+        <h3 className="mb-4 text-sm font-semibold text-[var(--text-primary)]">Top Expense Categories</h3>
         <div className="h-80 w-full flex flex-col md:flex-row items-center justify-center">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>

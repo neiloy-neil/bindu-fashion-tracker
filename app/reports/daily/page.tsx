@@ -7,6 +7,15 @@ import toast from 'react-hot-toast'
 import { Download, Share2 } from 'lucide-react'
 import DailyReportTemplate from '@/components/reports/DailyReportTemplate'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 export default function DailyReportPage() {
   const [branches, setBranches] = useState<Branch[]>([])
@@ -144,34 +153,37 @@ export default function DailyReportPage() {
           
   return (
     <>
-      <div className="sticky top-0 z-10 flex items-center justify-between gap-4 px-6 py-4 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur supports-[backdrop-filter]:bg-[var(--surface)]/80">
+      <div className="sticky top-0 z-10 flex items-center justify-between gap-4 px-6 py-4 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur">
         <div>
           <h1 className="text-lg font-semibold text-[var(--text-primary)] leading-none">Daily Report</h1>
           <p className="text-sm text-[var(--text-muted)] mt-1">View and export branch daily summaries</p>
         </div>
       </div>
       <div className="flex-1 p-6 space-y-6 min-h-0 flex flex-col overflow-auto">
-        <div className="card mb-6">
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
           <div className="flex flex-col md:flex-row gap-4 items-end">
             <div className="flex-1">
-              <label className="form-label">Branch</label>
-              <select
-                className="flex h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1 text-sm text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50"
+              <Label className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">Branch</Label>
+              <Select
                 value={selectedBranchId}
-                onChange={e => setSelectedBranchId(e.target.value)}
+                onValueChange={setSelectedBranchId}
                 disabled={branches.length === 1}
               >
-                <option value="">Select Branch...</option>
-                {branches.map(b => (
-                  <option key={b.id} value={b.id}>{b.name}</option>
-                ))}
-              </select>
+                <SelectTrigger className="h-9 w-full text-sm">
+                  <SelectValue placeholder="Select Branch..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {branches.map(b => (
+                    <SelectItem key={b.id} value={String(b.id)}>{b.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="flex-1">
-              <label className="form-label">Date</label>
-              <input
+              <Label className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">Date</Label>
+              <Input
                 type="date"
-                className="flex h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50"
+                className="h-9 w-full text-sm"
                 value={selectedDate}
                 onChange={e => setSelectedDate(e.target.value)}
               />
@@ -180,25 +192,31 @@ export default function DailyReportPage() {
         </div>
 
         {loading ? (
-          <div className="flex justify-center p-8 text-[var(--text-secondary)]">Loading report...</div>
+          <div className="flex items-center justify-center h-64 gap-3">
+            <div className="w-5 h-5 rounded-full border-2 border-[var(--border-strong)] border-t-[var(--accent)] animate-spin" />
+            <span className="text-sm text-[var(--text-muted)]">Loading…</span>
+          </div>
         ) : hasSearched && !entryData ? (
-          <div className="card text-center py-12">
-            <div className="text-4xl mb-4">📭</div>
-            <h3 className="text-xl font-bold text-white mb-2">No Entry Found</h3>
-            <p className="text-[var(--text-secondary)]">There is no daily entry recorded for this branch on the selected date.</p>
+          <div className="flex flex-col items-center justify-center h-64 gap-3">
+            <div className="w-12 h-12 rounded-full bg-[var(--surface-raised)] flex items-center justify-center">
+              <Download className="w-5 h-5 text-[var(--text-muted)]" />
+            </div>
+            <p className="text-sm font-medium text-[var(--text-muted)]">
+              There is no daily entry recorded for this branch on the selected date.
+            </p>
           </div>
         ) : entryData ? (
           <div>
             {/* Export Bar */}
             <div className="flex flex-wrap gap-3 mb-6">
-              <Button variant="outline" className="flex items-center gap-2" onClick={exportAsPdf}>
+              <Button variant="outline" className="gap-2" onClick={exportAsPdf}>
                 <Download size={16} /> Export PDF
               </Button>
-              <Button variant="outline" className="flex items-center gap-2" onClick={() => exportAsImage('png')}>
+              <Button variant="outline" className="gap-2" onClick={() => exportAsImage('png')}>
                 <Download size={16} /> Export PNG
               </Button>
               <Button 
-                className="text-white bg-green-600 hover:bg-green-700 border-none flex items-center gap-2 font-semibold shadow-md shadow-green-900/20 transition-all" 
+                className="gap-2 border-none bg-green-600 font-semibold text-white shadow-md shadow-green-900/20 transition-all hover:bg-green-700" 
                 onClick={shareToWhatsApp}
               >
                 <Share2 size={16} /> Share to WhatsApp
@@ -208,7 +226,7 @@ export default function DailyReportPage() {
             {/* Rendered Report Area */}
             <div 
               ref={reportRef} 
-              className="bg-[var(--bg-card)] p-8 rounded-xl border border-[var(--border)] shadow-xl text-white"
+              className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-8 text-[var(--text-primary)] shadow-xl"
             >
               <DailyReportTemplate entryData={entryData} />
             </div>

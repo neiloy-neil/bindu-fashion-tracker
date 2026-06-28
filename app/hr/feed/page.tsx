@@ -7,6 +7,7 @@ import { calcSalary } from '@/lib/hr/calculations'
 import { Users, ChevronRight, Clock, CheckCircle2, Circle, Lock } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import Link from 'next/link'
+import { Button } from '@/components/ui/button'
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 
@@ -138,7 +139,7 @@ function FeedContent() {
 
   return (
     <>
-      <div className="sticky top-0 z-10 flex items-center justify-between gap-4 px-6 py-4 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur supports-[backdrop-filter]:bg-[var(--surface)]/80">
+      <div className="sticky top-0 z-10 flex items-center justify-between gap-4 px-6 py-4 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur">
         <div>
           <h1 className="text-lg font-semibold text-[var(--text-primary)] leading-none">Monthly Salary Feed</h1>
           <p className="text-sm text-[var(--text-muted)] mt-1">
@@ -156,55 +157,57 @@ function FeedContent() {
       </div>
       <div className="flex-1 p-6 space-y-6 min-h-0 flex flex-col overflow-auto">
 
-      <div className="grid grid-cols-4 gap-3 mb-4">
-        <div className="bg-[var(--surface)] rounded-xl border border-[var(--border)] p-3 text-center">
-          <p className="text-xl font-bold text-[var(--text-primary)]">{processedCount}</p>
-          <p className="text-xs text-[var(--text-muted)] mt-0.5">Done</p>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5 space-y-1.5">
+          <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">Done</p>
+          <p className="text-2xl font-bold tabular-nums leading-none text-[var(--text-primary)]">{processedCount}</p>
+          <p className="text-xs text-[var(--text-muted)]">Months finalized</p>
         </div>
-        <div className="bg-[var(--surface)] rounded-xl border border-[var(--border)] p-3 text-center">
-          <p className="text-xl font-bold text-[var(--text-primary)]">{12 - processedCount}</p>
-          <p className="text-xs text-[var(--text-muted)] mt-0.5">Remaining</p>
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5 space-y-1.5">
+          <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">Remaining</p>
+          <p className="text-2xl font-bold tabular-nums leading-none text-[var(--text-primary)]">{12 - processedCount}</p>
+          <p className="text-xs text-[var(--text-muted)]">Months left</p>
         </div>
-        <div className="bg-[var(--surface)] rounded-xl border border-[var(--border)] p-3 text-center">
-          <p className="text-xl font-bold text-[var(--text-primary)]">{totalEmployees}</p>
-          <p className="text-xs text-[var(--text-muted)] mt-0.5">Staff</p>
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5 space-y-1.5">
+          <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">Staff</p>
+          <p className="text-2xl font-bold tabular-nums leading-none text-[var(--text-primary)]">{totalEmployees}</p>
+          <p className="text-xs text-[var(--text-muted)]">Active employees</p>
         </div>
-        <div className="bg-[var(--surface)] rounded-xl border border-[var(--border)] p-3 text-center">
-          <p className="text-lg font-bold text-[var(--info)]">{formatTaka(Math.round(totalPayable / 1000))}k</p>
-          <p className="text-xs text-[var(--text-muted)] mt-0.5">Total</p>
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5 space-y-1.5">
+          <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">Total</p>
+          <p className="text-2xl font-bold tabular-nums leading-none text-[var(--info)]">{formatTaka(Math.round(totalPayable / 1000))}k</p>
+          <p className="text-xs text-[var(--text-muted)]">Payroll volume</p>
         </div>
       </div>
 
-      <div className="flex items-center gap-1 mb-4 overflow-x-auto">
+      <div className="flex items-center gap-2 overflow-x-auto">
         {[
           { label: 'All', value: 'all', count: 12 },
           { label: 'Finalized', value: 'finalized', count: months.filter(m => m.status === 'finalized').length },
           { label: 'In Progress', value: 'in_progress', count: months.filter(m => m.status === 'in_progress').length },
           { label: 'Pending', value: 'pending', count: months.filter(m => m.status === 'pending').length },
         ].map(opt => (
-          <button
+          <Button
             key={opt.value}
             onClick={() => setStatusFilter(opt.value)}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap ${
-              statusFilter === opt.value ? 'bg-gray-900 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            variant="ghost"
+            size="sm"
+            className={`rounded-full px-3 py-1.5 text-xs font-medium whitespace-nowrap ${
+              statusFilter === opt.value
+                ? 'bg-[var(--accent-subtle)] text-[var(--accent)] hover:bg-[var(--accent-subtle)]'
+                : 'bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:bg-[var(--surface-raised)] hover:text-[var(--text-primary)]'
             }`}
           >
-            {opt.label}<span className={`ml-1.5 ${statusFilter === opt.value ? 'text-gray-300' : 'text-gray-400'}`}>{opt.count}</span>
-          </button>
+            {opt.label}
+            <span className={`ml-1.5 ${statusFilter === opt.value ? 'text-[var(--accent)]/70' : 'text-[var(--text-muted)]'}`}>{opt.count}</span>
+          </Button>
         ))}
       </div>
 
       {loading ? (
-        <div className="space-y-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="bg-white rounded-xl border border-gray-200 p-5 flex items-center gap-4 animate-pulse">
-              <div className="w-10 h-10 rounded-full bg-gray-200 shrink-0" />
-              <div className="flex-1 space-y-2">
-                <div className="h-4 w-32 bg-gray-200 rounded" />
-                <div className="h-3 w-48 bg-gray-200 rounded" />
-              </div>
-            </div>
-          ))}
+        <div className="flex items-center justify-center h-64 gap-3">
+          <div className="w-5 h-5 rounded-full border-2 border-[var(--border-strong)] border-t-[var(--accent)] animate-spin" />
+          <span className="text-sm text-[var(--text-muted)]">Loading…</span>
         </div>
       ) : (
         <div className="space-y-2">
@@ -212,7 +215,7 @@ function FeedContent() {
             const isCurrentMonth = m.month === currentMonth && m.year === currentYear
             return (
               <Link key={m.month} href={`/hr/salary?month=${m.month}&year=${m.year}`} className="block group">
-                <div className={`bg-[var(--surface)] rounded-xl border p-4 sm:p-5 flex items-center gap-3 sm:gap-4 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 ${
+                <div className={`rounded-xl border bg-[var(--surface)] p-4 sm:p-5 flex items-center gap-3 sm:gap-4 transition-all duration-200 hover:border-[var(--border-strong)] hover:bg-[var(--surface-raised)] ${
                   isCurrentMonth ? 'border-[var(--warning)]/40 ring-1 ring-[var(--warning)]/10' : 'border-[var(--border)]'
                 }`}>
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
@@ -226,9 +229,9 @@ function FeedContent() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-semibold text-[var(--text-primary)] text-sm sm:text-base">{MONTHS[m.month - 1]}</p>
-                      {isCurrentMonth && <span className="text-[10px] font-bold uppercase tracking-wider bg-[var(--warning-subtle)]/30 text-[var(--warning)] px-2 py-0.5 rounded-full">Current</span>}
-                      {m.status === 'finalized' && <span className="text-[10px] font-bold uppercase tracking-wider bg-[var(--success-subtle)]/30 text-[var(--success)] px-2 py-0.5 rounded-full hidden sm:inline">Finalized</span>}
-                      {m.status === 'in_progress' && <span className="text-[10px] font-bold uppercase tracking-wider bg-[var(--info-subtle)]/30 text-[var(--info)] px-2 py-0.5 rounded-full hidden sm:inline">In Progress</span>}
+                      {isCurrentMonth && <span className="inline-flex rounded-full bg-[var(--warning-subtle)] px-2 py-0.5 text-[11px] font-semibold text-[var(--warning)]">Current</span>}
+                      {m.status === 'finalized' && <span className="hidden sm:inline-flex rounded-full bg-[var(--success-subtle)] px-2 py-0.5 text-[11px] font-semibold text-[var(--success)]">Finalized</span>}
+                      {m.status === 'in_progress' && <span className="hidden sm:inline-flex rounded-full bg-[var(--info-subtle)] px-2 py-0.5 text-[11px] font-semibold text-[var(--info)]">In Progress</span>}
                     </div>
                     <div className="flex items-center gap-3 mt-0.5 text-xs text-[var(--text-muted)] flex-wrap">
                       {m.records > 0 ? (
@@ -247,11 +250,21 @@ function FeedContent() {
                   {m.records > 0 && (
                     <div className="shrink-0 hidden sm:flex flex-col items-end gap-1">
                       <span className="text-xs font-semibold text-[var(--text-muted)]">{m.completion}%</span>
-                      <div className="w-16 bg-[var(--border)]/30 rounded-full h-1.5 overflow-hidden">
-                        <div
-                          className={`h-full rounded-full transition-all ${m.completion >= 100 ? 'bg-[var(--success)]' : m.completion >= 50 ? 'bg-[var(--info)]' : 'bg-[var(--warning)]'}`}
-                          style={{ width: `${Math.min(m.completion, 100)}%` }}
-                        />
+                      <div className="flex gap-0.5">
+                        {Array.from({ length: 10 }).map((_, index) => (
+                          <span
+                            key={index}
+                            className={`h-1.5 w-1.5 rounded-full ${
+                              index < Math.ceil(Math.min(m.completion, 100) / 10)
+                                ? m.completion >= 100
+                                  ? 'bg-[var(--success)]'
+                                  : m.completion >= 50
+                                  ? 'bg-[var(--info)]'
+                                  : 'bg-[var(--warning)]'
+                                : 'bg-[var(--border)]'
+                            }`}
+                          />
+                        ))}
                       </div>
                     </div>
                   )}
@@ -264,8 +277,11 @@ function FeedContent() {
             )
           })}
           {filtered.length === 0 && (
-            <div className="bg-[var(--surface)] rounded-xl border border-[var(--border)] text-center py-16">
-              <p className="text-[var(--text-muted)] text-sm">No months match the selected filter</p>
+            <div className="flex flex-col items-center justify-center h-64 gap-3">
+              <div className="w-12 h-12 rounded-full bg-[var(--surface-raised)] flex items-center justify-center">
+                <Circle className="w-5 h-5 text-[var(--text-muted)]" />
+              </div>
+              <p className="text-sm font-medium text-[var(--text-muted)]">No months match the selected filter</p>
             </div>
           )}
         </div>

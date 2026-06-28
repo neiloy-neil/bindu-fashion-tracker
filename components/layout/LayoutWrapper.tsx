@@ -40,8 +40,8 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
   return (
     <div className="app-layout">
       {/* Mobile Top Bar */}
-      <div className="mobile-top-bar fixed top-0 left-0 right-0 z-40 h-[60px] flex items-center justify-between px-4 bg-[var(--surface)] border-b border-[var(--border)] md:hidden">
-        <div className="flex items-center gap-2">
+      <div className="mobile-top-bar fixed top-0 left-0 right-0 z-40 h-[60px] flex items-center justify-between px-4 bg-[var(--surface)] border-b border-[var(--border)]">
+        <div className="flex items-center gap-2.5">
           <Image src="/bindu-logo.webp" width={26} height={26} className="object-contain" alt="Bindu" />
           <span className="text-[15px] font-semibold text-[var(--text-primary)]">
             Bindu Premium
@@ -58,7 +58,7 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
       {/* Mobile Overlay */}
       {mobileMenuOpen && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden"
+          className="fixed inset-0 bg-black/60 z-40 md:hidden"
           onClick={() => setMobileMenuOpen(false)}
         />
       )}

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { useForm, useFieldArray, useWatch } from 'react-hook-form'
+import { useForm, useFieldArray, useWatch, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod' // wait, the original used '@hookform/resolvers/zod'
 import { NewEntryFormValues, newEntryFormSchema } from '@/lib/schemas'
 import { Account, Branch, Category, Employee, Party } from '@/lib/types'
@@ -19,6 +19,9 @@ import { AdvanceSalarySection } from './AdvanceSalarySection'
 import { EODChecklistModal } from './EODChecklistModal'
 import { BrandSpinner } from '@/components/ui/BrandSpinner'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 const generateId = () => Math.random().toString(36).substring(2, 9)
 
@@ -274,7 +277,7 @@ export function NewEntryForm({ initialData, userId }: Props) {
 
   return (
     <>
-      <div className="sticky top-0 z-10 flex items-center justify-between gap-4 px-6 py-4 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur supports-[backdrop-filter]:bg-[var(--surface)]/80">
+      <div className="sticky top-0 z-10 flex items-center justify-between gap-4 px-6 py-4 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur">
         <div>
           <h1 className="text-lg font-semibold text-[var(--text-primary)] leading-none flex items-center gap-2">
             📝 {isFactory ? 'Factory Daily Entry' : 'Daily Entry'}
@@ -291,36 +294,46 @@ export function NewEntryForm({ initialData, userId }: Props) {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         
         {/* Branch & Meta Section */}
-        <div className="bg-card p-4 sm:p-5 rounded-lg border border-border">
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 sm:p-5">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
-              <label className="form-label text-xs">Date</label>
-              <input type="date" className={inputClass} {...form.register('formMeta.date')} />
+              <Label className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">Date</Label>
+              <Input type="date" className="h-10 w-full text-sm" {...form.register('formMeta.date')} />
               <ErrorMsg error={errors.formMeta?.date} />
             </div>
             <div>
-              <label className="form-label text-xs">Branch</label>
-              <select className={selectClass} {...form.register('formMeta.branchId')}>
-                <option value="">Select Branch</option>
-                {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-              </select>
+              <Label className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">Branch</Label>
+              <Controller
+                control={control}
+                name="formMeta.branchId"
+                render={({ field }) => (
+                  <Select value={field.value ? String(field.value) : undefined} onValueChange={field.onChange}>
+                    <SelectTrigger className="h-10 w-full text-sm">
+                      <SelectValue placeholder="Select Branch" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {branches.map(b => <SelectItem key={b.id} value={String(b.id)}>{b.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
               <ErrorMsg error={errors.formMeta?.branchId} />
             </div>
             <div>
-              <label className="form-label text-xs">Opening Time</label>
-              <input type="time" className={inputClass} {...form.register('formMeta.openingTime')} />
+              <Label className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">Opening Time</Label>
+              <Input type="time" className="h-10 w-full text-sm" {...form.register('formMeta.openingTime')} />
             </div>
             <div>
-              <label className="form-label text-xs">Closing Time</label>
-              <input type="time" className={inputClass} {...form.register('formMeta.closingTime')} />
+              <Label className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">Closing Time</Label>
+              <Input type="time" className="h-10 w-full text-sm" {...form.register('formMeta.closingTime')} />
             </div>
           </div>
         </div>
 
         {/* Income Section */}
-        <div className="bg-card rounded-lg border border-border overflow-hidden">
+        <div className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)]">
           <button type="button" aria-expanded={showIncome}
-            className="flex w-full justify-between items-center gap-3 p-4 bg-[var(--bg-card)] border-b border-[var(--border)] text-left"
+            className="flex w-full items-center justify-between gap-3 border-b border-[var(--border)] bg-[var(--surface)] p-4 text-left"
             onClick={() => setShowIncome(!showIncome)}
           >
             <h2 className="text-lg font-semibold flex flex-wrap items-center gap-2 min-w-0">
@@ -349,9 +362,9 @@ export function NewEntryForm({ initialData, userId }: Props) {
         </div>
 
         {/* Unified Expenses Section */}
-        <div className="bg-card rounded-lg border border-border overflow-hidden">
+        <div className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)]">
           <button type="button" aria-expanded={showExpense}
-            className="flex w-full justify-between items-center gap-3 p-4 bg-[var(--bg-card)] border-b border-[var(--border)] text-left"
+            className="flex w-full items-center justify-between gap-3 border-b border-[var(--border)] bg-[var(--surface)] p-4 text-left"
             onClick={() => setShowExpense(!showExpense)}
           >
             <h2 className="text-lg font-semibold flex flex-wrap items-center gap-2 min-w-0">
@@ -374,7 +387,7 @@ export function NewEntryForm({ initialData, userId }: Props) {
         </div>
 
         {/* Net Balance & Physical Cash */}
-        <div className="bg-[var(--bg-card)] p-5 sm:p-6 rounded-lg border border-[var(--border)] shadow-xl relative overflow-hidden">
+        <div className="relative overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-6 shadow-xl">
           <div className="absolute top-1/2 right-0 -translate-y-1/2 opacity-[0.03] pointer-events-none z-0 overflow-hidden">
             <img src="/bindu-logo.webp" alt="" className="w-64 h-64 object-contain translate-x-1/4" />
           </div>
@@ -389,11 +402,11 @@ export function NewEntryForm({ initialData, userId }: Props) {
             </div>
 
             <div className="w-full sm:w-64">
-              <label htmlFor="actualPhysicalCash" className="form-label text-xs text-primary">Actual Physical Cash *</label>
-              <input 
+              <Label htmlFor="actualPhysicalCash" className="mb-1.5 block text-xs font-medium text-[var(--accent)]">Actual Physical Cash *</Label>
+              <Input 
                 id="actualPhysicalCash"
                 type="number" 
-                className="flex h-12 w-full rounded-md border border-[var(--accent)]/50 bg-[var(--surface)]/80 px-3 py-2 text-lg font-mono text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50"
+                className="h-12 w-full border-[var(--accent)]/50 bg-[var(--surface)]/80 text-lg font-mono text-[var(--text-primary)]"
                 placeholder="Enter exact cash amount"
                 {...form.register('actualPhysicalCash')}
               />
@@ -409,9 +422,9 @@ export function NewEntryForm({ initialData, userId }: Props) {
                   {formatCurrency(Math.abs(totals.netBalance - Number(actualPhysicalCash)))}
                 </span>
               </div>
-              <input 
+              <Input 
                 type="text" 
-                className="flex h-9 w-full rounded-md border border-destructive/30 bg-[var(--surface)] px-3 py-1 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive disabled:opacity-50" 
+                className="h-9 w-full border-destructive/30 text-sm" 
                 placeholder="Reason for cash discrepancy... (Required)"
                 {...form.register('cashDifferenceNote')}
               />
@@ -420,7 +433,7 @@ export function NewEntryForm({ initialData, userId }: Props) {
         </div>
 
         {/* Submission Actions */}
-        <div className="flex flex-col-reverse sm:flex-row gap-3 justify-between items-stretch sm:items-center bg-card p-4 border border-border rounded-lg mt-8 shadow-2xl sticky bottom-4 z-40">
+        <div className="sticky bottom-4 z-40 mt-8 flex flex-col-reverse items-stretch justify-between gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-2xl sm:flex-row sm:items-center">
           <Button 
             variant="outline"
             type="button" 

@@ -68,21 +68,21 @@ export default function AdminEditRequests() {
   }
 
   return (
-    <div className="card" style={{ marginBottom: 20, borderLeft: '4px solid var(--warning)' }}>
-      <div style={{ marginBottom: 12, fontWeight: 700, fontSize: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span style={{ fontSize: 18 }}>⚠️</span> Pending Edit Requests
+    <div className="mb-5 rounded-xl border border-[var(--border)] border-l-4 border-l-[var(--warning)] bg-[var(--surface)] p-5">
+      <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-[var(--text-primary)]">
+        <span className="text-lg">⚠️</span> Pending Edit Requests
       </div>
       <div className="flex flex-col gap-3">
         {requests.map(req => (
-          <div key={req.id} style={{ padding: 12, background: 'var(--bg-primary)', borderRadius: 8, fontSize: 13, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div key={req.id} className="flex items-center justify-between rounded-xl border border-[var(--border)] bg-[var(--surface-raised)] p-3 text-sm">
             <div>
-              <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
-                {req.entry.branch.name} Branch <span style={{ color: 'var(--text-muted)' }}>— for entry on {formatDate(req.entry.date)}</span>
+              <div className="font-semibold text-[var(--text-primary)]">
+                {req.entry.branch.name} Branch <span className="text-[var(--text-muted)]">— for entry on {formatDate(req.entry.date)}</span>
               </div>
-              <div style={{ color: 'var(--text-secondary)', marginTop: 4 }}>
-                Reason: <span style={{ fontStyle: 'italic' }}>{req.reason || 'No reason provided'}</span>
+              <div className="mt-1 text-[var(--text-secondary)]">
+                Reason: <span className="italic">{req.reason || 'No reason provided'}</span>
               </div>
-              <div style={{ color: 'var(--warning)', fontSize: 12, marginTop: 4, fontWeight: 500 }}>
+              <div className="mt-1 text-xs font-medium text-[var(--warning)]">
                 {describeChanges(req.changes)}
               </div>
             </div>

@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { dhakaDateString } from '@/lib/new-entry'
 import { BrandSpinner } from '@/components/ui/BrandSpinner'
+import { Button } from '@/components/ui/button'
 
 type Employee = {
   id: number
@@ -136,8 +137,11 @@ export function MorningCheckInWidget({ branchId }: Props) {
 
   if (loading) {
     return (
-      <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl p-6 shadow-sm flex items-center justify-center min-h-[200px]">
-        <BrandSpinner />
+      <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
+        <div className="flex items-center justify-center h-64 gap-3">
+          <div className="w-5 h-5 rounded-full border-2 border-[var(--border-strong)] border-t-[var(--accent)] animate-spin" />
+          <span className="text-sm text-[var(--text-muted)]">Loading…</span>
+        </div>
       </div>
     )
   }
@@ -153,7 +157,7 @@ export function MorningCheckInWidget({ branchId }: Props) {
     <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl overflow-hidden shadow-sm">
       <div className="p-4 border-b border-[var(--border)] bg-[var(--surface-raised)] flex justify-between items-center">
         <div>
-          <h2 className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
+          <h2 className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
             <Clock className="text-primary" size={18} />
             Morning Check-In
           </h2>
@@ -180,9 +184,9 @@ export function MorningCheckInWidget({ branchId }: Props) {
               
               <div className="flex items-center gap-2">
                 {isSubmitted ? (
-                  <div className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
-                    record.status === 'PRESENT' ? 'bg-[var(--success-subtle)]/30 text-[var(--success)]' :
-                    record.status === 'ABSENT' ? 'bg-[var(--danger-subtle)]/30 text-[var(--danger)]' :
+                  <div className={`inline-flex rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-wide ${
+                    record.status === 'PRESENT' ? 'bg-[var(--success-subtle)] text-[var(--success)]' :
+                    record.status === 'ABSENT' ? 'bg-[var(--danger-subtle)] text-[var(--danger)]' :
                     record.status === 'LATE' ? 'bg-orange-500/10 text-orange-600' :
                     'bg-blue-500/10 text-blue-600'
                   }`}>
@@ -190,18 +194,22 @@ export function MorningCheckInWidget({ branchId }: Props) {
                   </div>
                 ) : (
                   <>
-                    <button 
+                    <Button 
                       onClick={() => handleMark(emp.id, false)}
-                      className="h-8 px-3 rounded-md bg-[var(--success-subtle)] text-[var(--success)] hover:bg-[var(--success)] hover:text-white transition-colors text-xs font-medium flex items-center gap-1"
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 gap-1 bg-[var(--success-subtle)] text-[var(--success)] hover:bg-[var(--success)] hover:text-white"
                     >
                       <Check size={14} /> Present
-                    </button>
-                    <button 
+                    </Button>
+                    <Button 
                       onClick={() => handleMark(emp.id, true)}
-                      className="h-8 px-3 rounded-md bg-[var(--danger-subtle)] text-[var(--danger)] hover:bg-[var(--danger)] hover:text-white transition-colors text-xs font-medium flex items-center gap-1"
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 gap-1 bg-[var(--danger-subtle)] text-[var(--danger)] hover:bg-[var(--danger)] hover:text-white"
                     >
                       <X size={14} /> Absent
-                    </button>
+                    </Button>
                   </>
                 )}
               </div>
@@ -211,13 +219,13 @@ export function MorningCheckInWidget({ branchId }: Props) {
       </div>
 
       <div className="p-4 border-t border-[var(--border)] bg-[var(--surface-raised)] flex justify-end">
-        <button 
+        <Button 
           onClick={submitAttendance}
           disabled={saving || allSubmitted || Object.values(attendanceData).filter(a => a.checkInTimeStr).length === 0}
-          className="btn btn-primary text-sm flex items-center gap-2"
+          className="gap-2 text-sm"
         >
           {saving ? <BrandSpinner size={14} /> : 'Submit Attendance'}
-        </button>
+        </Button>
       </div>
     </div>
   )

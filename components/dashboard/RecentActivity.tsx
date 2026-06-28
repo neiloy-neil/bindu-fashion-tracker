@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { BrandSpinner } from '@/components/ui/BrandSpinner'
+import { Clock } from 'lucide-react'
 
 type Activity = {
   id: string
@@ -29,17 +29,25 @@ export default function RecentActivity() {
 
   if (loading) {
     return (
-      <div className="card" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px' }}>
-        <BrandSpinner />
+      <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
+        <div className="flex items-center justify-center h-64 gap-3">
+          <div className="w-5 h-5 rounded-full border-2 border-[var(--border-strong)] border-t-[var(--accent)] animate-spin" />
+          <span className="text-sm text-[var(--text-muted)]">Loading…</span>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="card">
-      <div className="text-sm font-bold mb-4">Recent EOD Closures & Activity</div>
+    <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
+      <div className="mb-4 text-sm font-semibold text-[var(--text-primary)]">Recent EOD Closures & Activity</div>
       {activities.length === 0 ? (
-        <div className="text-[13px] text-[var(--text-muted)]">No recent activity.</div>
+        <div className="flex flex-col items-center justify-center h-64 gap-3">
+          <div className="w-12 h-12 rounded-full bg-[var(--surface-raised)] flex items-center justify-center">
+            <Clock className="w-5 h-5 text-[var(--text-muted)]" />
+          </div>
+          <p className="text-sm font-medium text-[var(--text-muted)]">No recent activity.</p>
+        </div>
       ) : (
         <div className="flex flex-col gap-3">
           {activities.map(a => (

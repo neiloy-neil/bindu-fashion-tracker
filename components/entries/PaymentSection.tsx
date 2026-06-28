@@ -1,9 +1,12 @@
-import { useFieldArray, Control, UseFormRegister, useWatch, UseFormSetValue, FieldErrors } from 'react-hook-form'
+import { useFieldArray, Control, UseFormRegister, useWatch, UseFormSetValue, FieldErrors, Controller } from 'react-hook-form'
 import { Plus, X, Paperclip } from 'lucide-react'
 import { useState } from 'react'
-import toast from 'react-hot-toast'
 import { Party } from '@/lib/types'
 import { NewEntryFormValues } from '@/lib/schemas'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 interface Props {
   control: Control<NewEntryFormValues>
@@ -29,46 +32,67 @@ export function PaymentSection({ control, register, setValue, parties, inputClas
     <div>
       <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Party Payments</h3>
       {fields.map((field, idx) => (
-        <div key={field.id} className="bg-[var(--bg-card)] border border-[var(--border)] rounded-lg p-4 mb-3 relative group">
-          <button type="button" aria-label="Remove payment" onClick={() => remove(idx)} className="absolute -right-2 -top-2 bg-destructive text-destructive-foreground p-1 rounded-full z-10">
+        <div key={field.id} className="relative mb-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 group">
+          <Button type="button" size="icon" aria-label="Remove payment" onClick={() => remove(idx)} className="absolute -right-2 -top-2 z-10 h-7 w-7 rounded-full bg-destructive text-destructive-foreground">
             <X size={14} />
-          </button>
+          </Button>
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
             <div>
-              <select className={selectClass} {...register(`payments.${idx}.partyId` as const)}>
-                <option value="">Select Party</option>
-                {parties.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-              </select>
+              <Controller
+                control={control}
+                name={`payments.${idx}.partyId` as const}
+                render={({ field }) => (
+                  <Select value={field.value ? String(field.value) : undefined} onValueChange={field.onChange}>
+                    <SelectTrigger className="h-10 w-full text-sm">
+                      <SelectValue placeholder="Select Party" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {parties.map(p => <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
               {errors.payments?.[idx]?.partyId?.message && <span className="text-xs text-destructive mt-1 block">{errors.payments[idx].partyId.message}</span>}
             </div>
             <div>
-              <select className={selectClass} {...register(`payments.${idx}.method` as const)}>
-                <option value="CASH">Cash</option>
-                <option value="CHEQUE">Cheque</option>
-                <option value="BANK">Bank</option>
-              </select>
+              <Controller
+                control={control}
+                name={`payments.${idx}.method` as const}
+                render={({ field }) => (
+                  <Select value={field.value ? String(field.value) : undefined} onValueChange={field.onChange}>
+                    <SelectTrigger className="h-10 w-full text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="CASH">Cash</SelectItem>
+                      <SelectItem value="CHEQUE">Cheque</SelectItem>
+                      <SelectItem value="BANK">Bank</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              />
             </div>
             <div>
-              <input type="number"
-                className={`text-right tabular-nums font-mono ${inputClass}`} placeholder="Amount" {...register(`payments.${idx}.amount` as const)} />
+              <Input type="number"
+                className="h-10 w-full text-right tabular-nums font-mono" placeholder="Amount" {...register(`payments.${idx}.amount` as const)} />
               {errors.payments?.[idx]?.amount?.message && <span className="text-xs text-destructive mt-1 block">{errors.payments[idx].amount.message}</span>}
             </div>
             <div>
-              <input type="text" className={inputClass} placeholder="Note" {...register(`payments.${idx}.note` as const)} />
+              <Input type="text" className="h-10 w-full text-sm" placeholder="Note" {...register(`payments.${idx}.note` as const)} />
             </div>
             {paymentsWatch[idx]?.method === 'CHEQUE' && (
               <>
-                <div><label className="form-label">Issue date</label><input type="date" className={inputClass} {...register(`payments.${idx}.issueDate` as const)} /></div>
-                <div><label className="form-label">Withdrawal date</label><input type="date" className={inputClass} {...register(`payments.${idx}.withdrawDate` as const)} /></div>
+                <div><Label className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">Issue date</Label><Input type="date" className="h-10 w-full text-sm" {...register(`payments.${idx}.issueDate` as const)} /></div>
+                <div><Label className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">Withdrawal date</Label><Input type="date" className="h-10 w-full text-sm" {...register(`payments.${idx}.withdrawDate` as const)} /></div>
               </>
             )}
-            
+             
             {(paymentsWatch[idx]?.method === 'BANK' || paymentsWatch[idx]?.method === 'CHEQUE') && (
-              <div className="sm:col-span-4 mt-2 p-3 bg-muted/30 border border-border rounded-lg">
-                <label className="form-label text-xs flex items-center gap-2">
+              <div className="sm:col-span-4 mt-2 rounded-lg border border-[var(--border)] bg-[var(--surface-raised)] p-3">
+                <Label className="mb-1.5 flex items-center gap-2 text-xs font-medium text-[var(--text-secondary)]">
                   Payslip Attachment (required) 
                   {uploadingAttachment[idx] && <span className="text-primary animate-pulse">Uploading...</span>}
-                </label>
+                </Label>
                 {!paymentsWatch[idx]?.attachmentKey ? (
                   <input 
                     type="file" 
@@ -84,17 +108,19 @@ export function PaymentSection({ control, register, setValue, parties, inputClas
                 ) : (
                   <div className="flex items-center gap-3">
                     <span className="text-primary text-xs flex items-center gap-1"><Paperclip size={14} /> {paymentsWatch[idx].attachmentKey instanceof File ? paymentsWatch[idx].attachmentKey.name : 'Payslip attached'}</span>
-                    <button 
+                    <Button 
                       type="button"
                       onClick={() => {
                         const key = paymentsWatch[idx].attachmentKey
                         setValue(`payments.${idx}.attachmentKey`, undefined, { shouldDirty: true })
                         if (key && typeof key === 'string') void fetch(`/api/upload?key=${encodeURIComponent(key)}`, { method: 'DELETE' })
                       }}
-                      className="text-xs text-destructive hover:underline"
+                      variant="ghost"
+                      size="sm"
+                      className="h-auto px-2 py-1 text-xs text-destructive hover:text-destructive"
                     >
                       Remove
-                    </button>
+                    </Button>
                   </div>
                 )}
               </div>
@@ -103,9 +129,9 @@ export function PaymentSection({ control, register, setValue, parties, inputClas
           </div>
         </div>
       ))}
-      <button type="button" onClick={() => append({ id: generateId(), partyId: '', method: 'CASH', amount: '', note: '', issueDate: '', withdrawDate: '' })} className="text-xs text-primary hover:underline flex items-center gap-1">
+      <Button type="button" variant="ghost" size="sm" onClick={() => append({ id: generateId(), partyId: '', method: 'CASH', amount: '', note: '', issueDate: '', withdrawDate: '' })} className="h-auto gap-1 px-0 text-xs text-primary hover:text-primary">
         <Plus size={14} /> Add Payment
-      </button>
+      </Button>
     </div>
   )
 }

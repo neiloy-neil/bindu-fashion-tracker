@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo, useRef } from 'react'
+import Link from 'next/link'
 import { toast } from 'sonner'
 import { SearchFilter } from '@/components/shared/SearchFilter'
 import { EmployeeModal } from '@/components/hr/EmployeeModal'
@@ -270,7 +271,12 @@ export default function EmployeesPage() {
                 <TableRow key={emp.id} className="border-[var(--border)] hover:bg-[var(--surface-raised)] transition-colors">
                   <TableCell className="font-mono text-xs text-[var(--text-primary)]">{emp.employeeId}</TableCell>
                   <TableCell>
-                    <div className="font-medium text-[var(--text-primary)]">{emp.name}</div>
+                    <Link
+                      href={`/hr/employees/${emp.id}`}
+                      className="font-medium text-[var(--text-primary)] hover:text-[var(--accent)] hover:underline transition-colors"
+                    >
+                      {emp.name}
+                    </Link>
                     <div className="text-xs text-[var(--text-muted)]">{emp.designation || '—'}</div>
                   </TableCell>
                   <TableCell className="text-[var(--text-primary)]">{emp.branch?.name || '—'}</TableCell>

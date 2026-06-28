@@ -147,7 +147,13 @@ function Table({
         ))}
       </View>
       {rows.map((row, rowIndex) => (
-        <View key={`${row[0]}-${rowIndex}`} style={[styles.tableRow, rowIndex === rows.length - 1 ? { borderBottomWidth: 0 } : null]}>
+        <View
+          key={`${row[0]}-${rowIndex}`}
+          style={[
+            styles.tableRow,
+            ...(rowIndex === rows.length - 1 ? [{ borderBottomWidth: 0 }] : []),
+          ]}
+        >
           {row.map((value, cellIndex) => (
             <Text
               key={`${value}-${cellIndex}`}
@@ -399,7 +405,9 @@ function SummaryReportDocument({
   )
 }
 
-async function saveDocument(document: React.ReactElement, filename: string) {
+type PdfDocumentElement = Parameters<typeof pdf>[0]
+
+async function saveDocument(document: PdfDocumentElement, filename: string) {
   const blob = await pdf(document).toBlob()
   saveAs(blob, filename)
 }

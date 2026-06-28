@@ -11,7 +11,7 @@ export async function PUT(
   const rawBody = await req.json()
   const parsed = dailyEntrySchema.partial().safeParse(rawBody)
   if (!parsed.success) {
-    return NextResponse.json({ error: 'Invalid input', details: parsed.error.format() }, { status: 400 })
+    return NextResponse.json({ error: 'Invalid input', details: parsed.error.issues }, { status: 400 })
   }
   const body = parsed.data
   // Add reason to body destructuring
@@ -80,6 +80,33 @@ export async function PUT(
           await prisma.expenseEntry.create({ data: { dailyEntryId: entryIdNum, categoryId: exp.categoryId, amount: exp.amount || 0, note: exp.note || null } })
         }
       }
+    }
+
+    // Recalculate expectedNetBalance from current DB state
+    const balanceSnapshot = await prisma.dailyEntry.findUnique({
+      where: { id: entryIdNum },
+      include: {
+        items: { include: { category: { select: { type: true, name: true } } } },
+        expenseEntries: true,
+        transfers: true,
+        payments: true,
+        advanceSalaries: true,
+      },
+    })
+    if (balanceSnapshot) {
+      const income = balanceSnapshot.items
+        .filter(i => i.category?.type === 'INCOME' && i.category?.name !== 'Opening Balance')
+        .reduce((s, i) => s + i.amount, 0)
+      const expenses = balanceSnapshot.expenseEntries.reduce((s, e) => s + e.amount, 0)
+      const transfers = balanceSnapshot.transfers.reduce((s, t) => s + t.amount, 0)
+      const payments = balanceSnapshot.payments.reduce((s, p) => s + p.amount, 0)
+      const advances = balanceSnapshot.advanceSalaries
+        .filter(a => a.type === 'CASH')
+        .reduce((s, a) => s + (a.amount ?? 0), 0)
+      await prisma.dailyEntry.update({
+        where: { id: entryIdNum },
+        data: { expectedNetBalance: income - expenses - transfers - payments - advances },
+      })
     }
 
     // Return the full updated entry

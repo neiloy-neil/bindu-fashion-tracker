@@ -34,7 +34,7 @@ export async function POST(request: Request) {
     const existing = await prisma.category.findUnique({ where: { name: name.trim() } })
     if (existing) return NextResponse.json({ error: 'A category with this name already exists' }, { status: 409 })
 
-    const category = await (prisma.category.create as any)({
+    const category = await prisma.category.create({
       data: {
         name: name.trim(),
         type,

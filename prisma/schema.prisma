@@ -37,7 +37,7 @@ model User {
   username              String          @unique
   email                 String?         @unique
   passwordHash          String
-  role                  String          @default("BRANCH") // ADMIN or BRANCH
+  role                  String          @default("BRANCH") // ADMIN | SUPER_ADMIN | BRANCH | AUDITOR | AREA_MANAGER | HR_ADMIN | ACCOUNTS
   isActive              Boolean         @default(true)
   branchId              Int?
   branch                Branch?         @relation("UserPrimaryBranch", fields: [branchId], references: [id])
@@ -509,7 +509,7 @@ model LeaveRecord {
   employee     Employee @relation(fields: [employeeId], references: [id])
   startDate    DateTime
   endDate      DateTime
-  type         String   // SICK, CASUAL, UNPAID, ANNUAL
+  type         String   // SICK, CASUAL, UNPAID, ANNUAL, MARRIAGE
   status       String   @default("PENDING") // PENDING, APPROVED, REJECTED
   reason       String?  @db.Text
   approvedById Int?

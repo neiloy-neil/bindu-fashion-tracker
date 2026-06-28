@@ -1,18 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
+
+const attendancePostSchema = z.object({
+  branchId: z.union([z.string(), z.number()]).transform(v => Number(v)).optional(),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'date must be YYYY-MM-DD'),
+  attendances: z.array(z.object({
+    employeeId: z.union([z.string(), z.number()]).transform(v => Number(v)),
+    checkInTimeStr: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).optional(),
+    isAbsent: z.boolean().optional(),
+  })).min(1),
+})
 
 export async function POST(req: NextRequest) {
   try {
     const userRole = req.headers.get('x-user-role')
     const userBranchId = req.headers.get('x-user-branch-id')
 
-    if (!userRole || (userRole !== 'ADMIN' && userRole !== 'BRANCH')) {
+    if (!userRole || !['ADMIN', 'SUPER_ADMIN', 'BRANCH'].includes(userRole)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { branchId, attendances, date } = await req.json()
-    const targetBranchId = userRole === 'BRANCH' ? parseInt(userBranchId || '0') : parseInt(branchId)
+    const parsed = attendancePostSchema.safeParse(await req.json())
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Invalid input', details: parsed.error.issues }, { status: 400 })
+    }
+    const { branchId, attendances, date } = parsed.data
+
+    const targetBranchId = userRole === 'BRANCH' ? parseInt(userBranchId || '0') : (branchId ?? 0)
 
     if (!targetBranchId) {
       return NextResponse.json({ error: 'Branch ID is required' }, { status: 400 })
@@ -72,7 +88,7 @@ export async function POST(req: NextRequest) {
         await tx.attendance.upsert({
           where: {
             employeeId_date: {
-              employeeId: parseInt(employeeId),
+              employeeId: employeeId,
               date: dateObj
             }
           },
@@ -81,7 +97,7 @@ export async function POST(req: NextRequest) {
             status: status
           },
           create: {
-            employeeId: parseInt(employeeId),
+            employeeId: employeeId,
             branchId: targetBranchId,
             date: dateObj,
             checkInTime: checkInTime,

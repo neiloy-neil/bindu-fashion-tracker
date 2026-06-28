@@ -5,7 +5,7 @@ import { logAudit } from '@/lib/audit'
 
 export async function GET(req: NextRequest) {
   const role = req.headers.get('x-user-role')
-  if (!role || (role !== 'ADMIN' && role !== 'HR_ADMIN' && role !== 'AUDITOR')) {
+  if (!role || !['ADMIN', 'SUPER_ADMIN', 'HR_ADMIN', 'AUDITOR'].includes(role)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
@@ -117,7 +117,7 @@ export async function POST(req: NextRequest) {
   const role = req.headers.get('x-user-role')
   const userId = req.headers.get('x-user-id')
   
-  if (!role || (role !== 'ADMIN' && role !== 'HR_ADMIN')) {
+  if (!role || !['ADMIN', 'SUPER_ADMIN', 'HR_ADMIN'].includes(role)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 

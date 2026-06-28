@@ -18,7 +18,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       if (clash) return NextResponse.json({ error: 'A category with this name already exists' }, { status: 409 })
     }
 
-    const category = await (prisma.category.update as any)({
+    const category = await prisma.category.update({
       where: { id: categoryId },
       data: {
         ...(name !== undefined && { name: name.trim() }),

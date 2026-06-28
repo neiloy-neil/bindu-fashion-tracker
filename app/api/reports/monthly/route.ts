@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma'
 
 export async function GET(req: NextRequest) {
   const role = req.headers.get('x-user-role')
-  if (!role || (role !== 'ADMIN' && role !== 'AUDITOR' && role !== 'AREA_MANAGER')) {
+  if (!role || !['ADMIN', 'SUPER_ADMIN', 'AUDITOR', 'AREA_MANAGER'].includes(role)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
         ...(branchId ? { branchId: parseInt(branchId) } : {})
       },
       include: {
-        items: true,
+        items: { include: { category: { select: { name: true, type: true } } } },
         expenseEntries: true,
         transfers: true,
         payments: true,
@@ -49,7 +49,9 @@ export async function GET(req: NextRequest) {
       let totalAdvances = 0
 
       branchEntries.forEach(entry => {
-        totalIncome += entry.items.reduce((sum, item) => sum + item.amount, 0)
+        totalIncome += entry.items
+          .filter(item => item.category?.type === 'INCOME' && item.category?.name !== 'Opening Balance')
+          .reduce((sum, item) => sum + item.amount, 0)
         totalExpense += entry.expenseEntries.reduce((sum, exp) => sum + exp.amount, 0)
         totalTransfers += entry.transfers.reduce((sum, tr) => sum + tr.amount, 0)
         totalPayments += entry.payments.reduce((sum, p) => sum + p.amount, 0)

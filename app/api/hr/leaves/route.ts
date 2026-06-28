@@ -5,8 +5,8 @@ import { sendEmail, leaveRequestEmail } from '@/lib/email'
 
 const leaveSchema = z.object({
   employeeId: z.number(),
-  startDate: z.string().transform(v => new Date(v)),
-  endDate: z.string().transform(v => new Date(v)),
+  startDate: z.string().pipe(z.coerce.date()),
+  endDate: z.string().pipe(z.coerce.date()),
   type: z.enum(['SICK', 'CASUAL', 'UNPAID', 'ANNUAL', 'MARRIAGE']),
   reason: z.string().optional()
 })
@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
     const rawBody = await req.json()
     const parsed = leaveSchema.safeParse(rawBody)
     if (!parsed.success) {
-      return NextResponse.json({ error: 'Invalid payload', details: parsed.error.flatten() }, { status: 400 })
+      return NextResponse.json({ error: 'Invalid payload', details: parsed.error.issues }, { status: 400 })
     }
 
     const leave = await prisma.leaveRecord.create({

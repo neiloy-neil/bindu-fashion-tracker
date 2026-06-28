@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
   const userBranchId = req.headers.get('x-user-branch-id')
 
   if (!userRole) return NextResponse.json({ error: 'UNAUTHORIZED', message: 'Authentication is required' }, { status: 401 })
-  if (userRole !== 'ADMIN' && userRole !== 'BRANCH') {
+  if (!['ADMIN', 'SUPER_ADMIN', 'BRANCH'].includes(userRole)) {
     return NextResponse.json({ error: 'FORBIDDEN', message: 'This role cannot create entries' }, { status: 403 })
   }
 
@@ -119,7 +119,7 @@ export async function POST(req: NextRequest) {
             orderBy: { date: 'desc' },
           })
           const expectedOpeningBalance = lastEntry?.actualPhysicalCash || 0
-          if (openingBalanceItem.amount !== expectedOpeningBalance) {
+          if (Math.abs(openingBalanceItem.amount - expectedOpeningBalance) > 0.01) {
             throw new Error(`Opening balance mismatch. Expected ৳${expectedOpeningBalance}, but got ৳${openingBalanceItem.amount}.`)
           }
         }

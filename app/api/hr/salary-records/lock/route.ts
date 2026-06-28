@@ -6,7 +6,7 @@ export async function POST(req: NextRequest) {
   const role = req.headers.get('x-user-role')
   const username = req.headers.get('x-user-username')
   
-  if (!role || role !== 'ADMIN') {
+  if (!role || !['ADMIN', 'SUPER_ADMIN'].includes(role)) {
     return NextResponse.json({ error: 'Forbidden. Only ADMIN can lock payroll.' }, { status: 403 })
   }
 
@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
       where: { username }
     })
 
-    if (!user || user.role !== 'ADMIN') {
+    if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 

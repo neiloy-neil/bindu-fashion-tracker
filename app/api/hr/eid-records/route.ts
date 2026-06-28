@@ -1,9 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
+
+const eidRecordSchema = z.object({
+  year: z.union([z.string(), z.number()]).transform(v => Number(v)),
+  title: z.string().optional(),
+  records: z.array(z.object({
+    employeeId: z.number().int(),
+    salaryPaymentPct: z.number().min(0).optional().default(0),
+    hrAdvanceDeducted: z.number().min(0).optional().default(0),
+    eidBonusPct: z.number().min(0).optional().default(0),
+    title: z.string().optional(),
+  })).min(1),
+})
 
 export async function GET(req: NextRequest) {
   const role = req.headers.get('x-user-role')
-  if (!role || (role !== 'ADMIN' && role !== 'HR_ADMIN' && role !== 'AUDITOR')) {
+  if (!role || !['ADMIN', 'SUPER_ADMIN', 'HR_ADMIN', 'AUDITOR'].includes(role)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
@@ -34,21 +47,19 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const role = req.headers.get('x-user-role')
-  if (!role || (role !== 'ADMIN' && role !== 'HR_ADMIN')) {
+  if (!role || !['ADMIN', 'SUPER_ADMIN', 'HR_ADMIN'].includes(role)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
   try {
-    const { year, title, records } = await req.json()
-    
-    if (!year || !Array.isArray(records)) {
-      return NextResponse.json({ error: 'Invalid payload. year, and records array required.' }, { status: 400 })
+    const parsed = eidRecordSchema.safeParse(await req.json())
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Invalid payload', details: parsed.error.issues }, { status: 400 })
     }
-
-    const y = parseInt(year)
+    const { year: y, title, records } = parsed.data
 
     const result = await prisma.$transaction(
-      records.map((r: any) => 
+      records.map((r) =>
         prisma.eidRecord.upsert({
           where: {
             employeeId_year_title: {

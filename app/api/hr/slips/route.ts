@@ -6,7 +6,7 @@ export async function GET(req: NextRequest) {
   const role = req.headers.get('x-user-role')
   const userIdStr = req.headers.get('x-user-id')
 
-  if (!role || !userIdStr || (role !== 'ADMIN' && role !== 'HR_ADMIN' && role !== 'AUDITOR' && role !== 'BRANCH')) {
+  if (!role || !userIdStr || !['ADMIN', 'SUPER_ADMIN', 'HR_ADMIN', 'AUDITOR', 'BRANCH'].includes(role)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 

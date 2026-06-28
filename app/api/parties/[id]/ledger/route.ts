@@ -52,6 +52,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         date: paymentDate,
         amount: p.amount, // credit
         method: p.method,
+        approvalStatus: p.approvalStatus,
         note: p.note,
         attachmentUrl: p.attachmentUrl,
         cheque: p.cheque,
@@ -68,7 +69,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     const ledgerWithBalance = ledger.map(item => {
       if (item.type === 'PURCHASE') {
         runningBalance += item.amount
-      } else {
+      } else if (item.approvalStatus === 'APPROVED') {
+        // Only reduce balance for approved payments — matches party.balance in DB
         runningBalance -= item.amount
       }
       return { ...item, runningBalance }

@@ -83,7 +83,18 @@ function SlipsContent() {
           if ((calc.employee as any).branch) {
             brs.set(bid, (calc.employee as any).branch)
           } else if (bid === 'unassigned') {
-            brs.set(bid, { id: 'unassigned' as any, name: 'Unassigned', createdAt: new Date(), updatedAt: new Date() })
+            brs.set(bid, { 
+              id: -1 as any, 
+              name: 'Unassigned', 
+              type: 'OTHER', 
+              isActive: true, 
+              createdAt: new Date(), 
+              code: null, 
+              address: null, 
+              contactPerson: null, 
+              phoneNumber: null, 
+              shiftStartTime: '09:00' 
+            })
           }
           
           if (!map.has(bid)) map.set(bid, [])

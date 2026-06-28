@@ -126,13 +126,15 @@ function SalaryContent() {
     
     const upserts = dirty.map(r => ({
       employeeId: r.employee.id,
-      hrAdvanceDeducted: r.record.hrAdvanceDeducted ?? 0,
-      leaveDaysTaken: r.record.leaveDaysTaken ?? 0,
-      leaveAdjustment: r.record.leaveAdjustment ?? 0,
-      lateDays: r.record.lateDays ?? 0,
-      otDays: r.record.otDays ?? 0,
-      attendanceBonus: r.record.attendanceBonus ?? 0,
-      conveyanceOverride: r.record.conveyanceOverride ?? r.employee.conveyance,
+      hrAdvanceDeducted: isNaN(Number(r.record.hrAdvanceDeducted)) ? 0 : Number(r.record.hrAdvanceDeducted),
+      leaveDaysTaken: isNaN(Number(r.record.leaveDaysTaken)) ? 0 : Number(r.record.leaveDaysTaken),
+      leaveAdjustment: isNaN(Number(r.record.leaveAdjustment)) ? 0 : Number(r.record.leaveAdjustment),
+      lateDays: isNaN(Number(r.record.lateDays)) ? 0 : Math.round(Number(r.record.lateDays)),
+      otDays: isNaN(Number(r.record.otDays)) ? 0 : Number(r.record.otDays),
+      attendanceBonus: isNaN(Number(r.record.attendanceBonus)) ? 0 : Number(r.record.attendanceBonus),
+      conveyanceOverride: (r.record.conveyanceOverride === null || r.record.conveyanceOverride === '' || isNaN(Number(r.record.conveyanceOverride))) 
+        ? r.employee.conveyance 
+        : Number(r.record.conveyanceOverride),
       notes: r.record.notes ?? '',
     }))
 

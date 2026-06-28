@@ -180,15 +180,15 @@ export async function POST(req: NextRequest) {
             employeeId: r.employeeId,
             month: m,
             year: y,
-            hrAdvanceDeducted: r.hrAdvanceDeducted || 0,
+            hrAdvanceDeducted: r.hrAdvanceDeducted ?? 0,
             trackerAdvanceTotal: 0,
-            leaveDaysTaken: r.leaveDaysTaken || 0,
-            leaveAdjustment: r.leaveAdjustment || 0,
-            lateDays: r.lateDays || 0,
-            otDays: r.otDays || 0,
-            attendanceBonus: r.attendanceBonus || 0,
-            conveyanceOverride: r.conveyanceOverride || null,
-            notes: r.notes || '',
+            leaveDaysTaken: r.leaveDaysTaken ?? 0,
+            leaveAdjustment: r.leaveAdjustment ?? 0,
+            lateDays: r.lateDays ?? 0,
+            otDays: r.otDays ?? 0,
+            attendanceBonus: r.attendanceBonus ?? 0,
+            conveyanceOverride: r.conveyanceOverride ?? null,
+            notes: r.notes ?? '',
           }
         })
       )

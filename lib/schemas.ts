@@ -5,14 +5,7 @@ const idSchema = z.union([z.string(), z.number()]).transform(val => typeof val =
 const nonNegativeNumberSchema = z.union([z.string(), z.number()]).transform(val => typeof val === 'string' ? parseFloat(val) : val).refine(val => Number.isFinite(val) && val >= 0, { message: 'Must be a non-negative number' })
 const positiveNumberSchema = z.union([z.string(), z.number()]).transform(val => typeof val === 'string' ? parseFloat(val) : val).refine(val => Number.isFinite(val) && val > 0, { message: 'Must be greater than zero' })
 const finiteNumberSchema = z.union([z.string(), z.number()]).transform(val => typeof val === 'string' ? parseFloat(val) : val).refine(val => Number.isFinite(val), { message: 'Must be a valid number' })
-
-export const entryItemSchema = z.object({
-  categoryId: z.union([z.string(), z.number()]).transform(val => typeof val === 'string' ? parseInt(val) : val),
-  amount: numericStringOrNumber,
-  note: z.string().optional().nullable(),
-  partyName: z.string().optional().nullable(),
-  receiptUrls: z.array(z.string()).optional()
-})
+const hhmmSchema = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Time must be in HH:MM format')
 
 export const dailyEntrySchema = z.object({
   date: z.string().or(z.date()),
@@ -25,15 +18,14 @@ export const dailyEntrySchema = z.object({
   }),
   cashDifferenceNote: z.string().optional().nullable(),
   eodChecklist: z.any().optional().nullable(),
-  items: z.array(entryItemSchema).optional()
+  items: z.array(z.object({
+    categoryId: z.union([z.string(), z.number()]).transform(val => typeof val === 'string' ? parseInt(val) : val),
+    amount: numericStringOrNumber,
+    note: z.string().optional().nullable(),
+    partyName: z.string().optional().nullable(),
+    receiptUrls: z.array(z.string()).optional()
+  })).optional()
 }).passthrough()
-
-export const categorySchema = z.object({
-  name: z.string().min(1),
-  type: z.enum(['INCOME', 'EXPENSE']),
-  isActive: z.boolean().optional(),
-  isDefault: z.boolean().optional()
-})
 
 export const userSchema = z.object({
   username: z.string().min(1),
@@ -84,8 +76,8 @@ export const newEntryFormSchema = z.object({
   formMeta: z.object({
     date: z.string().min(1, 'Date is required'),
     branchId: z.string().min(1, 'Branch is required'),
-    openingTime: z.string().optional(),
-    closingTime: z.string().optional(),
+    openingTime: hhmmSchema,
+    closingTime: hhmmSchema,
   }),
   incomeItems: z.array(z.object({
     id: z.string(),
@@ -161,12 +153,14 @@ export const purchaseSchema = z.object({
 })
 
 export const partyUpdateSchema = z.object({
-  name: z.string().min(1, 'Company Name is required'),
+  name: z.string().min(1, 'Company Name is required').optional(),
   contactPerson: z.string().optional().nullable(),
   contactNumber: z.string().optional().nullable(),
   secondaryNumber: z.string().optional().nullable(),
-  address: z.string().optional().nullable()
-})
+  email: z.union([z.string().email('Invalid email address'), z.literal('')]).optional().nullable(),
+  address: z.string().optional().nullable(),
+  isActive: z.boolean().optional(),
+}).strict()
 
 export const directPaymentSchema = z.object({
   dailyEntryId: idSchema.optional().nullable(),

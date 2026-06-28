@@ -381,7 +381,6 @@ function Entries() {
             <p className="mb-6 text-sm">There are no entries for {MONTHS[month-1]} {year} yet.<br />If the shop is open today, click &apos;+ New Entry&apos; to start the daily sheet.</p>
             <div className="flex gap-3 justify-center">
               <Button asChild className="min-w-[160px]"><Link href="/entries/new">+ New Entry</Link></Button>
-              <Button asChild variant="outline" className="min-w-[160px]"><Link href="/import">Import Excel</Link></Button>
             </div>
           </div>
         ) : (

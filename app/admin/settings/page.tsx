@@ -7,7 +7,7 @@ import { BrandSpinner } from '@/components/ui/BrandSpinner'
 import { Button } from '@/components/ui/button'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 
-type Tab = 'BRANCHES' | 'PARTIES' | 'ACCOUNTS' | 'EMPLOYEES'
+type Tab = 'BRANCHES' | 'PARTIES' | 'ACCOUNTS'
 
 export default function AdminSettings() {
   const [activeTab, setActiveTab] = useState<Tab>('BRANCHES')
@@ -15,8 +15,6 @@ export default function AdminSettings() {
   const [branches, setBranches] = useState<any[]>([])
   const [parties, setParties] = useState<any[]>([])
   const [accounts, setAccounts] = useState<any[]>([])
-  const [employees, setEmployees] = useState<any[]>([])
-  
   const [loading, setLoading] = useState(true)
   const [refreshNonce, setRefreshNonce] = useState(0)
 
@@ -38,9 +36,6 @@ export default function AdminSettings() {
         } else if (activeTab === 'ACCOUNTS') {
           const res = await fetch('/api/accounts?includeInactive=true')
           if (res.ok && !cancelled) setAccounts(await res.json())
-        } else if (activeTab === 'EMPLOYEES') {
-          const res = await fetch('/api/employees?includeInactive=true')
-          if (res.ok && !cancelled) setEmployees(await res.json())
         }
       } catch {
         if (!cancelled) {
@@ -71,7 +66,6 @@ export default function AdminSettings() {
     let url = ''
     if (activeTab === 'PARTIES') url = `/api/parties/${id}`
     else if (activeTab === 'ACCOUNTS') url = `/api/accounts/${id}`
-    else if (activeTab === 'EMPLOYEES') url = `/api/employees/${id}`
 
     try {
       const res = await fetch(url, { method: 'DELETE' })
@@ -98,7 +92,6 @@ export default function AdminSettings() {
     if (activeTab === 'BRANCHES') url = '/api/branches'
     else if (activeTab === 'PARTIES') url = '/api/parties'
     else if (activeTab === 'ACCOUNTS') url = '/api/accounts'
-    else if (activeTab === 'EMPLOYEES') url = '/api/employees'
 
     if (selectedItem) url += `/${selectedItem.id}`
 
@@ -121,7 +114,6 @@ export default function AdminSettings() {
     { id: 'BRANCHES', label: 'Branches Configuration' },
     { id: 'PARTIES', label: 'Parties' },
     { id: 'ACCOUNTS', label: 'Accounts' },
-    { id: 'EMPLOYEES', label: 'Employees' },
   ]
 
   const renderTable = () => {
@@ -137,9 +129,6 @@ export default function AdminSettings() {
     } else if (activeTab === 'ACCOUNTS') {
       data = accounts
       columns = [{ key: 'name', label: 'Name' }, { key: 'type', label: 'Type' }, { key: 'status', label: 'Status' }]
-    } else if (activeTab === 'EMPLOYEES') {
-      data = employees
-      columns = [{ key: 'name', label: 'Name' }, { key: 'status', label: 'Status' }]
     }
 
     return (

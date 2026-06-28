@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { partyUpdateSchema } from '@/lib/schemas'
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const userRole = req.headers.get('x-user-role')
@@ -30,7 +31,12 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   const id = parseInt(resolvedParams.id)
   
   try {
-    const { name, isActive, contactPerson, contactNumber, secondaryNumber, email, address } = await req.json()
+    const parsed = partyUpdateSchema.partial().safeParse(await req.json())
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Invalid input', details: parsed.error.format() }, { status: 400 })
+    }
+
+    const { name, isActive, contactPerson, contactNumber, secondaryNumber, email, address } = parsed.data
     
     if (name) {
       const existing = await prisma.party.findFirst({ where: { name, id: { not: id } } })

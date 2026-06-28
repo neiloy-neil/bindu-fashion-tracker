@@ -1,9 +1,26 @@
 'use client'
 
 import { useState } from 'react'
-import * as Dialog from '@radix-ui/react-dialog'
 import toast from 'react-hot-toast'
-import { supabase } from '@/lib/supabase'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+
+async function uploadReceipt(file: File) {
+  const formData = new FormData()
+  formData.append('file', file)
+
+  const response = await fetch('/api/upload?bucket=receipts', {
+    method: 'POST',
+    body: formData,
+  })
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.message || error.error || 'Upload failed')
+  }
+
+  const { url } = await response.json()
+  return url as string
+}
 
 export function PaymentModal({ isOpen, onClose, partyId, onSuccess }: { isOpen: boolean, onClose: () => void, partyId: number, onSuccess: () => void }) {
   const [loading, setLoading] = useState(false)
@@ -27,15 +44,7 @@ export function PaymentModal({ isOpen, onClose, partyId, onSuccess }: { isOpen: 
     try {
       let attachmentUrl = null
       if (file) {
-        const fileExt = file.name.split('.').pop()
-        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
-        const filePath = `receipts/${fileName}`
-        
-        const { error: uploadError } = await supabase.storage.from('receipts').upload(filePath, file)
-        if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`)
-        
-        const { data } = supabase.storage.from('receipts').getPublicUrl(filePath)
-        attachmentUrl = data.publicUrl
+        attachmentUrl = await uploadReceipt(file)
       }
 
       const payload = {
@@ -78,11 +87,11 @@ export function PaymentModal({ isOpen, onClose, partyId, onSuccess }: { isOpen: 
   }
 
   return (
-    <Dialog.Root open={isOpen} onOpenChange={onClose}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-card p-6 sm:p-8 rounded-2xl shadow-2xl z-50 border border-border">
-          <Dialog.Title className="text-xl font-bold mb-6">Make Direct Payment</Dialog.Title>
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose() }}>
+      <DialogContent className="w-full max-w-md rounded-2xl border-border bg-card p-6 sm:p-8">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-bold">Make Direct Payment</DialogTitle>
+        </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             
             <div className="grid grid-cols-2 gap-4">
@@ -142,8 +151,7 @@ export function PaymentModal({ isOpen, onClose, partyId, onSuccess }: { isOpen: 
               </button>
             </div>
           </form>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+      </DialogContent>
+    </Dialog>
   )
 }

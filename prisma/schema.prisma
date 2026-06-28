@@ -483,7 +483,6 @@ model EidRecord {
   salaryPaymentPct    Float    @default(50)
   trackerAdvanceTotal Float    @default(0)
   hrAdvanceDeducted   Float    @default(0)
-  advanceDeducted     Float    @default(0) // Kept for backward compatibility
   eidBonusPct         Float    @default(50)
   createdAt           DateTime @default(now())
 

@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
   if (!session?.user) return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 })
   const file = (await request.formData()).get('file')
   if (!(file instanceof File)) return NextResponse.json({ error: 'FILE_REQUIRED' }, { status: 400 })
-  if (!ALLOWED_TYPES.has(file.type)) return NextResponse.json({ error: 'INVALID_FILE_TYPE' }, { status: 400 })
+  if (!ALLOWED_TYPES.has(file.type)) return NextResponse.json({ error: 'INVALID_FILE_TYPE', message: 'Only JPEG, PNG, WebP, GIF, and PDF files are allowed.' }, { status: 400 })
   if (file.size > MAX_FILE_SIZE) return NextResponse.json({ error: 'FILE_TOO_LARGE' }, { status: 400 })
 
   const bucket = request.nextUrl.searchParams.get('bucket') || 'private_receipts'
@@ -35,10 +35,28 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   const session = await getServerSession(authOptions)
-  if (!session?.user) return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 })
+  if (!session?.user) {
+    return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 })
+  }
+
   const key = request.nextUrl.searchParams.get('key')
-  if (!key || !key.startsWith(`${session.user.id}/`)) return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 })
-  const { error } = await storageAdmin().storage.from('receipts').remove([key])
-  if (error) return NextResponse.json({ error: 'DELETE_FAILED', message: error.message }, { status: 500 })
+  const bucket = request.nextUrl.searchParams.get('bucket') || 'receipts'
+
+  if (!['private_receipts', 'receipts', 'employees'].includes(bucket)) {
+    return NextResponse.json({ error: 'INVALID_BUCKET' }, { status: 400 })
+  }
+
+  if (!key || !key.startsWith(`${session.user.id}/`)) {
+    return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 })
+  }
+
+  const { error } = await storageAdmin().storage.from(bucket).remove([key])
+  if (error) {
+    return NextResponse.json(
+      { error: 'DELETE_FAILED', message: error.message },
+      { status: 500 }
+    )
+  }
+
   return NextResponse.json({ success: true })
 }

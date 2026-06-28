@@ -14,6 +14,7 @@ import { downloadWorkbook } from '@/lib/excel-export'
 
 import { useSearchParams } from 'next/navigation'
 import { BrandSpinner } from '@/components/ui/BrandSpinner'
+import { Button } from '@/components/ui/button'
 
 function Entries() {
   const searchParams = useSearchParams()
@@ -320,20 +321,20 @@ function Entries() {
         <div className="flex flex-wrap items-center gap-3">
           <input
             type="text"
-            className="form-input w-[150px]"
+            className="flex h-9 w-[150px] rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50"
             placeholder="Search entries..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
           <select
-            className="form-input form-select w-[130px]"
+            className="flex h-9 w-[130px] rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1 text-sm text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50"
             value={month}
             onChange={(e) => setMonth(parseInt(e.target.value))}
           >
             {MONTHS.map((m, i) => <option key={i+1} value={i+1}>{m}</option>)}
           </select>
           <select
-            className="form-input form-select w-[95px]"
+            className="flex h-9 w-[95px] rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1 text-sm text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50"
             value={year}
             onChange={(e) => setYear(parseInt(e.target.value))}
           >
@@ -353,17 +354,17 @@ function Entries() {
               ))}
             </select>
           )}
-          <button className="btn btn-secondary btn-sm flex items-center gap-2" onClick={() => { void exportToExcel() }}>
+          <Button variant="outline" size="sm" className="flex items-center gap-2" onClick={() => { void exportToExcel() }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
               <polyline points="7 10 12 15 17 10" />
               <line x1="12" y1="15" x2="12" y2="3" />
             </svg>
             Export
-          </button>
-          <Link href="/entries/new" className="btn btn-primary btn-sm flex items-center gap-2">
-            + New Entry
-          </Link>
+          </Button>
+          <Button asChild size="sm" className="flex items-center gap-2">
+            <Link href="/entries/new">+ New Entry</Link>
+          </Button>
         </div>
       </div>
 
@@ -379,8 +380,8 @@ function Entries() {
             <h3 className="text-xl text-[var(--text-primary)] mb-2 font-semibold">No register data submitted</h3>
             <p className="mb-6 text-sm">There are no entries for {MONTHS[month-1]} {year} yet.<br />If the shop is open today, click &apos;+ New Entry&apos; to start the daily sheet.</p>
             <div className="flex gap-3 justify-center">
-              <Link href="/entries/new" className="btn btn-primary min-w-[160px]">+ New Entry</Link>
-              <Link href="/import" className="btn btn-secondary min-w-[160px]">Import Excel</Link>
+              <Button asChild className="min-w-[160px]"><Link href="/entries/new">+ New Entry</Link></Button>
+              <Button asChild variant="outline" className="min-w-[160px]"><Link href="/import">Import Excel</Link></Button>
             </div>
           </div>
         ) : (

@@ -37,19 +37,18 @@ export default function RecentActivity() {
 
   return (
     <div className="card">
-      <div style={{ marginBottom: 16, fontWeight: 700, fontSize: 14 }}>Recent EOD Closures & Activity</div>
+      <div className="text-sm font-bold mb-4">Recent EOD Closures & Activity</div>
       {activities.length === 0 ? (
-        <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>No recent activity.</div>
+        <div className="text-[13px] text-[var(--text-muted)]">No recent activity.</div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div className="flex flex-col gap-3">
           {activities.map(a => (
-            <div key={a.id} style={{ display: 'flex', gap: 10, alignItems: 'center', fontSize: 13, borderBottom: '1px solid var(--border)', paddingBottom: 8, paddingRight: 8 }}>
-              <div style={{
-                width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
-                background: a.type === 'ENTRY_SUBMITTED' ? 'var(--success)' : 'var(--warning)'
-              }} />
-              <div style={{ flex: 1, color: 'var(--text-primary)' }}>{a.message}</div>
-              <div style={{ color: 'var(--text-muted)', fontSize: 11, whiteSpace: 'nowrap' }}>
+            <div key={a.id} className="flex items-center gap-2.5 text-[13px] border-b border-[var(--border)] pb-2 pr-2 last:border-0 last:pb-0">
+              <div 
+                className={`w-2 h-2 rounded-full shrink-0 ${a.type === 'ENTRY_SUBMITTED' ? 'bg-[var(--success)]' : 'bg-[var(--warning)]'}`}
+              />
+              <div className="flex-1 text-[var(--text-primary)]">{a.message}</div>
+              <div className="text-[11px] text-[var(--text-muted)] whitespace-nowrap">
                 {new Date(a.date).toLocaleDateString('en-BD', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
               </div>
             </div>

@@ -7,6 +7,7 @@ import { CheckCircle, XCircle, Clock, Search, AlertCircle, Building2, User, Imag
 import { ViewReceiptModal } from '@/components/entries/ViewReceiptModal'
 import { BrandSpinner } from '@/components/ui/BrandSpinner'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
+import { Button } from '@/components/ui/button'
 
 interface Cheque {
   id: number
@@ -169,7 +170,7 @@ export function ChequesClient() {
             </div>
             <div className="relative w-full sm:w-72">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
-              <input type="text" placeholder="Search party or branch..." className="form-input w-full pl-9 h-10 text-sm"
+              <input type="text" placeholder="Search party or branch..." className="flex h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50 pl-9"
                 value={chequeSearch} onChange={e => setChequeSearch(e.target.value)} />
             </div>
           </div>
@@ -217,10 +218,10 @@ export function ChequesClient() {
                     <TableCell className="text-right">
                       {chequeFilter === 'PENDING' ? (
                         <div className="flex items-center justify-end gap-2">
-                          <button onClick={() => handleChequeAction(c.id, 'reject')} disabled={chequeActionLoading === c.id}
-                            className="btn bg-[var(--danger-subtle)]/30 text-[var(--danger)] hover:bg-[var(--danger-subtle)]/50 text-xs px-3 h-8">Reject</button>
-                          <button onClick={() => handleChequeAction(c.id, 'approve')} disabled={chequeActionLoading === c.id}
-                            className="btn btn-primary text-xs px-3 h-8">{chequeActionLoading === c.id ? <BrandSpinner size={14} /> : 'Clear'}</button>
+                          <Button variant="ghost" onClick={() => handleChequeAction(c.id, 'reject')} disabled={chequeActionLoading === c.id}
+                            className="bg-[var(--danger-subtle)]/30 text-[var(--danger)] hover:bg-[var(--danger-subtle)]/50 text-xs px-3 h-8">Reject</Button>
+                          <Button onClick={() => handleChequeAction(c.id, 'approve')} disabled={chequeActionLoading === c.id}
+                            className="text-xs px-3 h-8">{chequeActionLoading === c.id ? <BrandSpinner size={14} /> : 'Clear'}</Button>
                         </div>
                       ) : (
                         <div className="text-xs text-[var(--text-muted)]">{chequeFilter === 'APPROVED' ? 'Cleared' : 'Rejected'} by<br /><span className="font-semibold text-[var(--text-primary)]">{c.approvedBy?.username || 'Admin'}</span></div>
@@ -246,7 +247,7 @@ export function ChequesClient() {
             </div>
             <div className="relative w-full sm:w-72">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
-              <input type="text" placeholder="Search party or branch..." className="form-input w-full pl-9 h-10 text-sm"
+              <input type="text" placeholder="Search party or branch..." className="flex h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50 pl-9"
                 value={paymentSearch} onChange={e => setPaymentSearch(e.target.value)} />
             </div>
           </div>
@@ -291,10 +292,10 @@ export function ChequesClient() {
                     <TableCell className="text-right">
                       {paymentFilter === 'PENDING' ? (
                         <div className="flex items-center justify-end gap-2">
-                          <button onClick={() => handlePaymentAction(p.id, 'reject')} disabled={paymentActionLoading === p.id}
-                            className="btn bg-[var(--danger-subtle)]/30 text-[var(--danger)] hover:bg-[var(--danger-subtle)]/50 text-xs px-3 h-8">Reject</button>
-                          <button onClick={() => handlePaymentAction(p.id, 'approve')} disabled={paymentActionLoading === p.id}
-                            className="btn btn-primary text-xs px-3 h-8">{paymentActionLoading === p.id ? <BrandSpinner size={14} /> : 'Approve'}</button>
+                          <Button variant="ghost" onClick={() => handlePaymentAction(p.id, 'reject')} disabled={paymentActionLoading === p.id}
+                            className="bg-[var(--danger-subtle)]/30 text-[var(--danger)] hover:bg-[var(--danger-subtle)]/50 text-xs px-3 h-8">Reject</Button>
+                          <Button onClick={() => handlePaymentAction(p.id, 'approve')} disabled={paymentActionLoading === p.id}
+                            className="text-xs px-3 h-8">{paymentActionLoading === p.id ? <BrandSpinner size={14} /> : 'Approve'}</Button>
                         </div>
                       ) : (
                         <span className={`text-xs px-2 py-1 rounded font-bold ${paymentFilter === 'APPROVED' ? 'bg-[var(--success-subtle)]/30 text-[var(--success)]' : 'bg-[var(--danger-subtle)]/30 text-[var(--danger)]'}`}>

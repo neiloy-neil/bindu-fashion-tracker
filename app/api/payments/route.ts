@@ -49,7 +49,8 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const needsApproval = userRole === 'BRANCH' && method !== 'CHEQUE'
+    const isAdminRole = userRole === 'ADMIN' || userRole === 'SUPER_ADMIN'
+    const needsApproval = !isAdminRole || method === 'CHEQUE'
 
     const result = await prisma.$transaction(async (tx) => {
       const payment = await tx.payment.create({

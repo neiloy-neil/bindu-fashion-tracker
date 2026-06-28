@@ -84,7 +84,7 @@ export function ExpenseSection({ control, register, setValue, expenseCategories,
           </div>
           <div className="sm:col-span-4">
             {!expenses[idx]?.attachmentKey ? (
-              <input type="file" accept="image/*,.pdf" onChange={event => {
+              <input type="file" accept="image/jpeg,image/png,image/webp,image/gif,application/pdf" onChange={event => {
                 const file = event.target.files?.[0]
                 if (!file) return
                 setValue(`expenseEntries.${idx}.attachmentKey`, file, { shouldDirty: true })

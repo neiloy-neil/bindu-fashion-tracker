@@ -106,12 +106,12 @@ export default function AdminRequestsPage() {
 
   return (
     <>
-      <div className="page-header">
-        <h2 className="page-title">Branch Support Requests</h2>
-        <p className="page-subtitle">Manage incoming requests from all branches</p>
+      <div className="sticky top-0 z-10 flex items-center justify-between gap-4 px-6 py-4 border-b border-[var(--border)] bg-[var(--surface)]">
+        <h2 className="text-lg font-semibold text-[var(--text-primary)]">Branch Support Requests</h2>
+        <p className="text-sm text-[var(--text-muted)] mt-1">Manage incoming requests from all branches</p>
       </div>
 
-      <div className="page-body p-5">
+      <div className="flex-1 p-6 space-y-6 p-5">
         {/* Filters */}
         <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
           {['ALL', 'PENDING', 'IN_PROGRESS', 'RESOLVED', 'REJECTED'].map((f) => (

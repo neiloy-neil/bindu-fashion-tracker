@@ -7,6 +7,7 @@ import { formatCurrency } from '@/lib/utils'
 import toast from 'react-hot-toast'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { AddPartyModal } from '@/components/parties/AddPartyModal'
+import { Button } from '@/components/ui/button'
 import { useRouter } from 'next/navigation'
 
 export default function PartyListClient({ initialParties }: { initialParties: any[] }) {
@@ -90,19 +91,20 @@ export default function PartyListClient({ initialParties }: { initialParties: an
             ref={fileInputRef} 
             onChange={handleImport}
           />
-          <button 
+          <Button 
             onClick={() => fileInputRef.current?.click()}
             disabled={isImporting}
-            className="btn btn-outline flex items-center gap-2"
+            variant="outline"
+            className="flex items-center gap-2"
           >
             <Upload size={16} /> {isImporting ? 'Importing...' : 'Import Excel'}
-          </button>
-          <button 
+          </Button>
+          <Button 
             onClick={() => setIsAddModalOpen(true)}
-            className="btn btn-primary flex items-center gap-2"
+            className="flex items-center gap-2"
           >
             <Plus size={16} /> Add Party
-          </button>
+          </Button>
         </div>
       </div>
       <div className="flex-1 p-6 space-y-6 min-h-0 flex flex-col overflow-auto">
@@ -112,18 +114,22 @@ export default function PartyListClient({ initialParties }: { initialParties: an
         <div className="p-4 sm:p-6 border-b border-border bg-muted/20">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
             <div className="flex bg-muted p-1 rounded-lg w-full sm:w-auto overflow-x-auto">
-              <button
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap ${activeTab === 'ALL' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+              <Button
+                variant={activeTab === 'ALL' ? 'default' : 'ghost'}
+                size="sm"
+                className="rounded-md"
                 onClick={() => setActiveTab('ALL')}
               >
                 All Parties
-              </button>
-              <button
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap ${activeTab === 'DUE' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+              </Button>
+              <Button
+                variant={activeTab === 'DUE' ? 'default' : 'ghost'}
+                size="sm"
+                className="rounded-md"
                 onClick={() => setActiveTab('DUE')}
               >
                 Due List
-              </button>
+              </Button>
             </div>
 
             <div className="flex gap-2 w-full sm:w-auto">
@@ -132,7 +138,7 @@ export default function PartyListClient({ initialParties }: { initialParties: an
                 <input
                   type="text"
                   placeholder="Search parties..."
-                  className="w-full pl-9 pr-4 py-2 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  className="flex h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] pl-9 pr-4 py-2 text-sm text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50"
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
                 />
@@ -193,11 +199,11 @@ export default function PartyListClient({ initialParties }: { initialParties: an
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
-                      <Link href={`/parties/${party.id}`}>
-                        <button className="px-3 py-1.5 bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground font-medium text-xs rounded-md transition-colors flex items-center gap-1 ml-auto">
+                      <Button asChild variant="secondary" size="sm" className="flex items-center gap-1 ml-auto text-xs h-8">
+                        <Link href={`/parties/${party.id}`}>
                           View Details <ChevronRight size={14} />
-                        </button>
-                      </Link>
+                        </Link>
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))

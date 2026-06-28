@@ -128,7 +128,7 @@ export function PaymentModal({ isOpen, onClose, partyId, onSuccess }: { isOpen: 
                 <input 
                   required
                   type="file" 
-                  accept="image/*,.pdf" 
+                  accept="image/jpeg,image/png,image/webp,image/gif,application/pdf"
                   onChange={e => setFile(e.target.files?.[0] || null)}
                   className="w-full p-2 text-sm border border-border rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
                 />

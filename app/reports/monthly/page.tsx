@@ -5,6 +5,7 @@ import { Branch } from '@/lib/types'
 import toast from 'react-hot-toast'
 import { Download } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 
@@ -78,20 +79,20 @@ export default function MonthlyReportPage() {
 
   return (
     <>
-      <div className="page-header">
+      <div className="sticky top-0 z-10 flex items-center justify-between gap-4 px-6 py-4 border-b border-[var(--border)] bg-[var(--surface)]">
         <div>
-          <h2 className="page-title">Monthly Report</h2>
-          <p className="page-subtitle">Consolidated monthly view of branch cash flows</p>
+          <h2 className="text-lg font-semibold text-[var(--text-primary)]">Monthly Report</h2>
+          <p className="text-sm text-[var(--text-muted)] mt-1">Consolidated monthly view of branch cash flows</p>
         </div>
       </div>
 
-      <div className="page-body">
+      <div className="flex-1 p-6 space-y-6">
         <div className="card mb-6">
           <div className="flex flex-col md:flex-row gap-4 items-end">
             <div className="flex-1">
               <label className="form-label">Branch</label>
               <select
-                className="form-input form-select"
+                className="flex h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1 text-sm text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50"
                 value={selectedBranchId}
                 onChange={e => setSelectedBranchId(e.target.value)}
               >
@@ -103,13 +104,13 @@ export default function MonthlyReportPage() {
             </div>
             <div className="flex-1">
               <label className="form-label">Month</label>
-              <select className="form-input form-select" value={month} onChange={(e) => setMonth(Number(e.target.value))}>
+              <select className="flex h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1 text-sm text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50" value={month} onChange={(e) => setMonth(Number(e.target.value))}>
                 {MONTHS.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
               </select>
             </div>
             <div className="flex-1">
               <label className="form-label">Year</label>
-              <input type="number" className="form-input" value={year} onChange={(e) => setYear(Number(e.target.value))} />
+              <input type="number" className="flex h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50" value={year} onChange={(e) => setYear(Number(e.target.value))} />
             </div>
           </div>
         </div>
@@ -125,9 +126,9 @@ export default function MonthlyReportPage() {
         ) : (
           <div>
             <div className="flex flex-wrap gap-3 mb-6">
-              <button className="btn btn-secondary flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white border-0" onClick={exportAsPdf}>
+              <Button className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white border-0" onClick={exportAsPdf}>
                 <Download size={16} /> Export PDF Report
-              </button>
+              </Button>
             </div>
 
             <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] shadow-xl overflow-hidden">

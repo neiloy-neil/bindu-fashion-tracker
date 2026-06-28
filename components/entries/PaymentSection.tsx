@@ -72,7 +72,7 @@ export function PaymentSection({ control, register, setValue, parties, inputClas
                 {!paymentsWatch[idx]?.attachmentKey ? (
                   <input 
                     type="file" 
-                    accept="image/*,.pdf"
+                    accept="image/jpeg,image/png,image/webp,image/gif,application/pdf"
                     disabled={uploadingAttachment[idx]}
                     onChange={(e) => {
                       const file = e.target.files?.[0]

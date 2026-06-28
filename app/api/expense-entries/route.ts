@@ -1,5 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { z } from 'zod'
+
+const createExpenseEntrySchema = z.object({
+  dailyEntryId: z.number().int().positive(),
+  categoryId:   z.number().int().positive(),
+  amount:       z.number().positive(),
+  note:         z.string().max(500).optional().nullable(),
+})
 
 export async function POST(req: NextRequest) {
   const userRole = req.headers.get('x-user-role')
@@ -10,10 +18,18 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { dailyEntryId, categoryId, amount, note } = await req.json()
+    const body = await req.json()
+    const parsed = createExpenseEntrySchema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Invalid request', details: parsed.error.flatten() },
+        { status: 400 }
+      )
+    }
+    const { dailyEntryId, categoryId, amount, note } = parsed.data
 
     // Verify branch ownership
-    const entry = await prisma.dailyEntry.findUnique({ where: { id: parseInt(dailyEntryId) } })
+    const entry = await prisma.dailyEntry.findUnique({ where: { id: dailyEntryId } })
     if (!entry) return NextResponse.json({ error: 'Entry not found' }, { status: 404 })
 
     if (userRole === 'BRANCH' && String(entry.branchId) !== String(userBranchId)) {
@@ -22,10 +38,10 @@ export async function POST(req: NextRequest) {
 
     const expenseEntry = await prisma.expenseEntry.create({
       data: {
-        dailyEntryId: parseInt(dailyEntryId),
-        categoryId: parseInt(categoryId),
-        amount: parseFloat(amount),
-        note,
+        dailyEntryId: dailyEntryId,
+        categoryId: categoryId,
+        amount: amount,
+        note: note,
       }
     })
 

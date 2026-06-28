@@ -6,6 +6,7 @@ import { toPng, toJpeg } from 'html-to-image'
 import toast from 'react-hot-toast'
 import { Download, Share2 } from 'lucide-react'
 import DailyReportTemplate from '@/components/reports/DailyReportTemplate'
+import { Button } from '@/components/ui/button'
 
 export default function DailyReportPage() {
   const [branches, setBranches] = useState<Branch[]>([])
@@ -155,7 +156,7 @@ export default function DailyReportPage() {
             <div className="flex-1">
               <label className="form-label">Branch</label>
               <select
-                className="form-input form-select"
+                className="flex h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1 text-sm text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50"
                 value={selectedBranchId}
                 onChange={e => setSelectedBranchId(e.target.value)}
                 disabled={branches.length === 1}
@@ -170,7 +171,7 @@ export default function DailyReportPage() {
               <label className="form-label">Date</label>
               <input
                 type="date"
-                className="form-input"
+                className="flex h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50"
                 value={selectedDate}
                 onChange={e => setSelectedDate(e.target.value)}
               />
@@ -190,18 +191,18 @@ export default function DailyReportPage() {
           <div>
             {/* Export Bar */}
             <div className="flex flex-wrap gap-3 mb-6">
-              <button className="btn btn-secondary flex items-center gap-2" onClick={exportAsPdf}>
+              <Button variant="outline" className="flex items-center gap-2" onClick={exportAsPdf}>
                 <Download size={16} /> Export PDF
-              </button>
-              <button className="btn btn-secondary flex items-center gap-2" onClick={() => exportAsImage('png')}>
+              </Button>
+              <Button variant="outline" className="flex items-center gap-2" onClick={() => exportAsImage('png')}>
                 <Download size={16} /> Export PNG
-              </button>
-              <button 
-                className="btn text-white bg-green-600 hover:bg-green-700 border-none flex items-center gap-2 font-semibold shadow-md shadow-green-900/20 transition-all" 
+              </Button>
+              <Button 
+                className="text-white bg-green-600 hover:bg-green-700 border-none flex items-center gap-2 font-semibold shadow-md shadow-green-900/20 transition-all" 
                 onClick={shareToWhatsApp}
               >
                 <Share2 size={16} /> Share to WhatsApp
-              </button>
+              </Button>
             </div>
 
             {/* Rendered Report Area */}

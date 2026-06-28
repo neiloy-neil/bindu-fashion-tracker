@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
 import { Plus, Edit2, Trash2 } from 'lucide-react'
 import { BrandSpinner } from '@/components/ui/BrandSpinner'
+import { Button } from '@/components/ui/button'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 
 type Tab = 'BRANCHES' | 'PARTIES' | 'ACCOUNTS' | 'EMPLOYEES'
@@ -14,7 +15,6 @@ export default function AdminSettings() {
   const [branches, setBranches] = useState<any[]>([])
   const [parties, setParties] = useState<any[]>([])
   const [accounts, setAccounts] = useState<any[]>([])
-  const [categories, setCategories] = useState<any[]>([])
   const [employees, setEmployees] = useState<any[]>([])
   
   const [loading, setLoading] = useState(true)
@@ -165,13 +165,13 @@ export default function AdminSettings() {
                   </span>
                 </TableCell>
                 <TableCell className="text-right flex justify-end gap-2">
-                  <button onClick={() => openModal(item)} className="p-2 hover:bg-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded transition-colors" title="Edit">
+                  <Button variant="ghost" size="icon" onClick={() => openModal(item)} className="h-8 w-8 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--border)]" title="Edit">
                     <Edit2 size={14} />
-                  </button>
+                  </Button>
                   {activeTab !== 'BRANCHES' && (
-                    <button onClick={() => handleDelete(item.id)} className="p-2 hover:bg-[var(--danger-subtle)]/50 text-[var(--text-secondary)] hover:text-[var(--danger)] rounded transition-colors" title="Delete">
+                    <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)} className="h-8 w-8 text-[var(--text-secondary)] hover:text-[var(--danger)] hover:bg-[var(--danger-subtle)]/50" title="Delete">
                       <Trash2 size={14} />
-                    </button>
+                    </Button>
                   )}
                 </TableCell>
               </TableRow>
@@ -192,18 +192,18 @@ export default function AdminSettings() {
       <>
         <div>
           <label className="text-sm text-[var(--text-secondary)] mb-1 block">Name</label>
-          <input type="text" name="name" defaultValue={selectedItem?.name} className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded p-2 text-white focus:outline-none focus:border-[var(--accent)]" required />
+          <input type="text" name="name" defaultValue={selectedItem?.name} className="flex h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1 text-sm text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50" required />
         </div>
 
         {activeTab === 'BRANCHES' && (
           <>
             <div>
               <label className="text-sm text-[var(--text-secondary)] mb-1 block">Code</label>
-              <input type="text" name="code" defaultValue={selectedItem?.code} className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded p-2 text-white focus:outline-none focus:border-[var(--accent)]" required />
+              <input type="text" name="code" defaultValue={selectedItem?.code} className="flex h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1 text-sm text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50" required />
             </div>
             <div>
               <label className="text-sm text-[var(--text-secondary)] mb-1 block">Branch Type</label>
-              <select name="type" defaultValue={selectedItem?.type || 'RETAIL'} className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded p-2 text-white focus:outline-none focus:border-[var(--accent)]" required>
+              <select name="type" defaultValue={selectedItem?.type || 'RETAIL'} className="flex h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1 text-sm text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50" required>
                 <option value="RETAIL">Retail</option>
                 <option value="WHOLESALE">Wholesale</option>
                 <option value="FACTORY">Factory</option>
@@ -211,16 +211,16 @@ export default function AdminSettings() {
             </div>
             <div>
               <label className="text-sm text-[var(--text-secondary)] mb-1 block">Address</label>
-              <textarea name="address" defaultValue={selectedItem?.address} className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded p-2 text-white focus:outline-none focus:border-[var(--accent)]" rows={2}></textarea>
+              <textarea name="address" defaultValue={selectedItem?.address} className="flex h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1 text-sm text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50" rows={2}></textarea>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-sm text-[var(--text-secondary)] mb-1 block">Contact Person</label>
-                <input type="text" name="contactPerson" defaultValue={selectedItem?.contactPerson} className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded p-2 text-white focus:outline-none focus:border-[var(--accent)]" />
+                <input type="text" name="contactPerson" defaultValue={selectedItem?.contactPerson} className="flex h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1 text-sm text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50" />
               </div>
               <div>
                 <label className="text-sm text-[var(--text-secondary)] mb-1 block">Phone Number</label>
-                <input type="text" name="phoneNumber" defaultValue={selectedItem?.phoneNumber} className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded p-2 text-white focus:outline-none focus:border-[var(--accent)]" />
+                <input type="text" name="phoneNumber" defaultValue={selectedItem?.phoneNumber} className="flex h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1 text-sm text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50" />
               </div>
             </div>
           </>
@@ -229,7 +229,7 @@ export default function AdminSettings() {
         {activeTab === 'ACCOUNTS' && (
           <div>
             <label className="text-sm text-[var(--text-secondary)] mb-1 block">Account Type</label>
-            <select name="type" defaultValue={selectedItem?.type || 'BRANCH'} className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded p-2 text-white focus:outline-none focus:border-[var(--accent)]" required>
+            <select name="type" defaultValue={selectedItem?.type || 'BRANCH'} className="flex h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1 text-sm text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50" required>
               <option value="BRANCH">Branch</option>
               <option value="COMPANY">Company</option>
               <option value="ONLINE_DEPARTMENT">Online Department</option>
@@ -240,7 +240,7 @@ export default function AdminSettings() {
 
         <div>
           <label className="text-sm text-[var(--text-secondary)] mb-1 block">Status</label>
-          <select name="isActive" defaultValue={selectedItem ? String(selectedItem.isActive) : 'true'} className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded p-2 text-white focus:outline-none focus:border-[var(--accent)]">
+          <select name="isActive" defaultValue={selectedItem ? String(selectedItem.isActive) : 'true'} className="flex h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1 text-sm text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50">
             <option value="true">Active</option>
             <option value="false">Inactive</option>
           </select>
@@ -259,7 +259,7 @@ export default function AdminSettings() {
       </div>
       <div className="flex-1 p-6 space-y-6 min-h-0 flex flex-col overflow-auto">
 
-      <div className="flex gap-4 border-b border-[var(--border)] overflow-x-auto whitespace-nowrap scrollbar-hide">
+      <div className="flex flex-wrap gap-4 border-b border-[var(--border)]">
         {tabs.map(tab => (
           <button 
             key={tab.id}
@@ -277,9 +277,9 @@ export default function AdminSettings() {
         <div>
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-xl font-bold text-white capitalize">{tabs.find(t => t.id === activeTab)?.label} Directory</h3>
-            <button className="btn btn-primary flex items-center gap-2" onClick={() => openModal()}>
+            <Button className="flex items-center gap-2" onClick={() => openModal()}>
               <Plus size={16} /> Add New
-            </button>
+            </Button>
           </div>
           {renderTable()}
         </div>
@@ -295,8 +295,8 @@ export default function AdminSettings() {
               {renderFormFields()}
               
               <div className="flex justify-end gap-3 mt-4">
-                <button type="button" className="btn btn-secondary" onClick={() => setModalOpen(false)}>Cancel</button>
-                <button type="submit" className="btn btn-primary">{selectedItem ? 'Save Changes' : 'Create'}</button>
+                <Button variant="outline" type="button" onClick={() => setModalOpen(false)}>Cancel</Button>
+                <Button type="submit">{selectedItem ? 'Save Changes' : 'Create'}</Button>
               </div>
             </form>
           </div>

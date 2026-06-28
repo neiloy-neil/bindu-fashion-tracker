@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react'
 import { BrandSpinner } from '@/components/ui/BrandSpinner'
+import { Button } from '@/components/ui/button'
 
 export default function ImportPage() {
   const [dragging, setDragging] = useState(false)
@@ -43,20 +44,47 @@ export default function ImportPage() {
     } catch (err: unknown) {
       setError((err as Error).message)
     } finally {
+    setFile(f)
+    setError('')
+    setResult(null)
+  }
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    setDragging(false)
+    const f = e.dataTransfer.files[0]
+    if (f) handleFile(f)
+  }
+
+  const handleImport = async () => {
+    if (!file) return
+    setLoading(true)
+    setError('')
+    setResult(null)
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      const res = await fetch('/api/entries/import', { method: 'POST', body: fd })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Import failed')
+      setResult(data)
+    } catch (err: unknown) {
+      setError((err as Error).message)
+    } finally {
       setLoading(false)
     }
   }
 
   return (
     <>
-      <div className="page-header">
+      <div className="sticky top-0 z-10 flex items-center justify-between gap-4 px-6 py-4 border-b border-[var(--border)] bg-[var(--surface)]">
         <div>
-          <h2 className="page-title">Import Excel</h2>
-          <p className="page-subtitle">Upload your Bindu Fashion Monthly Sheet .xlsx file</p>
+          <h2 className="text-lg font-semibold text-[var(--text-primary)]">Import Excel</h2>
+          <p className="text-sm text-[var(--text-muted)] mt-1">Upload your Bindu Fashion Monthly Sheet .xlsx file</p>
         </div>
       </div>
 
-      <div className="page-body">
+      <div className="flex-1 p-6 space-y-6">
         <div style={{ maxWidth: 640, margin: '0 auto' }}>
           {/* Drop zone */}
           <div
@@ -138,9 +166,9 @@ export default function ImportPage() {
           )}
 
           {file && !result && (
-            <button
-              className="btn btn-primary w-full"
-              style={{ marginTop: 20, justifyContent: 'center', padding: '14px' }}
+            <Button
+              className="w-full justify-center p-3"
+              style={{ marginTop: 20 }}
               onClick={handleImport}
               disabled={loading}
             >
@@ -150,7 +178,7 @@ export default function ImportPage() {
                   Importing…
                 </>
               ) : '📥 Import Data'}
-            </button>
+            </Button>
           )}
         </div>
       </div>

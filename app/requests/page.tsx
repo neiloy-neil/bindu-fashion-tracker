@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { toast } from 'react-hot-toast'
 import { BrandSpinner } from '@/components/ui/BrandSpinner'
+import { Button } from '@/components/ui/button'
 
 export default function BranchRequestsPage() {
   const [requests, setRequests] = useState<any[]>([])
@@ -121,17 +122,17 @@ export default function BranchRequestsPage() {
 
   return (
     <>
-      <div className="page-header flex justify-between items-center">
+      <div className="sticky top-0 z-10 flex items-center justify-between gap-4 px-6 py-4 border-b border-[var(--border)] bg-[var(--surface)]">
         <div>
-          <h2 className="page-title">Support Requests</h2>
-          <p className="page-subtitle">Submit requests for maintenance, supplies, staff, or other needs</p>
+          <h2 className="text-lg font-semibold text-[var(--text-primary)]">Support Requests</h2>
+          <p className="text-sm text-[var(--text-muted)] mt-1">Submit requests for maintenance, supplies, staff, or other needs</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowModal(true)}>
+        <Button onClick={() => setShowModal(true)}>
           + New Request
-        </button>
+        </Button>
       </div>
 
-      <div className="page-body p-5">
+      <div className="flex-1 p-6 space-y-6">
         {loading ? (
           <div className="flex justify-center items-center h-40">
             <BrandSpinner />
@@ -186,7 +187,7 @@ export default function BranchRequestsPage() {
               <div>
                 <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">Request Type</label>
                 <select 
-                  className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-lg px-3 py-2 text-white focus:outline-none focus:border-[var(--accent)]"
+                  className="flex h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1 text-sm text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50"
                   value={type}
                   onChange={e => setType(e.target.value)}
                 >
@@ -199,7 +200,7 @@ export default function BranchRequestsPage() {
               <div>
                 <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">Priority</label>
                 <select 
-                  className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-lg px-3 py-2 text-white focus:outline-none focus:border-[var(--accent)]"
+                  className="flex h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1 text-sm text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50"
                   value={priority}
                   onChange={e => setPriority(e.target.value)}
                 >
@@ -212,7 +213,7 @@ export default function BranchRequestsPage() {
               <div>
                 <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">Description</label>
                 <textarea
-                  className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-lg px-3 py-2 text-white focus:outline-none focus:border-[var(--accent)] h-32 resize-none"
+                  className="flex min-h-[80px] w-full rounded-md border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50 h-32 resize-none"
                   placeholder="Describe what you need in detail..."
                   value={description}
                   onChange={e => setDescription(e.target.value)}
@@ -228,12 +229,12 @@ export default function BranchRequestsPage() {
                 />
               </div>
               <div className="flex justify-end gap-3 mt-2">
-                <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 rounded-lg text-sm font-medium text-[var(--text-secondary)] hover:text-white hover:bg-[var(--border)]">
+                <Button variant="outline" type="button" onClick={() => setShowModal(false)}>
                   Cancel
-                </button>
-                <button type="submit" disabled={submitting} className="px-4 py-2 rounded-lg text-sm font-bold bg-[var(--accent)] text-black hover:bg-[var(--accent-dark)] disabled:opacity-50">
+                </Button>
+                <Button type="submit" disabled={submitting}>
                   {submitting ? 'Submitting...' : 'Submit'}
-                </button>
+                </Button>
               </div>
             </form>
           </div>

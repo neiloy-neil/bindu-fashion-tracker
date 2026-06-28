@@ -319,7 +319,7 @@ function EmployeeModalForm({
             </div>
             <div className="space-y-1.5">
               <Label>Photo Upload</Label>
-              <Input type="file" accept="image/*" onChange={e => setPhotoFile(e.target.files?.[0] || null)} />
+              <Input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={e => setPhotoFile(e.target.files?.[0] || null)} />
             </div>
           </div>
         )}

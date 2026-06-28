@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { PlusCircle, Pencil, ToggleLeft, ToggleRight } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
+import { Button } from '@/components/ui/button'
 
 type User = {
   id: number
@@ -178,14 +179,14 @@ export default function UsersPage() {
             ].map(f => (
               <div key={f.label}>
                 <label className="block text-sm text-[var(--text-muted)] mb-1">{f.label}</label>
-                <input required={f.required} type={f.type} className="form-input w-full" value={f.value}
+                <input required={f.required} type={f.type} className="flex h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50" value={f.value}
                   onChange={e => f.set(e.target.value)} />
               </div>
             ))}
 
             <div>
               <label className="block text-sm text-[var(--text-muted)] mb-1">Role</label>
-              <select className="form-input form-select w-full" value={createRole} onChange={e => setCreateRole(e.target.value)}>
+              <select className="flex h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1 text-sm text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50" value={createRole} onChange={e => setCreateRole(e.target.value)}>
                 {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
               </select>
             </div>
@@ -194,14 +195,14 @@ export default function UsersPage() {
               <>
                 <div>
                   <label className="block text-sm text-[var(--text-muted)] mb-1">Branch</label>
-                  <select className="form-input form-select w-full" value={createBranchId} onChange={e => setCreateBranchId(e.target.value)}>
+                  <select className="flex h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1 text-sm text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50" value={createBranchId} onChange={e => setCreateBranchId(e.target.value)}>
                     <option value="">-- Select Branch --</option>
                     {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="block text-sm text-[var(--text-muted)] mb-1">Linked Employee (Optional)</label>
-                  <select className="form-input form-select w-full" value={createEmployeeId} onChange={e => setCreateEmployeeId(e.target.value)}>
+                  <select className="flex h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1 text-sm text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50" value={createEmployeeId} onChange={e => setCreateEmployeeId(e.target.value)}>
                     <option value="">-- None --</option>
                     {employees.map(e => <option key={e.id} value={e.id}>{e.name} ({e.employeeId})</option>)}
                   </select>
@@ -224,9 +225,9 @@ export default function UsersPage() {
               </div>
             )}
 
-            <button type="submit" className="w-full mt-2 py-2 rounded font-medium flex items-center justify-center bg-[var(--accent)] hover:bg-[var(--accent)]/80 text-black">
+            <Button type="submit" className="w-full mt-2 flex items-center justify-center">
               <PlusCircle size={16} className="mr-2" /> Create User
-            </button>
+            </Button>
           </form>
         </div>
 
@@ -270,9 +271,9 @@ export default function UsersPage() {
                       </button>
                     </TableCell>
                     <TableCell className="text-right">
-                      <button onClick={() => openEdit(u)} className="btn btn-secondary text-xs px-3 h-8 flex items-center gap-1.5 ml-auto">
+                      <Button variant="outline" size="sm" onClick={() => openEdit(u)} className="text-xs px-3 h-8 flex items-center gap-1.5 ml-auto">
                         <Pencil size={13} /> Edit
-                      </button>
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -294,31 +295,31 @@ export default function UsersPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm text-[var(--text-muted)] mb-1">Username</label>
-                  <input className="form-input w-full" value={editUsername} onChange={e => setEditUsername(e.target.value)} />
+                  <input className="flex h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50" value={editUsername} onChange={e => setEditUsername(e.target.value)} />
                 </div>
                 <div>
                   <label className="block text-sm text-[var(--text-muted)] mb-1">Phone Number</label>
-                  <input className="form-input w-full" type="tel" value={editPhone} onChange={e => setEditPhone(e.target.value)} placeholder="Optional" />
+                  <input className="flex h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50" type="tel" value={editPhone} onChange={e => setEditPhone(e.target.value)} placeholder="Optional" />
                 </div>
               </div>
               <div>
                 <label className="block text-sm text-[var(--text-muted)] mb-1">Email</label>
-                <input className="form-input w-full" type="email" value={editEmail} onChange={e => setEditEmail(e.target.value)} placeholder="Optional" />
+                <input className="flex h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50" type="email" value={editEmail} onChange={e => setEditEmail(e.target.value)} placeholder="Optional" />
               </div>
               <div>
                 <label className="block text-sm text-[var(--text-muted)] mb-1">New Password <span className="text-[var(--text-muted)] font-normal">(leave blank to keep current)</span></label>
-                <input className="form-input w-full" type="password" value={editPassword} onChange={e => setEditPassword(e.target.value)} placeholder="Min 6 characters" />
+                <input className="flex h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50" type="password" value={editPassword} onChange={e => setEditPassword(e.target.value)} placeholder="Min 6 characters" />
               </div>
               <div>
                 <label className="block text-sm text-[var(--text-muted)] mb-1">Role</label>
-                <select className="form-input form-select w-full" value={editRole} onChange={e => setEditRole(e.target.value)}>
+                <select className="flex h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1 text-sm text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50" value={editRole} onChange={e => setEditRole(e.target.value)}>
                   {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
                 </select>
               </div>
               {editRole === 'BRANCH' && (
                 <div>
                   <label className="block text-sm text-[var(--text-muted)] mb-1">Branch</label>
-                  <select className="form-input form-select w-full" value={editBranchId} onChange={e => setEditBranchId(e.target.value)}>
+                  <select className="flex h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1 text-sm text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50" value={editBranchId} onChange={e => setEditBranchId(e.target.value)}>
                     <option value="">-- Select Branch --</option>
                     {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                   </select>
@@ -347,10 +348,10 @@ export default function UsersPage() {
               </div>
             </div>
             <div className="px-6 py-4 border-t border-[var(--border)] flex justify-end gap-3">
-              <button onClick={() => setEditUser(null)} className="btn btn-secondary px-4">Cancel</button>
-              <button onClick={handleEditSave} disabled={editSaving} className="btn bg-[var(--accent)] text-black px-6 hover:bg-[var(--accent)]/80">
+              <Button variant="outline" onClick={() => setEditUser(null)} className="px-4">Cancel</Button>
+              <Button onClick={handleEditSave} disabled={editSaving} className="px-6">
                 {editSaving ? 'Saving…' : 'Save Changes'}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

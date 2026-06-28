@@ -11,7 +11,7 @@ export default async function ChequesPage() {
   if (session.user.role !== 'ADMIN' && session.user.role !== 'SUPER_ADMIN') redirect('/entries')
 
   return (
-    <div className="page-body">
+    <div className="flex-1 p-6 space-y-6">
       <ChequesClient />
     </div>
   )

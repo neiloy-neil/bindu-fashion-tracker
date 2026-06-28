@@ -320,7 +320,7 @@ model Payment {
   amount         Float
   note           String?
   attachmentUrl  String?
-  approvalStatus String   @default("APPROVED")
+  approvalStatus String   @default("PENDING")
   createdAt      DateTime @default(now())
 
   dailyEntry DailyEntry? @relation(fields: [dailyEntryId], references: [id])

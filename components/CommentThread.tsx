@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { X, Send } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { Button } from '@/components/ui/button'
 
 type Comment = {
   id: number
@@ -84,18 +85,19 @@ export default function CommentThread({ entryId, branchName, date, onClose }: { 
       <form onSubmit={handleSend} className="p-4 border-t border-[var(--border)] bg-[var(--bg-card)] flex gap-2">
         <input 
           type="text" 
-          className="form-input flex-1 bg-[var(--bg-secondary)] focus:ring-2 focus:ring-[var(--accent)] rounded-full px-4"
+          className="flex h-10 w-full flex-1 rounded-full border border-[var(--border)] bg-[var(--bg-secondary)] px-4 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50"
           placeholder="Type a message..."
           value={message}
           onChange={e => setMessage(e.target.value)}
         />
-        <button 
+        <Button 
           type="submit" 
           disabled={!message.trim() || sending}
-          className="bg-[var(--accent)] hover:bg-[var(--accent-dark)] disabled:bg-[var(--border)] disabled:text-[var(--text-secondary)] text-[var(--bg-card)] w-10 h-10 rounded-full flex items-center justify-center transition-colors"
+          size="icon"
+          className="rounded-full h-10 w-10 shrink-0"
         >
           <Send size={16} className={sending ? 'opacity-50' : ''} />
-        </button>
+        </Button>
       </form>
     </div>
   )

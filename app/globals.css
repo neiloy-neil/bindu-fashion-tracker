@@ -70,30 +70,32 @@
   --chart-3: 220 70% 60%;
   --chart-4: 13 84% 55%;
   --chart-5: 215 20% 65%;
+
+  /* shadcn semantic aliases — point to existing custom tokens */
+  --foreground:            var(--text-primary);
+  --card:                  var(--surface);
+  --card-foreground:       var(--text-primary);
+  --popover:               var(--surface-raised);
+  --popover-foreground:    var(--text-primary);
+  --primary:               var(--accent);
+  --primary-foreground:    var(--brand-ivory);
+  --secondary:             var(--surface-raised);
+  --secondary-foreground:  var(--text-primary);
+  --muted:                 var(--surface-raised);
+  --muted-foreground:      var(--text-muted);
+  --destructive:           var(--danger);
+  --destructive-foreground: var(--brand-ivory);
+  --input:                 var(--border);
+  --ring:                  var(--accent);
+
+  /* Back-compat aliases for unmigrated pages */
+  --bg-card:               var(--surface);
+  --bg-primary:            var(--background);
+  --bg-secondary:          var(--surface-raised);
+  --bg-hover:              var(--surface-raised);
 }
 
-/* shadcn CSS vars (HSL format required by shadcn components) */
-:root {
-  --background:          var(--background-hsl);
-  --foreground:          var(--foreground-hsl);
-  --card:                var(--card-hsl);
-  --card-foreground:     var(--card-foreground-hsl);
-  --popover:             var(--popover-hsl);
-  --popover-foreground:  var(--popover-foreground-hsl);
-  --primary:             var(--primary-hsl);
-  --primary-foreground:  var(--primary-foreground-hsl);
-  --secondary:           var(--secondary-hsl);
-  --secondary-foreground: var(--secondary-foreground-hsl);
-  --muted:               var(--muted-hsl);
-  --muted-foreground:    var(--muted-foreground-hsl);
-  --accent:              var(--accent-hsl);
-  --accent-foreground:   var(--accent-foreground-hsl);
-  --destructive:         var(--destructive-hsl);
-  --destructive-foreground: var(--destructive-foreground-hsl);
-  --border:              var(--border-hsl);
-  --input:               var(--input-hsl);
-  --ring:                var(--ring-hsl);
-}
+
 
 /* ─── Light theme ───────────────────────────────── */
 .light {
@@ -123,47 +125,52 @@
   --info:                #2563EB;
   --info-subtle:         rgba(37,99,235,0.10);
 
-  /* shadcn light overrides */
-  --background-hsl:         0 0% 98%;
-  --foreground-hsl:         222 47% 6%;
-  --card-hsl:               0 0% 100%;
-  --card-foreground-hsl:    222 47% 6%;
-  --popover-hsl:            0 0% 100%;
-  --popover-foreground-hsl: 222 47% 6%;
-  --secondary-hsl:          220 14% 96%;
-  --secondary-foreground-hsl: 222 47% 6%;
-  --muted-hsl:              220 14% 96%;
-  --muted-foreground-hsl:   215 16% 47%;
-  --border-hsl:             220 13% 91%;
-  --input-hsl:              220 13% 91%;
+  --foreground:            var(--text-primary);
+  --card:                  var(--surface);
+  --card-foreground:       var(--text-primary);
+  --popover:               var(--surface);
+  --popover-foreground:    var(--text-primary);
+  --primary:               var(--accent);
+  --primary-foreground:    var(--brand-ivory);
+  --secondary:             var(--surface-raised);
+  --secondary-foreground:  var(--text-primary);
+  --muted:                 var(--surface-raised);
+  --muted-foreground:      var(--text-muted);
+  --destructive:           var(--danger);
+  --destructive-foreground: var(--brand-ivory);
+  --input:                 var(--border);
+  --ring:                  var(--accent);
+  --bg-card:               var(--surface);
+  --bg-primary:            var(--background);
+  --bg-secondary:          var(--surface-raised);
 }
 
 /* ─── Tailwind v4 @theme mapping ─────────────────── */
 @theme inline {
-  --color-background:          hsl(var(--background));
-  --color-foreground:          hsl(var(--foreground));
-  --color-card:                hsl(var(--card));
-  --color-card-foreground:     hsl(var(--card-foreground));
-  --color-popover:             hsl(var(--popover));
-  --color-popover-foreground:  hsl(var(--popover-foreground));
-  --color-primary:             hsl(var(--primary));
-  --color-primary-foreground:  hsl(var(--primary-foreground));
-  --color-secondary:           hsl(var(--secondary));
-  --color-secondary-foreground: hsl(var(--secondary-foreground));
-  --color-muted:               hsl(var(--muted));
-  --color-muted-foreground:    hsl(var(--muted-foreground));
-  --color-accent:              hsl(var(--accent));
-  --color-accent-foreground:   hsl(var(--accent-foreground));
-  --color-destructive:         hsl(var(--destructive));
-  --color-destructive-foreground: hsl(var(--destructive-foreground));
-  --color-border:              hsl(var(--border));
-  --color-input:               hsl(var(--input));
-  --color-ring:                hsl(var(--ring));
-  --color-chart-1:             hsl(var(--chart-1));
-  --color-chart-2:             hsl(var(--chart-2));
-  --color-chart-3:             hsl(var(--chart-3));
-  --color-chart-4:             hsl(var(--chart-4));
-  --color-chart-5:             hsl(var(--chart-5));
+  --color-background:             var(--background);
+  --color-foreground:             var(--text-primary);
+  --color-card:                   var(--surface);
+  --color-card-foreground:        var(--text-primary);
+  --color-popover:                var(--surface-raised);
+  --color-popover-foreground:     var(--text-primary);
+  --color-primary:                var(--accent);
+  --color-primary-foreground:     var(--brand-ivory);
+  --color-secondary:              var(--surface-raised);
+  --color-secondary-foreground:   var(--text-primary);
+  --color-muted:                  var(--surface-raised);
+  --color-muted-foreground:       var(--text-muted);
+  --color-accent:                 var(--accent);
+  --color-accent-foreground:      var(--brand-ivory);
+  --color-destructive:            var(--danger);
+  --color-destructive-foreground: var(--brand-ivory);
+  --color-border:                 var(--border);
+  --color-input:                  var(--border);
+  --color-ring:                   var(--accent);
+  --color-chart-1:                var(--accent);
+  --color-chart-2:                var(--success);
+  --color-chart-3:                #3B82F6;
+  --color-chart-4:                var(--danger);
+  --color-chart-5:                var(--text-secondary);
   --radius-sm:  calc(var(--radius) - 4px);
   --radius-md:  calc(var(--radius) - 2px);
   --radius-lg:  var(--radius);

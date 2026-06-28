@@ -18,6 +18,7 @@ import { PaymentSection } from './PaymentSection'
 import { AdvanceSalarySection } from './AdvanceSalarySection'
 import { EODChecklistModal } from './EODChecklistModal'
 import { BrandSpinner } from '@/components/ui/BrandSpinner'
+import { Button } from '@/components/ui/button'
 
 const generateId = () => Math.random().toString(36).substring(2, 9)
 
@@ -82,28 +83,24 @@ export function NewEntryForm({ initialData, userId }: Props) {
   const date = useWatch({ control, name: 'formMeta.date' })
   const actualPhysicalCash = useWatch({ control, name: 'actualPhysicalCash' })
   
-  const incomeAmounts = useWatch({ control, name: incomeFields.map((_, i) => `incomeItems.${i}.amount` as const) })
-  const incomeCategories = useWatch({ control, name: incomeFields.map((_, i) => `incomeItems.${i}.categoryId` as const) })
-  const expenseAmounts = useWatch({ control, name: expenseFields.map((_, i) => `expenseEntries.${i}.amount` as const) })
-  const transferAmounts = useWatch({ control, name: transferFields.map((_, i) => `transfers.${i}.amount` as const) })
-  const paymentAmounts = useWatch({ control, name: paymentFields.map((_, i) => `payments.${i}.amount` as const) })
-  const paymentMethods = useWatch({ control, name: paymentFields.map((_, i) => `payments.${i}.method` as const) })
-  const advanceAmounts = useWatch({ control, name: advanceFields.map((_, i) => `advanceSalaries.${i}.amount` as const) })
-  const advanceTypes = useWatch({ control, name: advanceFields.map((_, i) => `advanceSalaries.${i}.type` as const) })
+  const incomeItemsWatch = useWatch({ control, name: 'incomeItems' })
+  const expenseEntriesWatch = useWatch({ control, name: 'expenseEntries' })
+  const transfersWatch = useWatch({ control, name: 'transfers' })
+  const paymentsWatch = useWatch({ control, name: 'payments' })
+  const advanceSalariesWatch = useWatch({ control, name: 'advanceSalaries' })
   
-  const payments = useWatch({ control, name: 'payments' })
-  const hasInvalidPayments = payments?.some(p => (p.method === 'BANK' || p.method === 'CHEQUE') && !p.attachmentKey)
+  const hasInvalidPayments = paymentsWatch?.some(p => (p.method === 'BANK' || p.method === 'CHEQUE') && !p.attachmentKey)
 
   const totals = useMemo(() => {
     const fakeEntry = {
-      items: (incomeAmounts || []).map((amt, i) => ({ amount: Number(amt), category: categories.find(c => c.id === Number(incomeCategories[i])) || null })),
-      transfers: (transferAmounts || []).map(amt => ({ amount: Number(amt) })),
-      payments: (paymentAmounts || []).map((amt, i) => ({ amount: Number(amt), method: paymentMethods[i] })),
-      expenseEntries: (expenseAmounts || []).map(amt => ({ amount: Number(amt) })),
-      advanceSalaries: (advanceAmounts || []).map((amt, i) => ({ amount: Number(amt), type: advanceTypes[i] }))
+      items: (incomeItemsWatch || []).map(item => ({ amount: Number(item.amount), category: categories.find(c => String(c.id) === String(item.categoryId)) || null })),
+      transfers: (transfersWatch || []).map(t => ({ amount: Number(t.amount) })),
+      payments: (paymentsWatch || []).map(p => ({ amount: Number(p.amount), method: p.method })),
+      expenseEntries: (expenseEntriesWatch || []).map(e => ({ amount: Number(e.amount) })),
+      advanceSalaries: (advanceSalariesWatch || []).map(a => ({ amount: Number(a.amount), type: a.type }))
     }
     return computeTotals(fakeEntry)
-  }, [incomeAmounts, incomeCategories, expenseAmounts, transferAmounts, paymentAmounts, paymentMethods, advanceAmounts, advanceTypes, categories])
+  }, [incomeItemsWatch, expenseEntriesWatch, transfersWatch, paymentsWatch, advanceSalariesWatch, categories])
 
   const selectedBranchObj = useMemo(() => branches.find(b => String(b.id) === branchId), [branches, branchId])
   const isFactory = selectedBranchObj?.type === 'FACTORY'
@@ -184,13 +181,7 @@ export function NewEntryForm({ initialData, userId }: Props) {
         const note = item.detail.note?.trim()
         const rawFiles = item.detail.files || []
         
-        if (note && rawFiles.length === 0) {
-          toast.error("Receipt image is required when a note is provided for Income/Expense.")
-          toast.dismiss(uploadToast)
-          setLoading(false)
-          return
-        }
-        
+
         // Upload any pending File objects
         const uploadedKeys = await Promise.all(rawFiles.map(f => uploadFile(f)))
         const validKeys = uploadedKeys.filter(Boolean) as string[]
@@ -278,8 +269,8 @@ export function NewEntryForm({ initialData, userId }: Props) {
   }
 
   // Common UI classes
-  const inputClass = "form-input h-10 w-full text-sm bg-card border-border"
-  const selectClass = "form-input form-select h-10 w-full text-sm bg-card border-border"
+  const inputClass = "flex h-10 w-full rounded-md border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50"
+  const selectClass = "flex h-10 w-full rounded-md border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50"
 
   return (
     <>
@@ -402,7 +393,7 @@ export function NewEntryForm({ initialData, userId }: Props) {
               <input 
                 id="actualPhysicalCash"
                 type="number" 
-                className="form-input w-full h-12 text-lg font-mono focus:ring-2 focus:ring-primary border-primary/50 bg-card/80"
+                className="flex h-12 w-full rounded-md border border-[var(--accent)]/50 bg-[var(--surface)]/80 px-3 py-2 text-lg font-mono text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50"
                 placeholder="Enter exact cash amount"
                 {...form.register('actualPhysicalCash')}
               />
@@ -420,7 +411,7 @@ export function NewEntryForm({ initialData, userId }: Props) {
               </div>
               <input 
                 type="text" 
-                className="form-input w-full text-sm border-destructive/30 focus:border-destructive bg-card" 
+                className="flex h-9 w-full rounded-md border border-destructive/30 bg-[var(--surface)] px-3 py-1 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive disabled:opacity-50" 
                 placeholder="Reason for cash discrepancy... (Required)"
                 {...form.register('cashDifferenceNote')}
               />
@@ -430,21 +421,21 @@ export function NewEntryForm({ initialData, userId }: Props) {
 
         {/* Submission Actions */}
         <div className="flex flex-col-reverse sm:flex-row gap-3 justify-between items-stretch sm:items-center bg-card p-4 border border-border rounded-lg mt-8 shadow-2xl sticky bottom-4 z-40">
-          <button 
+          <Button 
+            variant="outline"
             type="button" 
-            className="btn btn-secondary" 
             onClick={() => router.push('/entries')}
             disabled={loading}
           >
             Cancel
-          </button>
-          <button 
+          </Button>
+          <Button 
             type="submit" 
-            className="w-full sm:w-auto py-4 px-8 bg-[var(--accent)] hover:bg-[var(--accent-dark)] text-white font-bold rounded-lg shadow-lg shadow-[var(--accent-glow)] transition-all flex justify-center items-center"
+            className="w-full sm:w-auto py-6 px-8 bg-[var(--accent)] hover:bg-[var(--accent-dark)] text-white font-bold shadow-lg shadow-[var(--accent-glow)] text-lg"
             disabled={loading || hasInvalidPayments}
           >
             {loading ? <BrandSpinner size={16} /> : 'Close Register'}
-          </button>
+          </Button>
         </div>
       </form>
 

@@ -3,6 +3,7 @@ import { toast } from 'react-hot-toast'
 import { formatDate } from '@/lib/utils'
 import { Eye } from 'lucide-react'
 import EntryViewModal from '@/components/dashboard/EntryViewModal'
+import { Button } from '@/components/ui/button'
 
 export default function AdminEditRequests() {
   const [requests, setRequests] = useState<any[]>([])
@@ -86,15 +87,11 @@ export default function AdminEditRequests() {
               </div>
             </div>
             <div className="flex gap-2 items-center">
-              <button 
-                className="p-1.5 text-[var(--accent)] hover:bg-[var(--accent)]/10 rounded transition-colors"
-                title="View Full Entry"
-                onClick={() => setViewingEntry({ entry: req.entry, changes: req.changes })}
-              >
+              <Button size="icon" variant="ghost" className="h-8 w-8 text-[var(--accent)] hover:text-[var(--accent)] hover:bg-[var(--accent)]/10" title="View Full Entry" onClick={() => setViewingEntry({ entry: req.entry, changes: req.changes })}>
                 <Eye size={18} />
-              </button>
-              <button className="btn btn-primary" style={{ padding: '6px 12px', fontSize: 12 }} onClick={() => handleAction(req.id, 'APPROVED')}>Approve</button>
-              <button className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: 12 }} onClick={() => handleAction(req.id, 'REJECTED')}>Reject</button>
+              </Button>
+              <Button size="sm" onClick={() => handleAction(req.id, 'APPROVED')}>Approve</Button>
+              <Button variant="outline" size="sm" onClick={() => handleAction(req.id, 'REJECTED')}>Reject</Button>
             </div>
           </div>
         ))}

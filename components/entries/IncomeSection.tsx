@@ -42,7 +42,7 @@ export function IncomeSection({ control, register, setValue, categories, inputCl
           )}
           
           <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
-            <div className="sm:col-span-3">
+            <div className="sm:col-span-4">
               <select 
                 className={`${selectClass} ${isOpeningBalance ? 'opacity-70 pointer-events-none' : ''}`} 
                 {...register(`incomeItems.${idx}.categoryId` as const)}
@@ -54,7 +54,7 @@ export function IncomeSection({ control, register, setValue, categories, inputCl
               </select>
               {errors.incomeItems?.[idx]?.categoryId?.message && <span className="text-xs text-destructive mt-1 block">{errors.incomeItems[idx].categoryId.message}</span>}
             </div>
-            <div className="sm:col-span-2">
+            <div className="sm:col-span-3">
               <input 
                 type="number"
                 className={`text-right tabular-nums font-mono ${inputClass} ${isOpeningBalance ? 'opacity-70 pointer-events-none' : ''}`} 
@@ -64,11 +64,8 @@ export function IncomeSection({ control, register, setValue, categories, inputCl
               />
               {errors.incomeItems?.[idx]?.amount?.message && <span className="text-xs text-destructive mt-1 block">{errors.incomeItems[idx].amount.message}</span>}
             </div>
-            <div className="sm:col-span-4">
+            <div className="sm:col-span-5">
               <input type="text" className={inputClass} placeholder="Note" {...register(`incomeItems.${idx}.detail.note` as const)} />
-            </div>
-            <div className="sm:col-span-3">
-              <input type="text" className={inputClass} placeholder="Party Name (Optional)" {...register(`incomeItems.${idx}.detail.partyName` as const)} />
             </div>
             
             {/* Supabase URL File Upload */}
@@ -81,7 +78,7 @@ export function IncomeSection({ control, register, setValue, categories, inputCl
               <input 
                 type="file" 
                 multiple
-                accept="image/*,.pdf"
+                accept="image/jpeg,image/png,image/webp,image/gif,application/pdf"
                 disabled={uploadingAttachment[idx]}
                 className="block w-full text-xs text-muted-foreground file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-primary file:text-primary-foreground hover:file:opacity-90 cursor-pointer"
                 onChange={(e) => {

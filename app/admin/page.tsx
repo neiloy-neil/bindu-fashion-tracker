@@ -114,7 +114,7 @@ export default function AdminAnalyticsDashboard() {
 
         <div className="flex flex-wrap items-center gap-3 bg-[var(--bg-card)] p-2 rounded-lg border border-[var(--border)]">
           <select 
-            className="form-select bg-[var(--bg-card)] border-[var(--border)] text-sm py-1.5"
+            className="flex h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1 text-sm text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
             value={dateRange}
             onChange={(e) => setDateRange(e.target.value)}
           >
@@ -129,14 +129,14 @@ export default function AdminAnalyticsDashboard() {
             <div className="flex items-center gap-2">
               <input 
                 type="date" 
-                className="form-input bg-[var(--bg-card)] border-[var(--border)] text-sm py-1.5"
+                className="flex h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50"
                 value={customStart}
                 onChange={e => setCustomStart(e.target.value)}
               />
               <span className="text-[var(--text-secondary)]">to</span>
               <input 
                 type="date" 
-                className="form-input bg-[var(--bg-card)] border-[var(--border)] text-sm py-1.5"
+                className="flex h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50"
                 value={customEnd}
                 onChange={e => setCustomEnd(e.target.value)}
               />

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { BrandSpinner } from '@/components/ui/BrandSpinner'
+import { Button } from '@/components/ui/button'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 
 type AuditLog = {
@@ -97,7 +98,7 @@ export default function AuditLogsPage() {
         <div>
           <label className="block text-xs text-[var(--text-muted)] mb-1 uppercase tracking-wider">Action</label>
           <select 
-            className="form-input form-select bg-[var(--bg-card)] text-sm py-1.5"
+            className="flex h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1 text-sm text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
             value={filterAction}
             onChange={e => { setFilterAction(e.target.value); setPage(1); }}
           >
@@ -110,7 +111,7 @@ export default function AuditLogsPage() {
         <div>
           <label className="block text-xs text-[var(--text-muted)] mb-1 uppercase tracking-wider">Entity</label>
           <select 
-            className="form-input form-select bg-[var(--bg-card)] text-sm py-1.5"
+            className="flex h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1 text-sm text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
             value={filterEntity}
             onChange={e => { setFilterEntity(e.target.value); setPage(1); }}
           >
@@ -208,20 +209,22 @@ export default function AuditLogsPage() {
               Page {page} of {totalPages || 1}
             </span>
             <div className="flex gap-2">
-              <button 
-                className="btn btn-secondary py-1 px-3" 
+              <Button 
+                variant="outline" 
+                size="sm"
                 disabled={page <= 1}
                 onClick={() => setPage((p: number) => p - 1)}
               >
                 Previous
-              </button>
-              <button 
-                className="btn btn-secondary py-1 px-3"
+              </Button>
+              <Button 
+                variant="outline"
+                size="sm"
                 disabled={page >= totalPages}
                 onClick={() => setPage((p: number) => p + 1)}
               >
                 Next
-              </button>
+              </Button>
             </div>
           </div>
         </div>

@@ -5,6 +5,7 @@ import { Plus, Edit2, Trash2, CheckCircle2, XCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { Category } from '@/lib/types'
 import { BrandSpinner } from '@/components/ui/BrandSpinner'
+import { Button } from '@/components/ui/button'
 
 const FREQUENCIES = [
   { value: 'DAILY',     label: 'Daily' },
@@ -170,19 +171,19 @@ export default function CategoriesPage() {
 
   return (
     <>
-      <div className="page-header">
+      <div className="sticky top-0 z-10 flex items-center justify-between gap-4 px-6 py-4 border-b border-[var(--border)] bg-[var(--surface)]">
         <div>
-          <h2 className="page-title">Manage Categories</h2>
-          <p className="page-subtitle">Income and expense categories used in daily entries</p>
+          <h2 className="text-lg font-semibold text-[var(--text-primary)]">Manage Categories</h2>
+          <p className="text-sm text-[var(--text-muted)] mt-1">Income and expense categories used in daily entries</p>
         </div>
         <div className="page-actions">
-          <button className="btn btn-primary" onClick={openNew}>
+          <Button onClick={openNew}>
             <Plus size={18} /> New Category
-          </button>
+          </Button>
         </div>
       </div>
 
-      <div className="page-body">
+      <div className="flex-1 p-6 space-y-6">
         {loading ? (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '200px', gap: 12 }}>
             <BrandSpinner />
@@ -207,13 +208,13 @@ export default function CategoriesPage() {
             <form onSubmit={handleSave} className="p-6 flex flex-col gap-5">
               <div className="form-group">
                 <label className="form-label">Category Name</label>
-                <input className="form-input" value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Shop Rent" autoFocus />
+                <input className="flex h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50" value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Shop Rent" autoFocus />
               </div>
 
               <div className="form-group">
                 <label className="form-label">Type</label>
                 <select
-                  className="form-input"
+                  className="flex h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50"
                   value={type}
                   onChange={e => setType(e.target.value as 'INCOME' | 'EXPENSE')}
                   disabled={!!editingCategory?.isDefault}
@@ -226,7 +227,7 @@ export default function CategoriesPage() {
               {type === 'EXPENSE' && (
                 <div className="form-group">
                   <label className="form-label">Frequency</label>
-                  <select className="form-input" value={frequency} onChange={e => setFrequency(e.target.value)}>
+                  <select className="flex h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50" value={frequency} onChange={e => setFrequency(e.target.value)}>
                     {FREQUENCIES.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
                   </select>
                   <p className="text-xs text-[var(--text-secondary)] mt-1">
@@ -241,8 +242,8 @@ export default function CategoriesPage() {
               </div>
 
               <div className="flex gap-3 pt-4 border-t border-[var(--border)]">
-                <button type="button" onClick={() => setShowModal(false)} className="btn btn-secondary flex-1">Cancel</button>
-                <button type="submit" className="btn btn-primary flex-1">Save Category</button>
+                <Button variant="outline" type="button" onClick={() => setShowModal(false)} className="flex-1">Cancel</Button>
+                <Button type="submit" className="flex-1">Save Category</Button>
               </div>
             </form>
           </div>

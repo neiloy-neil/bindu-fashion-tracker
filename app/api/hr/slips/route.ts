@@ -54,7 +54,11 @@ export async function GET(req: NextRequest) {
         ...(effectiveEmployeeId ? { employeeId: parseInt(effectiveEmployeeId) } : {})
       },
       include: {
-        employee: true
+        employee: {
+          include: {
+            branch: true
+          }
+        }
       },
       orderBy: { employee: { id: 'asc' } }
     })

@@ -359,7 +359,7 @@ function Dashboard() {
     fetcher
   )
   const { data: chequesCountData } = useSWR(
-    userRole === 'ADMIN' ? '/api/admin/cheques?status=PENDING' : null,
+    userRole === 'ADMIN' ? '/api/cheques?status=PENDING' : null,
     fetcher
   )
 

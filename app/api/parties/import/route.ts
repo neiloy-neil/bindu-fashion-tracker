@@ -15,9 +15,15 @@ export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData()
     const file = formData.get('file') as File
+    const mappingStr = formData.get('mapping') as string
     
     if (!file) {
       return NextResponse.json({ error: 'No file uploaded' }, { status: 400 })
+    }
+
+    let mappingConfig: Record<string, string> = {}
+    if (mappingStr) {
+      mappingConfig = JSON.parse(mappingStr)
     }
 
     const arrayBuffer = await file.arrayBuffer()
@@ -27,6 +33,14 @@ export async function POST(req: NextRequest) {
     const worksheet = workbook.worksheets[0]
     if (!worksheet) {
       return NextResponse.json({ error: 'Excel file is empty' }, { status: 400 })
+    }
+
+    const headers: Record<number, string> = {}
+    const firstRow = worksheet.getRow(1)
+    if (firstRow) {
+      firstRow.eachCell((cell, colNumber) => {
+        headers[colNumber] = cell.text?.trim() || `Column ${colNumber}`
+      })
     }
 
     const importedParties: any[] = []
@@ -40,14 +54,30 @@ export async function POST(req: NextRequest) {
       if (rowNumber === 1) return // Skip header
       rowCount++
 
-      // Columns: Name | Contact Person | Contact Number | Secondary Number | Email | Address | Balance (Opening Due)
-      const name = row.getCell(1).text?.trim()
-      const contactPerson = row.getCell(2).text?.trim()
-      const contactNumber = row.getCell(3).text?.trim()
-      const secondaryNumber = row.getCell(4).text?.trim()
-      const email = row.getCell(5).text?.trim() || null
-      const address = row.getCell(6).text?.trim()
-      const balanceStr = row.getCell(7).text?.trim()
+      const rowData: Record<string, any> = {}
+      const customData: Record<string, any> = {}
+
+      row.eachCell((cell, colNumber) => {
+        const headerName = headers[colNumber]
+        if (!headerName) return
+        
+        const mappedField = mappingConfig[headerName]
+        const cellValue = cell.text?.trim()
+
+        if (mappedField) {
+          rowData[mappedField] = cellValue
+        } else if (cellValue) {
+          customData[headerName] = cellValue
+        }
+      })
+
+      const name = rowData['name']
+      const contactPerson = rowData['contactPerson']
+      const contactNumber = rowData['contactNumber']
+      const secondaryNumber = rowData['secondaryNumber']
+      const email = rowData['email'] || null
+      const address = rowData['address']
+      const balanceStr = rowData['balance']
       
       const balance = balanceStr ? parseFloat(balanceStr) : 0
 
@@ -64,7 +94,8 @@ export async function POST(req: NextRequest) {
         secondaryNumber: secondaryNumber || null,
         email,
         address: address || '-',
-        balance: isNaN(balance) ? 0 : balance
+        balance: isNaN(balance) ? 0 : balance,
+        customData: Object.keys(customData).length > 0 ? customData : undefined
       })
     })
 
@@ -88,7 +119,7 @@ export async function POST(req: NextRequest) {
             email: p.email,
             address: p.address,
             isActive: true,
-            balance: p.balance,
+            balance: p.balance
           }
         })
         

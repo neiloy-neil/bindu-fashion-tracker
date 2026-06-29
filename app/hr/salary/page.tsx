@@ -441,6 +441,9 @@ function SalaryContent() {
                   <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-center w-24">
                     Leave<br /><span className="normal-case font-normal text-[var(--text-muted)] text-[10px]">(days)</span>
                   </TableHead>
+                  <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-center w-24">
+                    Leave Adj<br /><span className="normal-case font-normal text-[var(--text-muted)] text-[10px]">(days)</span>
+                  </TableHead>
                   <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-center w-20">
                     Late<br /><span className="normal-case font-normal text-[var(--text-muted)] text-[10px]">(days)</span>
                   </TableHead>
@@ -493,6 +496,9 @@ function SalaryContent() {
                         <Input disabled={isLocked} type="number" min="0" step="0.5" value={rec.leaveDaysTaken ?? 0} onChange={e => update(row.employee.id, 'leaveDaysTaken', +e.target.value)} className="text-right h-7 text-xs w-full min-w-[60px]" />
                       </TableCell>
                       <TableCell>
+                        <Input disabled={isLocked} type="number" min="0" step="0.5" value={rec.leaveAdjustment ?? 0} onChange={e => update(row.employee.id, 'leaveAdjustment', +e.target.value)} className="text-right h-7 text-xs w-full min-w-[60px]" />
+                      </TableCell>
+                      <TableCell>
                         <Input disabled={isLocked} type="number" min="0" value={rec.lateDays ?? 0} onChange={e => update(row.employee.id, 'lateDays', +e.target.value)} className="text-right h-7 text-xs w-full min-w-[60px]" />
                       </TableCell>
                       <TableCell>
@@ -541,7 +547,7 @@ function SalaryContent() {
                 })}
                 {displayed.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={13} className="text-center py-16">
+                    <TableCell colSpan={14} className="text-center py-16">
                       <div className="flex flex-col items-center justify-center h-64 gap-3">
                         <div className="w-12 h-12 rounded-full bg-[var(--surface-raised)] flex items-center justify-center">
                           <Users className="w-5 h-5 text-[var(--text-muted)]" />
@@ -564,6 +570,7 @@ function SalaryContent() {
                     <TableCell className="text-center text-[var(--danger)] tabular-nums"></TableCell>
                     <TableCell className="text-center text-[var(--danger)] tabular-nums">{formatTaka(Math.round(totals.advance))}</TableCell>
                     <TableCell className="text-center text-[var(--danger)] tabular-nums">{formatTaka(Math.round(totals.leave))}</TableCell>
+                    <TableCell />
                     <TableCell className="text-center text-[var(--danger)] tabular-nums">{formatTaka(Math.round(totals.late))}</TableCell>
                     <TableCell className="text-center text-[var(--success)] tabular-nums">{formatTaka(Math.round(totals.ot))}</TableCell>
                     <TableCell className="text-center text-[var(--success)] tabular-nums">{formatTaka(Math.round(totals.bonus))}</TableCell>

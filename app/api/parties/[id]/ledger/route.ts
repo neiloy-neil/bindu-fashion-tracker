@@ -24,9 +24,12 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         where: { partyId: id },
         select: {
           id: true, amount: true, method: true, approvalStatus: true,
-          note: true, attachmentUrl: true, createdAt: true,
+          note: true, attachmentUrl: true, createdAt: true, transactionRef: true,
           cheque: {
             select: { id: true, issueDate: true, withdrawDate: true, status: true },
+          },
+          partyBankInfo: {
+            select: { type: true, label: true, accountNo: true, accountName: true },
           },
           dailyEntry: {
             select: {
@@ -75,6 +78,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         note: p.note,
         attachmentUrl: p.attachmentUrl,
         cheque: p.cheque,
+        partyBankInfo: p.partyBankInfo,
+        transactionRef: p.transactionRef,
         branch: p.dailyEntry?.branch,
         createdAt: p.createdAt
       })

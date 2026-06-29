@@ -283,15 +283,20 @@ model EmployeeTransfer {
 }
 
 model PartyBankInfo {
-  id         Int      @id @default(autoincrement())
-  partyId    Int
-  bankName   String
-  branchName String
-  accountNo  String
-  routingNo  String?
-  createdAt  DateTime @default(now())
+  id          Int      @id @default(autoincrement())
+  partyId     Int
+  type        String   @default("BANK")
+  label       String?
+  accountNo   String
+  accountName String?
+  bankName    String?
+  branchName  String?
+  routingNo   String?
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
 
-  party Party @relation(fields: [partyId], references: [id], onDelete: Cascade)
+  party    Party     @relation(fields: [partyId], references: [id], onDelete: Cascade)
+  payments Payment[]
 
   @@index([partyId])
 }
@@ -323,12 +328,17 @@ model Payment {
   approvalStatus String   @default("PENDING")
   createdAt      DateTime @default(now())
 
-  dailyEntry DailyEntry? @relation(fields: [dailyEntryId], references: [id])
-  party      Party       @relation(fields: [partyId], references: [id], onDelete: Cascade)
-  cheque     Cheque?
+  partyBankInfoId Int?
+  transactionRef  String?
+
+  dailyEntry    DailyEntry?    @relation(fields: [dailyEntryId], references: [id])
+  party         Party          @relation(fields: [partyId], references: [id], onDelete: Cascade)
+  cheque        Cheque?
+  partyBankInfo PartyBankInfo? @relation(fields: [partyBankInfoId], references: [id])
 
   @@index([partyId])
   @@index([dailyEntryId])
+  @@index([partyBankInfoId])
 }
 
 model Cheque {

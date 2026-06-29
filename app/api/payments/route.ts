@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json({ error: 'Invalid input', details: parsed.error.format() }, { status: 400 })
     }
-    const { dailyEntryId, partyId, method, amount, note, issueDate, withdrawDate, attachmentUrl } = parsed.data
+    const { dailyEntryId, partyId, method, amount, note, issueDate, withdrawDate, attachmentUrl, partyBankInfoId, transactionRef } = parsed.data
 
     const parsedDailyEntryId = dailyEntryId ?? null
 
@@ -61,6 +61,8 @@ export async function POST(req: NextRequest) {
           amount,
           note: note || null,
           attachmentUrl: attachmentUrl || null,
+          partyBankInfoId: partyBankInfoId || null,
+          transactionRef: transactionRef || null,
           approvalStatus: needsApproval ? 'PENDING' : 'APPROVED',
         }
       })

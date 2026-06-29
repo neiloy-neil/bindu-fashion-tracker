@@ -165,12 +165,14 @@ export const partyUpdateSchema = z.object({
 export const directPaymentSchema = z.object({
   dailyEntryId: idSchema.optional().nullable(),
   partyId: z.union([z.string(), z.number()]).transform(v => Number(v)),
-  method: z.enum(['CASH', 'BANK', 'CHEQUE']),
+  method: z.enum(['CASH', 'BANK', 'BKASH', 'NAGAD', 'CHEQUE']),
   amount: positiveNumberSchema,
   note: z.string().optional().nullable(),
   attachmentUrl: z.string().optional().nullable(),
   issueDate: z.string().optional().nullable(),
   withdrawDate: z.string().optional().nullable(),
+  partyBankInfoId: z.number().int().positive().optional().nullable(),
+  transactionRef: z.string().max(200).optional().nullable(),
 }).superRefine((value, context) => {
   if ((value.method === 'BANK' || value.method === 'CHEQUE') && !value.attachmentUrl) {
     context.addIssue({ code: 'custom', path: ['attachmentUrl'], message: 'Attachment is required for bank and cheque payments' })

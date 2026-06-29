@@ -174,6 +174,26 @@ export default function EmployeeAttendancePage() {
                 <p className="text-xs text-[var(--text-muted)] mb-0.5">Blood Group</p>
                 <p className="text-sm font-medium text-[var(--text-primary)]">{employee.bloodGroup || '—'}</p>
               </div>
+              <div>
+                <p className="text-xs text-[var(--text-muted)] mb-0.5">Date of Birth</p>
+                <p className="text-sm font-medium text-[var(--text-primary)]">{employee.dateOfBirth ? format(parseISO(employee.dateOfBirth), 'dd MMM yyyy') : '—'}</p>
+              </div>
+              <div>
+                <p className="text-xs text-[var(--text-muted)] mb-0.5">Emergency Contact</p>
+                <p className="text-sm font-medium text-[var(--text-primary)]">{employee.emergencyContact || '—'}</p>
+              </div>
+              <div>
+                <p className="text-xs text-[var(--text-muted)] mb-0.5">NID Number</p>
+                <p className="text-sm font-medium text-[var(--text-primary)]">{employee.nidNumber || '—'}</p>
+              </div>
+              <div>
+                <p className="text-xs text-[var(--text-muted)] mb-0.5">Old ID Card</p>
+                <p className="text-sm font-medium text-[var(--text-primary)]">{employee.oldIdCard || '—'}</p>
+              </div>
+              <div className="col-span-2">
+                <p className="text-xs text-[var(--text-muted)] mb-0.5 flex items-center gap-1">Address</p>
+                <p className="text-sm font-medium text-[var(--text-primary)]">{employee.address || '—'}</p>
+              </div>
             </div>
           </div>
         </div>

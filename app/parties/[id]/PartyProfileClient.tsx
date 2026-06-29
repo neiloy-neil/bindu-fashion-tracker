@@ -2,14 +2,14 @@
 
 import { useState } from 'react'
 import useSWR from 'swr'
-import { ArrowLeft, Plus, Building2, Phone, MapPin, Building, FileText, CreditCard, Receipt } from 'lucide-react'
+import { ArrowLeft, Plus, Building2, Phone, MapPin, Building, FileText, CreditCard, Receipt, Landmark, Smartphone } from 'lucide-react'
 import Link from 'next/link'
 import { formatCurrency } from '@/lib/utils'
 import { format } from 'date-fns'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 
 // Import extracted Modals
-import { BankModal } from '@/components/parties/BankModal'
+import { PaymentMethodModal } from '@/components/parties/PaymentMethodModal'
 import { PurchaseModal } from '@/components/parties/PurchaseModal'
 import { PaymentModal } from '@/components/parties/PaymentModal'
 
@@ -107,12 +107,12 @@ export default function PartyProfileClient({ party: initialParty }: { party: any
           </div>
         </div>
 
-        {/* Bank Info Card */}
+        {/* Payment Methods Card */}
         <div className="col-span-1 bg-card border border-border rounded-xl p-6 shadow-sm flex flex-col">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold flex items-center gap-2">
-              <Building size={18} className="text-primary" />
-              Bank Information
+              <Landmark size={18} className="text-primary" />
+              Payment Methods
             </h2>
             <button 
               onClick={() => setIsBankModalOpen(true)}
@@ -124,22 +124,52 @@ export default function PartyProfileClient({ party: initialParty }: { party: any
           
           <div className="flex-1 overflow-y-auto pr-2 space-y-4">
             {party.bankInfo && party.bankInfo.length > 0 ? (
-              party.bankInfo.map((bank: any) => (
-                <div key={bank.id} className="bg-muted/30 p-3 rounded-lg border border-border/50 text-sm">
-                  <p className="font-bold text-foreground">{bank.bankName}</p>
-                  <p className="text-muted-foreground mt-0.5">{bank.branchName} Branch</p>
-                  <div className="mt-2 space-y-1 text-xs font-mono text-muted-foreground">
-                    <p><span className="text-foreground/70 font-sans">A/C:</span> {bank.accountNo}</p>
-                    {bank.routingNo && <p><span className="text-foreground/70 font-sans">Routing:</span> {bank.routingNo}</p>}
+              party.bankInfo.map((method: any) => (
+                <div key={method.id} className="bg-muted/30 p-3 rounded-lg border border-border/50 text-sm relative group">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="font-bold text-foreground flex items-center gap-2">
+                        {method.type === 'BANK' ? <Landmark size={14} /> : <Smartphone size={14} />}
+                        {method.label || method.bankName || method.type}
+                        {method.isDefault && <span className="bg-primary/20 text-primary text-[10px] px-1.5 py-0.5 rounded font-medium">DEFAULT</span>}
+                      </p>
+                      {method.type === 'BANK' && method.branchName && (
+                        <p className="text-muted-foreground mt-0.5">{method.branchName} Branch</p>
+                      )}
+                      {method.accountName && (
+                        <p className="text-muted-foreground mt-0.5">{method.accountName}</p>
+                      )}
+                      <div className="mt-2 space-y-1 text-xs font-mono text-muted-foreground">
+                        <p><span className="text-foreground/70 font-sans">A/C:</span> {method.accountNo}</p>
+                        {method.routingNo && <p><span className="text-foreground/70 font-sans">Routing:</span> {method.routingNo}</p>}
+                      </div>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        if (!confirm('Delete this payment method?')) return
+                        try {
+                          await fetch(`/api/parties/${party.id}/bank/${method.id}`, { method: 'DELETE' })
+                          mutateParty()
+                        } catch (e) {
+                          console.error('Failed to delete', e)
+                        }
+                      }}
+                      className="text-destructive opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/10 p-1.5 rounded-md"
+                      title="Delete Payment Method"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                    </button>
                   </div>
                 </div>
               ))
             ) : (
-              <p className="text-sm text-muted-foreground text-center py-8">No bank information added yet.</p>
+              <p className="text-sm text-muted-foreground text-center py-8">No payment methods added yet.</p>
             )}
           </div>
         </div>
       </div>
+
+
 
       {/* Ledger Section */}
       <div className="bg-card border border-border rounded-xl shadow-lg overflow-hidden">
@@ -216,7 +246,15 @@ export default function PartyProfileClient({ party: initialParty }: { party: any
                         </div>
                       ) : (
                         <div className="space-y-1">
-                          <p className="font-semibold text-xs text-[var(--text-primary)]">{entry.method}</p>
+                          <p className="font-semibold text-xs text-[var(--text-primary)]">
+                            {entry.method} {entry.partyBankInfo && <span className="text-[var(--text-muted)] font-normal ml-1">via {entry.partyBankInfo.label || entry.partyBankInfo.bankName || entry.partyBankInfo.type}</span>}
+                          </p>
+                          {entry.partyBankInfo && entry.partyBankInfo.accountNo && (
+                            <p className="text-[var(--text-muted)] text-xs font-mono">A/C: {entry.partyBankInfo.accountNo}</p>
+                          )}
+                          {entry.transactionRef && (
+                            <p className="text-[var(--text-muted)] text-xs font-mono">Ref: {entry.transactionRef}</p>
+                          )}
                           {entry.branch && <p className="text-[var(--text-muted)] text-xs">Branch: {entry.branch.name}</p>}
                           {entry.note && <p className="text-[var(--text-muted)] truncate" title={entry.note}>{entry.note}</p>}
                           {entry.attachmentUrl && (
@@ -296,7 +334,15 @@ export default function PartyProfileClient({ party: initialParty }: { party: any
                     </div>
                   ) : (
                     <div className="space-y-1 text-sm">
-                      <p className="font-semibold text-xs">{entry.method}</p>
+                      <p className="font-semibold text-xs">
+                        {entry.method} {entry.partyBankInfo && <span className="text-muted-foreground font-normal ml-1">via {entry.partyBankInfo.label || entry.partyBankInfo.bankName || entry.partyBankInfo.type}</span>}
+                      </p>
+                      {entry.partyBankInfo && entry.partyBankInfo.accountNo && (
+                        <p className="text-muted-foreground text-xs font-mono">A/C: {entry.partyBankInfo.accountNo}</p>
+                      )}
+                      {entry.transactionRef && (
+                        <p className="text-muted-foreground text-xs font-mono">Ref: {entry.transactionRef}</p>
+                      )}
                       {entry.branch && <p className="text-muted-foreground text-xs">Branch: {entry.branch.name}</p>}
                       {entry.note && <p className="text-muted-foreground text-xs">{entry.note}</p>}
                       {entry.attachmentUrl && (
@@ -313,7 +359,7 @@ export default function PartyProfileClient({ party: initialParty }: { party: any
         </div>
       </div>
 
-      <BankModal 
+      <PaymentMethodModal 
         isOpen={isBankModalOpen} 
         onClose={() => setIsBankModalOpen(false)} 
         partyId={party.id} 
@@ -329,6 +375,7 @@ export default function PartyProfileClient({ party: initialParty }: { party: any
         isOpen={isPaymentModalOpen} 
         onClose={() => setIsPaymentModalOpen(false)} 
         partyId={party.id} 
+        bankAccounts={party.bankInfo || []}
         onSuccess={handleSuccess} 
       />
       </div>

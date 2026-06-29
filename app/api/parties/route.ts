@@ -29,11 +29,15 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { name, isActive, contactPerson, contactNumber, secondaryNumber, email, address, openingDueAmount, openingDueDate } = await req.json()
+    const { name, isActive, contactPerson, contactNumber, secondaryNumber, email, address, openingDueAmount, openingDueDate, hasPaymentMethod, methodType, methodLabel, methodAccountNo, methodRoutingNo, methodBranchName } = await req.json()
     
     // The user requested that everything is strictly required
     if (!name || !contactPerson || !contactNumber || !secondaryNumber || !address) {
       return NextResponse.json({ error: 'All fields (Name, Contact Person, Contact Number, Secondary Number, Address) are required.' }, { status: 400 })
+    }
+
+    if (hasPaymentMethod && (!methodType || !methodAccountNo)) {
+      return NextResponse.json({ error: 'Payment method type and account number are required.' }, { status: 400 })
     }
 
     const existing = await prisma.party.findUnique({ where: { name } })
@@ -68,6 +72,22 @@ export async function POST(req: NextRequest) {
             amount: initialBalance,
             isOpeningDue: true,
             note: 'Opening Due',
+          }
+        })
+      }
+
+      if (hasPaymentMethod) {
+        await tx.partyBankInfo.create({
+          data: {
+            partyId: newParty.id,
+            type: methodType,
+            label: methodLabel || undefined,
+            bankName: methodType === 'BANK' ? (methodLabel || '') : null,
+            accountNo: methodAccountNo,
+            accountName: contactPerson, // default to contact person
+            routingNo: methodRoutingNo || null,
+            branchName: methodBranchName || null,
+            isDefault: true
           }
         })
       }

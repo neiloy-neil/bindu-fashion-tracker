@@ -19,7 +19,13 @@ export function AddPartyModal({ isOpen, onClose, onSuccess }: AddPartyModalProps
     email: '',
     address: '',
     openingDueAmount: '',
-    openingDueDate: new Date().toISOString().split('T')[0]
+    openingDueDate: new Date().toISOString().split('T')[0],
+    hasPaymentMethod: false,
+    methodType: 'BKASH',
+    methodLabel: '',
+    methodAccountNo: '',
+    methodRoutingNo: '',
+    methodBranchName: ''
   })
 
   if (!isOpen) return null
@@ -64,7 +70,13 @@ export function AddPartyModal({ isOpen, onClose, onSuccess }: AddPartyModalProps
         email: '',
         address: '',
         openingDueAmount: '',
-        openingDueDate: new Date().toISOString().split('T')[0]
+        openingDueDate: new Date().toISOString().split('T')[0],
+        hasPaymentMethod: false,
+        methodType: 'BKASH',
+        methodLabel: '',
+        methodAccountNo: '',
+        methodRoutingNo: '',
+        methodBranchName: ''
       })
     } catch (err: any) {
       setError(err.message)
@@ -218,27 +230,105 @@ export function AddPartyModal({ isOpen, onClose, onSuccess }: AddPartyModalProps
                 </div>
               </div>
             </div>
+
+            <div className="pt-4 border-t border-border mt-4">
+              <label className="flex items-center gap-2 cursor-pointer mb-4">
+                <input
+                  type="checkbox"
+                  checked={formData.hasPaymentMethod}
+                  onChange={(e) => setFormData({ ...formData, hasPaymentMethod: e.target.checked })}
+                  className="rounded border-border bg-background text-primary focus:ring-primary/50 w-4 h-4"
+                />
+                <span className="text-sm font-medium">Add Payment Method (Optional)</span>
+              </label>
+
+              {formData.hasPaymentMethod && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-muted/20 rounded-lg border border-border">
+                  <div>
+                    <label className="block text-sm font-medium mb-1.5">Method Type <span className="text-destructive">*</span></label>
+                    <select
+                      required
+                      className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+                      value={formData.methodType}
+                      onChange={(e) => setFormData({ ...formData, methodType: e.target.value })}
+                    >
+                      <option value="BKASH">bKash</option>
+                      <option value="NAGAD">Nagad</option>
+                      <option value="BANK">Bank Account</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1.5">
+                      {formData.methodType === 'BANK' ? 'Bank Name' : 'Label'} <span className="text-destructive">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+                      value={formData.methodLabel}
+                      onChange={(e) => setFormData({ ...formData, methodLabel: e.target.value })}
+                      placeholder={formData.methodType === 'BANK' ? "e.g. Dutch Bangla Bank" : "e.g. bKash Personal"}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1.5">Account Number <span className="text-destructive">*</span></label>
+                    <input
+                      type="text"
+                      required
+                      className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 font-mono"
+                      value={formData.methodAccountNo}
+                      onChange={(e) => setFormData({ ...formData, methodAccountNo: e.target.value })}
+                      placeholder="e.g. 017..."
+                    />
+                  </div>
+
+                  {formData.methodType === 'BANK' && (
+                    <>
+                      <div>
+                        <label className="block text-sm font-medium mb-1.5">Branch Name (Optional)</label>
+                        <input
+                          type="text"
+                          className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+                          value={formData.methodBranchName}
+                          onChange={(e) => setFormData({ ...formData, methodBranchName: e.target.value })}
+                          placeholder="e.g. Gulshan"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1.5">Routing Number (Optional)</label>
+                        <input
+                          type="text"
+                          className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 font-mono"
+                          value={formData.methodRoutingNo}
+                          onChange={(e) => setFormData({ ...formData, methodRoutingNo: e.target.value })}
+                          placeholder="e.g. 095..."
+                        />
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
           </div>
 
-          <div className="p-6 flex justify-end gap-3 border-t border-border bg-card shrink-0">
+          <div className="p-6 border-t border-border bg-muted/20 flex justify-end gap-3 shrink-0">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-muted rounded-lg transition-colors"
+              className="px-5 py-2.5 rounded-lg border border-border hover:bg-muted font-medium transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-6 py-2 bg-primary text-primary-foreground text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="px-5 py-2.5 rounded-lg bg-primary text-primary-foreground font-medium flex items-center gap-2 hover:bg-primary/90 transition-colors disabled:opacity-50"
             >
               {isSubmitting ? (
-                <>
-                  <Loader2 size={16} className="animate-spin" />
-                  Saving...
-                </>
+                <><Loader2 size={18} className="animate-spin" /> Saving...</>
               ) : (
                 'Add Party'
               )}

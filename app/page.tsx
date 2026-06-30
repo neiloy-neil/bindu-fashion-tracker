@@ -499,11 +499,13 @@ function Dashboard() {
                   context={data.netBalance >= 0 ? 'Profit' : 'Loss'}
                   valueClass={data.netBalance >= 0 ? 'text-[var(--success)]' : 'text-[var(--danger)]'}
                 />
-                <StatCard
-                  label="Active Branches"
-                  value={data.branchStats.length}
-                  context="With activity this period"
-                />
+                {userRole === 'ADMIN' && (
+                  <StatCard
+                    label="Active Branches"
+                    value={data.branchStats.length}
+                    context="With activity this period"
+                  />
+                )}
                 {(userRole === 'ADMIN' || userRole === 'SUPER_ADMIN') && (
                   <>
                     <StatCard

@@ -193,7 +193,13 @@ export function MorningCheckInWidget({ branchId }: Props) {
   }
 
   if (employees.length === 0) {
-    return null
+    return (
+      <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl overflow-hidden shadow-sm p-6 text-center">
+        <h2 className="text-sm font-semibold text-[var(--text-primary)] mb-2">Morning Check-In</h2>
+        <p className="text-sm text-[var(--text-muted)]">No active employees found for this branch.</p>
+        <p className="text-xs text-[var(--text-muted)] mt-1">Add employees in the HR & Payroll section to start tracking attendance.</p>
+      </div>
+    )
   }
 
   const markedCount = Object.keys(attendanceData).length

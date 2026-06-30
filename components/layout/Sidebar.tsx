@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react'
 import { signOut } from 'next-auth/react'
 import { Moon, Sun, LogOut } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { LogOut, Moon, Sun } from 'lucide-react'
+
 
 type Role = 'ADMIN' | 'SUPER_ADMIN' | 'ACCOUNTS' | 'BRANCH' | 'AUDITOR' | 'AREA_MANAGER' | 'HR_ADMIN' | null
 

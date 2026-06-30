@@ -66,6 +66,39 @@ export async function PUT(
           create: { entryId: entryIdNum, categoryId: item.categoryId, amount: item.amount || 0, note: item.note || null, partyName: item.partyName || null, receiptUrls: item.receiptUrls || [] },
         })
       }
+
+      // --- AUTO-TRANSFER DIGITAL SALES ---
+      const digitalMethods = ['Bkash', 'Rocket', 'Nagad', 'POS']
+      for (const item of items) {
+        const cat = await prisma.category.findUnique({ where: { id: item.categoryId } })
+        if (cat && digitalMethods.some(m => cat.name.toLowerCase().includes(m.toLowerCase()))) {
+          let account = await prisma.ledgerAccount.findFirst({
+            where: { name: { equals: cat.name, mode: 'insensitive' } }
+          })
+          if (!account) {
+            account = await prisma.ledgerAccount.create({
+              data: { name: cat.name, type: 'BANK', isActive: true }
+            })
+          }
+          // Upsert the transfer for this specific auto-transfer
+          const transferNote = `Auto-transferred from ${cat.name} sale`
+          const existingTransfer = await prisma.transfer.findFirst({
+            where: { dailyEntryId: entryIdNum, accountId: account.id, note: transferNote }
+          })
+          if (existingTransfer) {
+            if (item.amount === 0) {
+              await prisma.transfer.delete({ where: { id: existingTransfer.id } })
+            } else {
+              await prisma.transfer.update({ where: { id: existingTransfer.id }, data: { amount: item.amount } })
+            }
+          } else if (item.amount > 0) {
+            await prisma.transfer.create({
+              data: { dailyEntryId: entryIdNum, accountId: account.id, amount: item.amount, note: transferNote }
+            })
+          }
+        }
+      }
+      // ------------------------------------
     }
 
     // Upsert expense entries if provided

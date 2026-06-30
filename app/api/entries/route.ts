@@ -110,6 +110,30 @@ export async function POST(req: NextRequest) {
         throw new Error('One or more transfer accounts are invalid')
       }
 
+      // --- AUTO-TRANSFER DIGITAL SALES ---
+      const digitalMethods = ['Bkash', 'Rocket', 'Nagad', 'POS']
+      const digitalSales = body.items.map(item => ({
+        item, cat: categories.find(c => c.id === item.categoryId)
+      })).filter(({ cat }) => cat && digitalMethods.some(m => cat.name.toLowerCase().includes(m.toLowerCase())))
+
+      for (const { item, cat } of digitalSales) {
+        if (!cat) continue;
+        let account = await tx.ledgerAccount.findFirst({
+          where: { name: { equals: cat.name, mode: 'insensitive' } }
+        })
+        if (!account) {
+          account = await tx.ledgerAccount.create({
+            data: { name: cat.name, type: 'BANK', isActive: true }
+          })
+        }
+        body.transfers.push({
+          accountId: account.id,
+          amount: item.amount,
+          note: `Auto-transferred from ${cat.name} sale`
+        })
+      }
+      // ------------------------------------
+
       const openingBalanceCategory = categories.find(c => c.name === 'Opening Balance')
       if (openingBalanceCategory) {
         const openingBalanceItem = body.items.find(item => item.categoryId === openingBalanceCategory.id)

@@ -112,7 +112,7 @@ export function NotificationBell() {
 
       {/* Dropdown panel */}
       {open && (
-        <div className="fixed bottom-20 left-4 w-80 max-h-[480px] overflow-y-auto rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-2xl z-[200] flex flex-col">
+        <div className="absolute right-0 top-full mt-2 w-80 max-h-[480px] overflow-y-auto rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-2xl z-[200] flex flex-col">
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border)] sticky top-0 bg-[var(--surface)]">
             <h3 className="text-sm font-semibold text-[var(--text-primary)]">Notifications</h3>

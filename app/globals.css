@@ -222,6 +222,14 @@ body {
   overflow-y: auto;
   overflow-x: hidden;
   background: var(--background);
+  position: relative;
+}
+
+/* Make room for the top-right Notification Bell on desktop */
+@media (min-width: 769px) {
+  .main-content .sticky.top-0 {
+    padding-right: 4.5rem !important;
+  }
 }
 
 /* ─── Mobile ────────────────────────────────────── */

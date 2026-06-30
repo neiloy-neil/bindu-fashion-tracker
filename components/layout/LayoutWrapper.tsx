@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react'
 import { Menu, X } from 'lucide-react'
 import Image from 'next/image'
 import { CommandPalette } from '@/components/shared/CommandPalette'
+import { NotificationBell } from '@/components/layout/NotificationBell'
 
 export function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
@@ -47,12 +48,17 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
             Bindu Premium
           </span>
         </div>
-        <button
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="p-2 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-raised)] transition-colors"
-        >
-          {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
-        </button>
+        <div className="flex items-center gap-2">
+          <div className="md:hidden">
+            <NotificationBell />
+          </div>
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="p-2 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-raised)] transition-colors"
+          >
+            {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile Overlay */}
@@ -67,6 +73,10 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
 
       <div className="main-content">
         {children}
+      </div>
+
+      <div className="hidden md:block fixed top-4 right-6 z-50">
+        <NotificationBell />
       </div>
 
       <CommandPalette open={cmdOpen} onOpenChange={setCmdOpen} />

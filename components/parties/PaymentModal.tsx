@@ -25,7 +25,7 @@ async function uploadReceipt(file: File) {
   return url as string
 }
 
-export function PaymentModal({ isOpen, onClose, partyId, bankAccounts = [], onSuccess }: { isOpen: boolean, onClose: () => void, partyId: number, bankAccounts?: Array<{id: number, type: string, isDefault?: boolean}>, onSuccess: () => void }) {
+export function PaymentModal({ isOpen, onClose, partyId, bankAccounts = [], onSuccess }: { isOpen: boolean, onClose: () => void, partyId: number, bankAccounts?: Array<{id: number, type: string, isDefault?: boolean, label?: string | null, bankName?: string | null, accountNo?: string | null}>, onSuccess: () => void }) {
   const [loading, setLoading] = useState(false)
   const [file, setFile] = useState<File | null>(null)
   

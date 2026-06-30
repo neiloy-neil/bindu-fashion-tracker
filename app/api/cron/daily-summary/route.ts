@@ -95,7 +95,7 @@ export async function GET(req: NextRequest) {
         summary.totalSales,
         summary.totalExpenses,
         summary.netBalance,
-        summary.branchSummaries
+        summary.branchSummaries.map(s => ({ branchName: s.branch, sales: s.sales, expenses: s.expenses, net: s.net }))
       )
       
       await Promise.all(

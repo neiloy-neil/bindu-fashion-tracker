@@ -120,7 +120,7 @@ export function dailySummaryEmail(date: string, totalSales: number, totalExpense
         <tbody>
           ${branchSummaries.map(b => `
             <tr style="border-bottom:1px solid #e2e8f0">
-              <td style="padding:12px 8px;font-weight:500">${escapeHtml(b.branch)}</td>
+              <td style="padding:12px 8px;font-weight:500">${escapeHtml(b.branchName)}</td>
               <td style="padding:12px 8px;text-align:right">৳${b.sales.toLocaleString()}</td>
               <td style="padding:12px 8px;text-align:right">৳${b.expenses.toLocaleString()}</td>
               <td style="padding:12px 8px;text-align:right;color:${b.net >= 0 ? '#15803d' : '#b91c1c'};font-weight:bold">৳${b.net.toLocaleString()}</td>

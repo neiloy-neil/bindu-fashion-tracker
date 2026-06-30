@@ -50,7 +50,7 @@ export function MorningCheckInWidget({ branchId }: Props) {
         const empRes = await fetch(`/api/hr/employees?branchId=${branchId}`)
         if (!empRes.ok) throw new Error('Failed to load employees')
         const empData = await empRes.json()
-        const activeEmployees = (empData.employees || []).filter((e: any) => e.isActive)
+        const activeEmployees = (Array.isArray(empData) ? empData : []).filter((e: any) => e.isActive)
         setEmployees(activeEmployees)
 
         const attRes = await fetch(`/api/hr/attendance?branchId=${branchId}&date=${today}`)

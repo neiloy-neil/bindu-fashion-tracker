@@ -8,7 +8,7 @@ import { formatCurrency, formatDate } from '@/lib/utils'
 type DailyReportData = {
   branch?: { name?: string | null } | null
   items?: Array<{ amount: number; note?: string | null; category?: { name?: string | null } | null }>
-  expenseEntries?: Array<{ amount: number; note?: string | null; category?: { name?: string | null } | null }>
+  expenseEntries?: Array<{ amount: number; note?: string | null; category?: { name?: string | null } | null; isTransferEntry?: boolean }>
   transfers?: Array<{ amount: number; note?: string | null; account?: { name?: string | null } | null }>
   payments?: Array<{ amount: number; method: string; party?: { name?: string | null } | null; cheque?: { status?: string | null } | null }>
   advanceSalaries?: Array<{ amount?: number | null; type: string; productDescription?: string | null; employee?: { name?: string | null } | null }>
@@ -192,7 +192,7 @@ function DailyReportDocument({
   selectedDate: string
 }) {
   const incomeItems = entryData.items ?? []
-  const expenseItems = entryData.expenseEntries ?? []
+  const expenseItems = (entryData.expenseEntries ?? []).filter((e) => !e.isTransferEntry)
   const transfers = entryData.transfers ?? []
   const payments = entryData.payments ?? []
   const advances = entryData.advanceSalaries ?? []

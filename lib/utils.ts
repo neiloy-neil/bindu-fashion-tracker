@@ -64,6 +64,7 @@ export function computeTotals(entry: any) {
   }
   if (entry && entry.expenseEntries && Array.isArray(entry.expenseEntries)) {
     for (const e of entry.expenseEntries) {
+      if (e.isTransferEntry) continue
       totalExpense += e.amount || 0
     }
   }

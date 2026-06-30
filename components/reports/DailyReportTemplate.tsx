@@ -34,6 +34,7 @@ type ReportExpenseEntry = {
   amount: number
   note?: string | null
   category?: { name: string } | null
+  isTransferEntry?: boolean
 }
 
 type ReportAdvanceSalary = {
@@ -71,7 +72,7 @@ export default function DailyReportTemplate({ entryData }: { entryData: ReportEn
 
   const incomeItems = entryData.items?.filter(item => item.category?.type === 'INCOME' && item.amount > 0) ?? []
   const receivedTransfers = entryData.receivedTransfers ?? []
-  const expenseEntries = entryData.expenseEntries ?? []
+  const expenseEntries = (entryData.expenseEntries ?? []).filter(e => !e.isTransferEntry)
   const transfers = entryData.transfers ?? []
   const payments = entryData.payments ?? []
   const advanceSalaries = entryData.advanceSalaries ?? []

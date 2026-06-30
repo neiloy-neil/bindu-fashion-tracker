@@ -11,7 +11,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   const id = parseInt(resolvedParams.id)
   
   try {
-    const { name, type, isActive } = await req.json()
+    const { name, type, isActive, branchId } = await req.json()
     
     if (name) {
       const existing = await prisma.ledgerAccount.findFirst({ where: { name, id: { not: id } } })
@@ -26,6 +26,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         ...(name && { name }),
         ...(type && { type }),
         ...(isActive !== undefined && { isActive }),
+        ...(branchId !== undefined && { branchId: branchId ? parseInt(branchId) : null }),
       }
     })
     return NextResponse.json(account)

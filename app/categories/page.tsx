@@ -140,17 +140,15 @@ function CategoryRow({
             >
               <Edit2 size={13} />
             </Button>
-            {!cat.isDefault && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => onDelete(cat.id)}
-                className="h-7 w-7 text-[var(--danger)] hover:bg-[var(--danger-subtle)]"
-                title="Delete"
-              >
-                <Trash2 size={13} />
-              </Button>
-            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onDelete(cat.id)}
+              className="h-7 w-7 text-[var(--danger)] hover:bg-[var(--danger-subtle)]"
+              title="Delete"
+            >
+              <Trash2 size={13} />
+            </Button>
           </div>
         </td>
       </tr>
@@ -388,7 +386,7 @@ export default function CategoriesPage() {
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 flex items-center justify-center p-4">
           <div className="flex w-full max-w-md flex-col overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-2xl">
             <div className="flex items-center justify-between border-b border-[var(--border)] px-5 py-4">
               <div>
@@ -417,7 +415,6 @@ export default function CategoriesPage() {
                   <Select
                     value={type}
                     onValueChange={value => setType(value as 'INCOME' | 'EXPENSE')}
-                    disabled={!!editingCategory?.isDefault}
                   >
                     <SelectTrigger className="w-full">
                       <SelectValue />

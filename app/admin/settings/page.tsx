@@ -36,8 +36,14 @@ export default function AdminSettings() {
           const res = await fetch('/api/parties?includeInactive=true')
           if (res.ok && !cancelled) setParties(await res.json())
         } else if (activeTab === 'ACCOUNTS') {
-          const res = await fetch('/api/accounts?includeInactive=true')
-          if (res.ok && !cancelled) setAccounts(await res.json())
+          const [accountsRes, branchesRes] = await Promise.all([
+            fetch('/api/accounts?includeInactive=true'),
+            fetch('/api/branches')
+          ])
+          if (!cancelled) {
+            if (accountsRes.ok) setAccounts(await accountsRes.json())
+            if (branchesRes.ok) setBranches(await branchesRes.json())
+          }
         } else if (activeTab === 'SLIPS') {
           const res = await fetch('/api/hr/settings')
           if (res.ok && !cancelled) setSettings(await res.json())
@@ -243,15 +249,26 @@ export default function AdminSettings() {
         )}
 
         {activeTab === 'ACCOUNTS' && (
-          <div>
-            <label className="text-sm text-[var(--text-secondary)] mb-1 block">Account Type</label>
-            <select name="type" defaultValue={selectedItem?.type || 'BRANCH'} className="flex h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1 text-sm text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50" required>
-              <option value="BRANCH">Branch</option>
-              <option value="COMPANY">Company</option>
-              <option value="ONLINE_DEPARTMENT">Online Department</option>
-              <option value="OTHER">Other</option>
-            </select>
-          </div>
+          <>
+            <div>
+              <label className="text-sm text-[var(--text-secondary)] mb-1 block">Account Type</label>
+              <select name="type" defaultValue={selectedItem?.type || 'BRANCH'} className="flex h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1 text-sm text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50" required>
+                <option value="BRANCH">Branch</option>
+                <option value="COMPANY">Company</option>
+                <option value="ONLINE_DEPARTMENT">Online Department</option>
+                <option value="OTHER">Other</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-sm text-[var(--text-secondary)] mb-1 block">Assigned Branch (Optional)</label>
+              <select name="branchId" defaultValue={selectedItem?.branchId || ''} className="flex h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1 text-sm text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50">
+                <option value="">None</option>
+                {branches.map(b => (
+                  <option key={b.id} value={b.id}>{b.name}</option>
+                ))}
+              </select>
+            </div>
+          </>
         )}
 
         <div>

@@ -24,7 +24,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       where: { id: categoryId },
       data: {
         ...(name !== undefined && { name: name.trim() }),
-        ...(type !== undefined && !existing.isDefault && { type }),
+        ...(type !== undefined && { type }),
         ...(frequency !== undefined && { frequency: (type ?? existing.type) === 'EXPENSE' ? frequency : null }),
         ...(isActive !== undefined && { isActive }),
         ...(parentId !== undefined && { parentId: parentId ? Number(parentId) : null }),
@@ -53,7 +53,6 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
       include: { children: true },
     })
     if (!existing) return NextResponse.json({ error: 'Category not found' }, { status: 404 })
-    if (existing.isDefault) return NextResponse.json({ error: 'Cannot delete system categories — deactivate instead.' }, { status: 400 })
     if (existing.children.length > 0) return NextResponse.json({ error: 'Delete sub-categories first before deleting this parent category.' }, { status: 409 })
 
     const itemCount = await prisma.entryItem.count({ where: { categoryId } })

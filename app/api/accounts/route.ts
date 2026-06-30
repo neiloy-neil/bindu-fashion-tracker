@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { name, type, isActive } = await req.json()
+    const { name, type, isActive, branchId } = await req.json()
     if (!name || !type) return NextResponse.json({ error: 'Name and type are required' }, { status: 400 })
 
     const existing = await prisma.ledgerAccount.findUnique({ where: { name } })
@@ -41,6 +41,7 @@ export async function POST(req: NextRequest) {
         name,
         type,
         isActive: isActive !== undefined ? isActive : true,
+        branchId: branchId ? parseInt(branchId) : null,
       }
     })
     return NextResponse.json(account, { status: 201 })

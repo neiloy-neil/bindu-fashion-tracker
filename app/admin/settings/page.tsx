@@ -7,13 +7,13 @@ import { BrandSpinner } from '@/components/ui/BrandSpinner'
 import { Button } from '@/components/ui/button'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 
-type Tab = 'BRANCHES' | 'PARTIES' | 'ACCOUNTS' | 'SLIPS'
+type Tab = 'BRANCHES' | 'ACCOUNTS' | 'SLIPS'
 
 export default function AdminSettings() {
   const [activeTab, setActiveTab] = useState<Tab>('BRANCHES')
   
   const [branches, setBranches] = useState<any[]>([])
-  const [parties, setParties] = useState<any[]>([])
+
   const [accounts, setAccounts] = useState<any[]>([])
   const [settings, setSettings] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -32,9 +32,7 @@ export default function AdminSettings() {
         if (activeTab === 'BRANCHES') {
           const res = await fetch('/api/branches')
           if (res.ok && !cancelled) setBranches(await res.json())
-        } else if (activeTab === 'PARTIES') {
-          const res = await fetch('/api/parties?includeInactive=true')
-          if (res.ok && !cancelled) setParties(await res.json())
+
         } else if (activeTab === 'ACCOUNTS') {
           const [accountsRes, branchesRes] = await Promise.all([
             fetch('/api/accounts?includeInactive=true'),
@@ -75,8 +73,7 @@ export default function AdminSettings() {
     if (!confirm('Are you sure you want to delete this record?')) return
     
     let url = ''
-    if (activeTab === 'PARTIES') url = `/api/parties/${id}`
-    else if (activeTab === 'ACCOUNTS') url = `/api/accounts/${id}`
+    if (activeTab === 'ACCOUNTS') url = `/api/accounts/${id}`
 
     try {
       const res = await fetch(url, { method: 'DELETE' })
@@ -101,7 +98,6 @@ export default function AdminSettings() {
 
     let url = ''
     if (activeTab === 'BRANCHES') url = '/api/branches'
-    else if (activeTab === 'PARTIES') url = '/api/parties'
     else if (activeTab === 'ACCOUNTS') url = '/api/accounts'
 
     if (selectedItem) url += `/${selectedItem.id}`
@@ -123,7 +119,6 @@ export default function AdminSettings() {
 
   const tabs = [
     { id: 'BRANCHES', label: 'Branches Configuration' },
-    { id: 'PARTIES', label: 'Parties' },
     { id: 'ACCOUNTS', label: 'Accounts' },
     { id: 'SLIPS', label: 'Slip Settings' },
   ]
@@ -156,9 +151,7 @@ export default function AdminSettings() {
     if (activeTab === 'BRANCHES') {
       data = branches
       columns = [{ key: 'name', label: 'Name' }, { key: 'code', label: 'Code' }, { key: 'status', label: 'Status' }]
-    } else if (activeTab === 'PARTIES') {
-      data = parties
-      columns = [{ key: 'name', label: 'Name' }, { key: 'balance', label: 'Balance' }, { key: 'status', label: 'Status' }]
+
     } else if (activeTab === 'ACCOUNTS') {
       data = accounts
       columns = [{ key: 'name', label: 'Name' }, { key: 'type', label: 'Type' }, { key: 'status', label: 'Status' }]
@@ -179,7 +172,7 @@ export default function AdminSettings() {
                 <TableCell className="font-medium text-[var(--text-primary)]">{item.name}</TableCell>
                 
                 {activeTab === 'BRANCHES' && <TableCell className="text-[var(--text-secondary)]">{item.code}</TableCell>}
-                {activeTab === 'PARTIES' && <TableCell className="text-[var(--text-secondary)]">৳{item.balance?.toFixed(2)}</TableCell>}
+
                 {activeTab === 'ACCOUNTS' && <TableCell className="text-[var(--text-secondary)]">{item.type}</TableCell>}
                 <TableCell>
                   <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wider font-bold ${item.isActive ? 'bg-[var(--success-subtle)]/30 text-[var(--success)]' : 'bg-[var(--danger-subtle)]/30 text-[var(--danger)]'}`}>

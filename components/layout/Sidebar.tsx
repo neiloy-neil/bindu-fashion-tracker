@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react'
 import { signOut } from 'next-auth/react'
 import { Moon, Sun, LogOut } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { NotificationBell } from './NotificationBell'
 
 type Role = 'ADMIN' | 'SUPER_ADMIN' | 'ACCOUNTS' | 'BRANCH' | 'AUDITOR' | 'AREA_MANAGER' | 'HR_ADMIN' | null
 
@@ -261,6 +262,12 @@ export function Sidebar({ isOpen, setIsOpen }: { isOpen?: boolean, setIsOpen?: (
 
         {/* Bottom area */}
         <div className="flex-shrink-0 border-t border-[var(--border)] px-3 py-3 space-y-0.5">
+          {/* Notification bell row */}
+          <div className="flex items-center gap-2 px-3 py-1.5">
+            <NotificationBell />
+            <span className="text-xs text-[var(--text-muted)]">Notifications</span>
+          </div>
+
           <button
             onClick={toggleTheme}
             className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)] hover:bg-[var(--surface-raised)]"

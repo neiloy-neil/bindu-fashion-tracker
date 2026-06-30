@@ -250,6 +250,56 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Fire in-app notifications for branch-to-branch transfers (fire-and-forget)
+    if (body.transfers && body.transfers.length > 0) {
+      void (async () => {
+        try {
+          // Get created transfer IDs and account details
+          const createdEntry = await prisma.dailyEntry.findUnique({
+            where: { id: entry.id },
+            include: {
+              transfers: { include: { account: { include: { branch: true } } } },
+              branch: { select: { name: true } },
+            },
+          })
+          if (!createdEntry) return
+
+          for (const transfer of createdEntry.transfers) {
+            if (transfer.status !== 'PENDING') continue
+            const receivingBranchId = transfer.account.branchId
+            if (!receivingBranchId) continue
+
+            // Find all active BRANCH users for the receiving branch
+            const receivingUsers = await prisma.user.findMany({
+              where: {
+                branchId: receivingBranchId,
+                isActive: true,
+                role: { in: ['BRANCH', 'ADMIN', 'SUPER_ADMIN'] },
+              },
+              select: { id: true },
+            })
+
+            if (receivingUsers.length === 0) continue
+
+            await prisma.notification.createMany({
+              data: receivingUsers.map(u => ({
+                userId: u.id,
+                type: 'TRANSFER_INCOMING',
+                title: `Incoming Transfer from ${createdEntry.branch.name}`,
+                body: `৳${transfer.amount.toLocaleString()} via ${transfer.account.name}${transfer.note ? ` — "${transfer.note}"` : ''}`,
+                metadata: {
+                  transferId: transfer.id,
+                  amount: transfer.amount,
+                  senderBranch: createdEntry.branch.name,
+                  accountName: transfer.account.name,
+                },
+              })),
+            })
+          }
+        } catch { /* non-critical, swallow */ }
+      })()
+    }
+
     return NextResponse.json(entry, { status: 201 })
   } catch (error) {
     logger.error('entry.create_failed', error, {

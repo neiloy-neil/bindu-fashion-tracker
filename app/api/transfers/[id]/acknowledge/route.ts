@@ -111,6 +111,53 @@ export async function PATCH(
         throw new Error(`Transfer is already ${latest?.status ?? 'UNKNOWN'}`)
       }
 
+      // Ensure system categories exist
+      const incomeCategory = await tx.category.upsert({
+        where: { name: 'Branch Transfer Received' },
+        update: {},
+        create: { name: 'Branch Transfer Received', type: 'INCOME', isDefault: true, isActive: true }
+      })
+
+      const expenseCategory = await tx.category.upsert({
+        where: { name: 'Branch Transfer Sent' },
+        update: {},
+        create: { name: 'Branch Transfer Sent', type: 'EXPENSE', isDefault: true, isActive: true, frequency: 'DAILY' }
+      })
+
+      // 1. Auto-book income on the receiving branch (today's entry)
+      const existingIncome = await tx.entryItem.findUnique({
+        where: {
+          entryId_categoryId: { entryId: dailyEntry.id, categoryId: incomeCategory.id }
+        }
+      })
+
+      if (existingIncome) {
+        await tx.entryItem.update({
+          where: { id: existingIncome.id },
+          data: { amount: { increment: transfer.amount } }
+        })
+      } else {
+        await tx.entryItem.create({
+          data: {
+            entryId: dailyEntry.id,
+            categoryId: incomeCategory.id,
+            amount: transfer.amount,
+            note: `Auto-booked transfer from via ${transfer.account.name}`
+          }
+        })
+      }
+
+      // 2. Auto-book expense on the sending branch (original entry)
+      await tx.expenseEntry.create({
+        data: {
+          dailyEntryId: transfer.dailyEntryId,
+          categoryId: expenseCategory.id,
+          amount: transfer.amount,
+          note: `Auto-booked transfer via ${transfer.account.name}`,
+          isTransferEntry: true
+        }
+      })
+
       return tx.transfer.findUniqueOrThrow({ where: { id: transferId } })
     })
 

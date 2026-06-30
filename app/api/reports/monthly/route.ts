@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
             where: { category: { type: 'INCOME', name: { not: 'Opening Balance' } } },
             select: { amount: true },
           },
-          expenseEntries: { select: { amount: true } },
+          expenseEntries: { where: { isTransferEntry: false }, select: { amount: true } },
           transfers: { select: { amount: true } },
           payments: { select: { amount: true } },
           advanceSalaries: { select: { amount: true, type: true } },

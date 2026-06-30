@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
     include: {
       branch: true,
       items: { include: { category: true } },
-      expenseEntries: true,
+      expenseEntries: { where: { isTransferEntry: false } },
       transfers: true,
       payments: { include: { cheque: true } },
       advanceSalaries: true,

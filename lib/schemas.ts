@@ -91,6 +91,7 @@ export const newEntryFormSchema = z.object({
   })),
   transfers: z.array(z.object({
     id: z.string(),
+    branchId: z.string().optional(),
     accountId: z.string().min(1, 'Required'),
     amount: z.union([z.string(), z.number()]).refine(v => Number(v) > 0, 'Amount must be greater than zero'),
     note: z.string()

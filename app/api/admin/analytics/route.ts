@@ -43,7 +43,7 @@ export async function GET(request: Request) {
         items: { select: { amount: true, category: { select: { name: true, type: true } } } },
         transfers: { select: { amount: true } },
         payments: { select: { amount: true, method: true, cheque: { select: { status: true } } } },
-        expenseEntries: { select: { amount: true, category: { select: { name: true } } } },
+        expenseEntries: { where: { isTransferEntry: false }, select: { amount: true, category: { select: { name: true } } } },
         advanceSalaries: { select: { type: true, amount: true } }
       },
       orderBy: { date: 'asc' }

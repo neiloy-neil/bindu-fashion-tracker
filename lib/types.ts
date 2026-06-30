@@ -17,6 +17,7 @@ export interface Category {
   isActive: boolean
   isDefault: boolean
   frequency?: string | null // DAILY | WEEKLY | MONTHLY | AS_NEEDED — only set for EXPENSE type
+  requiresAttachment: boolean
 }
 
 export interface EntryItem {
@@ -56,6 +57,7 @@ export interface Account {
   name: string
   type: string
   isActive: boolean
+  branchId?: number | null
   createdAt?: string | Date
 }
 

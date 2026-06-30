@@ -9,6 +9,7 @@ const attendancePostSchema = z.object({
   attendances: z.array(z.object({
     employeeId: z.union([z.string(), z.number()]).transform(v => Number(v)),
     checkInTimeStr: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).optional(),
+    checkOutTimeStr: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).optional(),
     isAbsent: z.boolean().optional(),
   })).min(1),
 })
@@ -59,16 +60,17 @@ export async function POST(req: NextRequest) {
       let successCount = 0
       
       for (const att of attendances) {
-        const { employeeId, checkInTimeStr, isAbsent } = att
+        const { employeeId, checkInTimeStr, checkOutTimeStr, isAbsent } = att
         
         let status = 'PRESENT'
-        let checkInTime = new Date(dateObj) // Default to today
+        let checkInTime = new Date(dateObj)
+        let checkOutTime: Date | null = null
 
         if (isAbsent) {
           status = 'ABSENT'
         } else if (checkInTimeStr) {
-          // checkInTimeStr in "HH:MM" format
           const [hour, min] = checkInTimeStr.split(':').map(Number)
+          checkInTime = new Date(dateObj)
           checkInTime.setUTCHours(hour, min, 0, 0)
 
           const checkInTotalMinutes = hour * 60 + min
@@ -76,7 +78,6 @@ export async function POST(req: NextRequest) {
             status = 'LATE'
           }
         } else {
-          // If no specific time provided but marked present, assume they checked in right now
           checkInTime = new Date()
           const checkInTotalMinutes = checkInTime.getUTCHours() * 60 + checkInTime.getUTCMinutes()
           if (checkInTotalMinutes > shiftStartTotalMinutes) {
@@ -84,7 +85,13 @@ export async function POST(req: NextRequest) {
           }
         }
 
-        // Upsert attendance record for this employee and date
+        // Parse checkout time if provided
+        if (checkOutTimeStr) {
+          checkOutTime = new Date(dateObj)
+          const [coHour, coMin] = checkOutTimeStr.split(':').map(Number)
+          checkOutTime.setUTCHours(coHour, coMin, 0, 0)
+        }
+
         await tx.attendance.upsert({
           where: {
             employeeId_date: {
@@ -94,6 +101,7 @@ export async function POST(req: NextRequest) {
           },
           update: {
             checkInTime: checkInTime,
+            checkOutTime: checkOutTime,
             status: status
           },
           create: {
@@ -101,6 +109,7 @@ export async function POST(req: NextRequest) {
             branchId: targetBranchId,
             date: dateObj,
             checkInTime: checkInTime,
+            checkOutTime: checkOutTime,
             status: status
           }
         })
@@ -115,6 +124,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Failed to record attendance' }, { status: 500 })
   }
 }
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const dateStr = searchParams.get('date')

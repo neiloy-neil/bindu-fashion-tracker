@@ -4,11 +4,13 @@ import { prisma } from '@/lib/prisma'
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const role = request.headers.get('x-user-role')
-    if (role !== 'ADMIN') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (!role || !['ADMIN', 'SUPER_ADMIN'].includes(role)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
 
     const { id } = await params
     const categoryId = parseInt(id)
-    const { name, type, frequency, isActive } = await request.json()
+    const { name, type, frequency, isActive, parentId, requiresAttachment } = await request.json()
 
     const existing = await prisma.category.findUnique({ where: { id: categoryId } })
     if (!existing) return NextResponse.json({ error: 'Category not found' }, { status: 404 })
@@ -23,8 +25,10 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       data: {
         ...(name !== undefined && { name: name.trim() }),
         ...(type !== undefined && !existing.isDefault && { type }),
-        ...(frequency !== undefined && { frequency: type === 'EXPENSE' || existing.type === 'EXPENSE' ? frequency : null }),
+        ...(frequency !== undefined && { frequency: (type ?? existing.type) === 'EXPENSE' ? frequency : null }),
         ...(isActive !== undefined && { isActive }),
+        ...(parentId !== undefined && { parentId: parentId ? Number(parentId) : null }),
+        ...(requiresAttachment !== undefined && { requiresAttachment: !!requiresAttachment }),
       },
     })
 
@@ -37,13 +41,20 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const role = request.headers.get('x-user-role')
-    if (role !== 'ADMIN') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (!role || !['ADMIN', 'SUPER_ADMIN'].includes(role)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
 
     const { id } = await params
     const categoryId = parseInt(id)
 
-    const existing = await prisma.category.findUnique({ where: { id: categoryId } })
-    if (existing?.isDefault) return NextResponse.json({ error: 'Cannot delete system categories — deactivate instead.' }, { status: 400 })
+    const existing = await prisma.category.findUnique({
+      where: { id: categoryId },
+      include: { children: true },
+    })
+    if (!existing) return NextResponse.json({ error: 'Category not found' }, { status: 404 })
+    if (existing.isDefault) return NextResponse.json({ error: 'Cannot delete system categories — deactivate instead.' }, { status: 400 })
+    if (existing.children.length > 0) return NextResponse.json({ error: 'Delete sub-categories first before deleting this parent category.' }, { status: 409 })
 
     const itemCount = await prisma.entryItem.count({ where: { categoryId } })
     const expenseCount = await prisma.expenseEntry.count({ where: { categoryId } })

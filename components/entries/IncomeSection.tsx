@@ -79,61 +79,63 @@ export function IncomeSection({ control, register, setValue, categories, inputCl
             </div>
             
             {/* Supabase URL File Upload */}
-            <div className="sm:col-span-12 mt-2">
-              <Label className="mb-1.5 flex items-center gap-2 text-xs font-medium text-[var(--text-secondary)]">
-                Receipt / Invoice
-                {uploadingAttachment[idx] && <span className="text-primary animate-pulse">Uploading...</span>}
-              </Label>
-              
-              <input 
-                type="file" 
-                multiple
-                accept="image/jpeg,image/png,image/webp,image/gif,application/pdf"
-                disabled={uploadingAttachment[idx]}
-                className="block w-full text-xs text-muted-foreground file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-primary file:text-primary-foreground hover:file:opacity-90 cursor-pointer"
-                onChange={(e) => {
-                  const files = Array.from(e.target.files || [])
-                  if (files.length === 0) return
-                  const existingFiles = incomeItemsWatch[idx]?.detail?.files || []
-                  setValue(`incomeItems.${idx}.detail.files`, [...existingFiles, ...files], { shouldDirty: true })
-                }}
-              />
-              
-              {incomeItemsWatch[idx]?.detail?.files && incomeItemsWatch[idx].detail.files.length > 0 && (
-                <div className="mt-2 flex flex-col gap-1">
-                  {incomeItemsWatch[idx].detail.files.map((file: string | File, fileIdx: number) => {
-                    const isLocal = file instanceof File;
-                    const fileName = isLocal ? file.name : (typeof file === 'string' ? file.split('/').pop() : 'Unknown file');
-                    
-                    return (
-                    <div key={fileIdx} className="flex items-center justify-between rounded-md border border-[var(--border)] bg-[var(--surface-raised)] p-2">
-                      <div className="flex items-center gap-2 overflow-hidden">
-                        <Paperclip size={14} className="shrink-0 text-primary" />
-                        <span className="text-xs truncate" title={fileName}>{fileName}</span>
+            {currentCat?.requiresAttachment !== false && (
+              <div className="sm:col-span-12 mt-2">
+                <Label className="mb-1.5 flex items-center gap-2 text-xs font-medium text-[var(--text-secondary)]">
+                  Receipt / Invoice
+                  {uploadingAttachment[idx] && <span className="text-primary animate-pulse">Uploading...</span>}
+                </Label>
+                
+                <input 
+                  type="file" 
+                  multiple
+                  accept="image/jpeg,image/png,image/webp,image/gif,application/pdf"
+                  disabled={uploadingAttachment[idx]}
+                  className="block w-full text-xs text-muted-foreground file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-primary file:text-primary-foreground hover:file:opacity-90 cursor-pointer"
+                  onChange={(e) => {
+                    const files = Array.from(e.target.files || [])
+                    if (files.length === 0) return
+                    const existingFiles = incomeItemsWatch[idx]?.detail?.files || []
+                    setValue(`incomeItems.${idx}.detail.files`, [...existingFiles, ...files], { shouldDirty: true })
+                  }}
+                />
+                
+                {incomeItemsWatch[idx]?.detail?.files && incomeItemsWatch[idx].detail.files.length > 0 && (
+                  <div className="mt-2 flex flex-col gap-1">
+                    {incomeItemsWatch[idx].detail.files.map((file: string | File, fileIdx: number) => {
+                      const isLocal = file instanceof File;
+                      const fileName = isLocal ? file.name : (typeof file === 'string' ? file.split('/').pop() : 'Unknown file');
+                      
+                      return (
+                      <div key={fileIdx} className="flex items-center justify-between rounded-md border border-[var(--border)] bg-[var(--surface-raised)] p-2">
+                        <div className="flex items-center gap-2 overflow-hidden">
+                          <Paperclip size={14} className="shrink-0 text-primary" />
+                          <span className="text-xs truncate" title={fileName}>{fileName}</span>
+                        </div>
+                        {!isOpeningBalance && (
+                          <Button 
+                            type="button"
+                            onClick={() => {
+                              const updated = [...incomeItemsWatch[idx].detail.files]
+                              const removed = updated.splice(fileIdx, 1)[0]
+                              setValue(`incomeItems.${idx}.detail.files`, updated, { shouldDirty: true })
+                              if (typeof removed === 'string') {
+                                void fetch(`/api/upload?key=${encodeURIComponent(removed)}`, { method: 'DELETE' })
+                              }
+                            }}
+                            variant="ghost"
+                            size="sm"
+                            className="h-auto px-2 py-1 text-xs text-destructive hover:text-destructive"
+                          >
+                            Remove
+                          </Button>
+                        )}
                       </div>
-                      {!isOpeningBalance && (
-                        <Button 
-                          type="button"
-                          onClick={() => {
-                            const updated = [...incomeItemsWatch[idx].detail.files]
-                            const removed = updated.splice(fileIdx, 1)[0]
-                            setValue(`incomeItems.${idx}.detail.files`, updated, { shouldDirty: true })
-                            if (typeof removed === 'string') {
-                              void fetch(`/api/upload?key=${encodeURIComponent(removed)}`, { method: 'DELETE' })
-                            }
-                          }}
-                          variant="ghost"
-                          size="sm"
-                          className="h-auto px-2 py-1 text-xs text-destructive hover:text-destructive"
-                        >
-                          Remove
-                        </Button>
-                      )}
-                    </div>
-                  )})}
-                </div>
-              )}
-            </div>
+                    )})}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )})}

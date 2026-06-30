@@ -55,6 +55,7 @@ model User {
   acknowledgedTransfers Transfer[]      @relation("TransferAcknowledger")
   salaryRecords         SalaryRecord[]
   approvedLeaves        LeaveRecord[]   @relation("LeaveApprover")
+  notifications         Notification[]
 
   phoneNumber String?
 
@@ -104,6 +105,12 @@ model Category {
   createdAt      DateTime       @default(now())
   items          EntryItem[]
   expenseEntries ExpenseEntry[]
+
+  // Sub-category support
+  parentId           Int?
+  parent             Category?  @relation("CategoryChildren", fields: [parentId], references: [id])
+  children           Category[] @relation("CategoryChildren")
+  requiresAttachment Boolean    @default(true)
 }
 
 model EntryItem {
@@ -356,13 +363,14 @@ model Cheque {
 }
 
 model ExpenseEntry {
-  id            Int      @id @default(autoincrement())
-  dailyEntryId  Int
-  categoryId    Int
-  amount        Float
-  note          String?
-  attachmentUrl String?
-  createdAt     DateTime @default(now())
+  id              Int      @id @default(autoincrement())
+  dailyEntryId    Int
+  categoryId      Int
+  amount          Float
+  note            String?
+  attachmentUrl   String?
+  isTransferEntry Boolean  @default(false) // Auto-booked on acknowledge — excluded from expense totals in reports
+  createdAt       DateTime @default(now())
 
   dailyEntry DailyEntry @relation(fields: [dailyEntryId], references: [id])
   category   Category   @relation(fields: [categoryId], references: [id])
@@ -408,13 +416,14 @@ model Employee {
 }
 
 model Attendance {
-  id          Int      @id @default(autoincrement())
-  date        DateTime
-  checkInTime DateTime
-  status      String   // PRESENT, ABSENT, LATE, LEAVE
-  note        String?  @db.Text
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           Int       @id @default(autoincrement())
+  date         DateTime
+  checkInTime  DateTime
+  checkOutTime DateTime? // Optional checkout time
+  status       String    // PRESENT, ABSENT, LATE, LEAVE
+  note         String?   @db.Text
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   employeeId  Int
   employee    Employee @relation(fields: [employeeId], references: [id])
@@ -524,4 +533,19 @@ model SystemSettings {
   generatedBy String   @default("")
   paymentBy   String   @default("")
   updatedAt   DateTime @updatedAt
+}
+
+model Notification {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type       String   // TRANSFER_INCOMING | GENERAL
+  title      String
+  body       String   @db.Text
+  metadata   Json?    // e.g. { transferId: 123, branchName: 'Mirpur' }
+  isRead     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  @@index([userId, isRead])
+  @@index([userId, createdAt])
 }

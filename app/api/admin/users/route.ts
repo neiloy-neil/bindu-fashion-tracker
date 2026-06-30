@@ -4,6 +4,7 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import { userSchema } from '@/lib/schemas'
+import { logger } from '@/lib/logger'
 
 export async function GET(req: NextRequest) {
   const userRole = req.headers.get('x-user-role')
@@ -31,7 +32,7 @@ export async function GET(req: NextRequest) {
     })
     return NextResponse.json(users)
   } catch (error: any) {
-    console.error('Failed to fetch users:', error)
+    logger.error('Failed to fetch users:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }
@@ -84,7 +85,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(user, { status: 201 })
   } catch (error: any) {
-    console.error('Failed to create user:', error)
+    logger.error('Failed to create user:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }

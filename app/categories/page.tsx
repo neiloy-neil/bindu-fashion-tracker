@@ -26,6 +26,7 @@ type CategoryWithChildren = {
   frequency?: string | null
   parentId?: number | null
   requiresAttachment?: boolean
+  isAutoTransferred?: boolean
   children?: CategoryWithChildren[]
 }
 
@@ -241,6 +242,7 @@ export default function CategoriesPage() {
   const [frequency, setFrequency] = useState<string>('DAILY')
   const [isActive, setIsActive] = useState(true)
   const [requiresAttachment, setRequiresAttachment] = useState(true)
+  const [isAutoTransferred, setIsAutoTransferred] = useState(false)
 
   const incomeCategories = categories.filter(c => c.type === 'INCOME')
   const expenseCategories = categories.filter(c => c.type === 'EXPENSE')
@@ -271,15 +273,14 @@ export default function CategoriesPage() {
     try {
       const url = editingCategory ? `/api/categories/${editingCategory.id}` : '/api/categories'
       const method = editingCategory ? 'PUT' : 'POST'
-      const body: Record<string, any> = {
+      const body = {
         name,
         type,
         frequency: type === 'EXPENSE' ? frequency : null,
         isActive,
+        isAutoTransferred,
         requiresAttachment,
-      }
-      if (parentCategory && !editingCategory) {
-        body.parentId = parentCategory.id
+        parentId: parentCategory?.id || null
       }
 
       const res = await fetch(url, {
@@ -316,6 +317,7 @@ export default function CategoriesPage() {
     setFrequency('DAILY')
     setIsActive(true)
     setRequiresAttachment(true)
+    setIsAutoTransferred(false)
     setShowModal(true)
   }
 
@@ -327,6 +329,7 @@ export default function CategoriesPage() {
     setFrequency(cat.frequency ?? 'DAILY')
     setIsActive(cat.isActive)
     setRequiresAttachment(cat.requiresAttachment ?? true)
+    setIsAutoTransferred(cat.isAutoTransferred ?? false)
     setShowModal(true)
   }
 
@@ -338,6 +341,7 @@ export default function CategoriesPage() {
     setFrequency(parent.frequency ?? 'DAILY')
     setIsActive(true)
     setRequiresAttachment(true)
+    setIsAutoTransferred(false)
     setShowModal(true)
   }
 
@@ -465,6 +469,18 @@ export default function CategoriesPage() {
                     Requires Attachment (shows upload box)
                   </Label>
                 </div>
+                {type === 'INCOME' && !parentCategory && (
+                  <div className="flex items-center gap-3">
+                    <Checkbox
+                      id="isAutoTransferred"
+                      checked={isAutoTransferred}
+                      onCheckedChange={(checked) => setIsAutoTransferred(checked === true)}
+                    />
+                    <Label htmlFor="isAutoTransferred" className="cursor-pointer text-sm font-medium text-[var(--text-primary)]">
+                      Auto-Transfer Digital Sales (creates transfer entry automatically)
+                    </Label>
+                  </div>
+                )}
               </div>
 
               <div className="flex gap-3 pt-4 border-t border-[var(--border)]">

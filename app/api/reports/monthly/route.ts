@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 
 export async function GET(req: NextRequest) {
   const role = req.headers.get('x-user-role')
@@ -77,7 +78,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(branchData)
   } catch (error: any) {
-    console.error('Monthly report error:', error)
+    logger.error('Monthly report error:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }

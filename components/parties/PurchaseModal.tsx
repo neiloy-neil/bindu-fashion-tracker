@@ -74,8 +74,8 @@ export function PurchaseModal({ isOpen, onClose, partyId, onSuccess }: { isOpen:
         setFormData({ date: new Date().toISOString().split('T')[0], amount: '', invoiceNumber: '', note: '', isOpeningDue: false })
         setFile(null)
       }, 300)
-    } catch (err: any) {
-      toast.error(err.message)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Unknown error')
     } finally {
       setLoading(false)
     }

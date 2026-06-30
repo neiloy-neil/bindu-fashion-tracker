@@ -1,7 +1,6 @@
 import 'dotenv/config'
 import { prisma } from './lib/prisma'
 import * as bcrypt from 'bcryptjs'
-import crypto from 'crypto'
 import { faker } from '@faker-js/faker'
 
 const BRANCHES = [
@@ -180,7 +179,7 @@ async function main() {
       }
 
       try {
-        const entry = await prisma.dailyEntry.upsert({
+        await prisma.dailyEntry.upsert({
           where: {
             date_branchId: { date, branchId: branch.id }
           },
@@ -201,7 +200,7 @@ async function main() {
         })
         entryCount++
         itemCount += incomeItems.length + expenseItems.length
-      } catch (e: any) {
+      } catch {
         // Skip if exists
       }
     }

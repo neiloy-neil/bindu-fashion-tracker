@@ -25,7 +25,7 @@ async function uploadReceipt(file: File) {
   return url as string
 }
 
-export function PaymentModal({ isOpen, onClose, partyId, bankAccounts = [], onSuccess }: { isOpen: boolean, onClose: () => void, partyId: number, bankAccounts?: any[], onSuccess: () => void }) {
+export function PaymentModal({ isOpen, onClose, partyId, bankAccounts = [], onSuccess }: { isOpen: boolean, onClose: () => void, partyId: number, bankAccounts?: Array<{id: number, type: string, isDefault?: boolean}>, onSuccess: () => void }) {
   const [loading, setLoading] = useState(false)
   const [file, setFile] = useState<File | null>(null)
   
@@ -50,6 +50,7 @@ export function PaymentModal({ isOpen, onClose, partyId, bankAccounts = [], onSu
   useEffect(() => {
     if (relevantAccounts.length > 0) {
       const defaultAcc = relevantAccounts.find(a => a.isDefault)
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPartyBankInfoId(defaultAcc ? defaultAcc.id : relevantAccounts[0].id)
     } else {
       setPartyBankInfoId('')
@@ -110,8 +111,8 @@ export function PaymentModal({ isOpen, onClose, partyId, bankAccounts = [], onSu
         setChequeNumber('')
         setFile(null)
       }, 300)
-    } catch (err: any) {
-      toast.error(err.message)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Unknown error')
     } finally {
       setLoading(false)
     }

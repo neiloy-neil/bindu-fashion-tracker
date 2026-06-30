@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 import { logAudit } from '@/lib/audit'
+import { logger } from '@/lib/logger'
 
 const statusSchema = z.object({
   status: z.enum(['APPROVED', 'REJECTED'])
@@ -61,7 +62,7 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
 
     return NextResponse.json(updated)
   } catch (error: any) {
-    console.error('Update leave error:', error)
+    logger.error('Update leave error:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }

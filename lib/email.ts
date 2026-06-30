@@ -89,7 +89,7 @@ export function chequeApprovalEmail(partyName: string, amount: number, withdrawD
   }
 }
 
-export function dailySummaryEmail(date: string, totalSales: number, totalExpenses: number, netBalance: number, branchSummaries: any[]) {
+export function dailySummaryEmail(date: string, totalSales: number, totalExpenses: number, netBalance: number, branchSummaries: Array<{ branchName: string, sales: number, expenses: number, net: number }>) {
   return {
     subject: `[Daily Summary] Register Closed — ${date}`,
     html: `

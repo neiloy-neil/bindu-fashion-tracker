@@ -111,10 +111,9 @@ export async function POST(req: NextRequest) {
       }
 
       // --- AUTO-TRANSFER DIGITAL SALES ---
-      const digitalMethods = ['Bkash', 'Rocket', 'Nagad', 'POS']
       const digitalSales = body.items.map(item => ({
         item, cat: categories.find(c => c.id === item.categoryId)
-      })).filter(({ cat }) => cat && digitalMethods.some(m => cat.name.toLowerCase().includes(m.toLowerCase())))
+      })).filter(({ cat }) => cat?.isAutoTransferred)
 
       for (const { item, cat } of digitalSales) {
         if (!cat) continue;

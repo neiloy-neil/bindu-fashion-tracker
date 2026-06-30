@@ -21,6 +21,7 @@ export function formatDate(date: Date | string): string {
   })
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function computeTotals(entry: any) {
   let totalSale = 0
   let totalExpense = 0

@@ -208,6 +208,7 @@ function DailyReportDocument({
     <Document>
       <Page size="A4" style={styles.page}>
         <View style={styles.logoWrap}>
+          {/* eslint-disable-next-line jsx-a11y/alt-text */}
           <Image src={BINDU_LOGO} style={styles.logo} />
         </View>
         <Text style={styles.title}>Bindu Premium - Daily Report</Text>
@@ -351,6 +352,7 @@ function MonthlyReportDocument({
     <Document>
       <Page size="A4" orientation="landscape" style={styles.page}>
         <View style={styles.logoWrap}>
+          {/* eslint-disable-next-line jsx-a11y/alt-text */}
           <Image src={BINDU_LOGO} style={styles.logo} />
         </View>
         <Text style={styles.title}>
@@ -386,6 +388,7 @@ function SummaryReportDocument({
     <Document>
       <Page size="A4" style={styles.page}>
         <View style={styles.logoWrap}>
+          {/* eslint-disable-next-line jsx-a11y/alt-text */}
           <Image src={BINDU_LOGO} style={styles.logo} />
         </View>
         <Text style={styles.title}>Bindu Premium - {branchName ? `${branchName} Summary` : 'Monthly Summary'}</Text>

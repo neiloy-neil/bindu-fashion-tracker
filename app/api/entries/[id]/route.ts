@@ -68,10 +68,9 @@ export async function PUT(
       }
 
       // --- AUTO-TRANSFER DIGITAL SALES ---
-      const digitalMethods = ['Bkash', 'Rocket', 'Nagad', 'POS']
       for (const item of items) {
         const cat = await prisma.category.findUnique({ where: { id: item.categoryId } })
-        if (cat && digitalMethods.some(m => cat.name.toLowerCase().includes(m.toLowerCase()))) {
+        if (cat?.isAutoTransferred) {
           let account = await prisma.ledgerAccount.findFirst({
             where: { name: { equals: cat.name, mode: 'insensitive' } }
           })

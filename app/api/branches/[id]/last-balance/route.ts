@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { dateOnlyToUtc } from '@/lib/new-entry'
+import { logger } from '@/lib/logger'
 
 export async function GET(
   req: NextRequest,
@@ -44,7 +45,7 @@ export async function GET(
 
     return NextResponse.json({ openingBalance })
   } catch (error: any) {
-    console.error('Error fetching last balance:', error)
+    logger.error('Error fetching last balance:', error)
     return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 })
   }
 }

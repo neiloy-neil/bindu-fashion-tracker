@@ -6,7 +6,7 @@ import { useSession } from 'next-auth/react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import {
   LayoutDashboard, Users, Building2, DollarSign, FileText,
-  CalendarDays, Gift, Settings, ArrowRight, Search, FileSignature, CheckSquare, ClipboardList
+  CalendarDays, Gift, Settings, ArrowRight, Search, CheckSquare, ClipboardList
 } from 'lucide-react'
 
 type CommandItem = {
@@ -61,11 +61,11 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
   // Reset on open
   useEffect(() => {
     if (open) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setQuery('')
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setSelectedIdx(0)
-      setTimeout(() => inputRef.current?.focus(), 50)
+      setTimeout(() => {
+        setQuery('')
+        setSelectedIdx(0)
+        inputRef.current?.focus()
+      }, 50)
     }
   }, [open])
 

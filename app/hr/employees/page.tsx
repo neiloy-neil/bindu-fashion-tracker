@@ -8,7 +8,7 @@ import { EmployeeModal } from '@/components/hr/EmployeeModal'
 import { EmployeeProfileModal } from '@/components/hr/EmployeeProfileModal'
 import { Button } from '@/components/ui/button'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
-import { Plus, User, Pencil, Trash2, Upload, Download } from 'lucide-react'
+import { Plus, User, Pencil, Trash2, Upload, Download, ArrowRightLeft } from 'lucide-react'
 import { downloadEmployeeTemplate, parseEmployeeSheet } from '@/lib/hr/excel'
 
 export default function EmployeesPage() {
@@ -30,6 +30,12 @@ export default function EmployeesPage() {
   const [isProfileOpen, setIsProfileOpen] = useState(false)
   const [viewingEmployee, setViewingEmployee] = useState<any | null>(null)
   const [reloadNonce, setReloadNonce] = useState(0)
+
+  const [isTransferOpen, setIsTransferOpen] = useState(false)
+  const [transferringEmployee, setTransferringEmployee] = useState<any | null>(null)
+  const [transferTargetBranch, setTransferTargetBranch] = useState<string>('')
+  const [transferReason, setTransferReason] = useState<string>('')
+  const [isTransferring, setIsTransferring] = useState(false)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -123,6 +129,29 @@ export default function EmployeesPage() {
       setReloadNonce((value) => value + 1)
     } catch (err: any) {
       toast.error(err.message)
+    }
+  }
+
+  const handleTransfer = async () => {
+    if (!transferringEmployee || !transferTargetBranch) return
+    setIsTransferring(true)
+    try {
+      const res = await fetch(`/api/hr/employees/${transferringEmployee.id}/transfer`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ toBranchId: parseInt(transferTargetBranch), reason: transferReason })
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Failed to transfer')
+      }
+      toast.success('Employee transferred successfully')
+      setIsTransferOpen(false)
+      setReloadNonce((value) => value + 1)
+    } catch (err: any) {
+      toast.error(err.message)
+    } finally {
+      setIsTransferring(false)
     }
   }
 
@@ -302,6 +331,14 @@ export default function EmployeesPage() {
                     <Button variant="ghost" size="icon" className="h-8 w-8 text-[var(--text-muted)] hover:text-[var(--info)] hover:bg-[var(--info-subtle)]" onClick={() => { setViewingEmployee(emp); setIsProfileOpen(true) }}>
                       <User size={14} />
                     </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-[var(--text-muted)] hover:text-[var(--accent)] hover:bg-[var(--accent-subtle)]" onClick={() => { 
+                      setTransferringEmployee(emp); 
+                      setTransferTargetBranch('');
+                      setTransferReason('');
+                      setIsTransferOpen(true);
+                    }}>
+                      <ArrowRightLeft size={14} />
+                    </Button>
                     <Button variant="ghost" size="icon" className="h-8 w-8 text-[var(--text-muted)] hover:text-[var(--accent)] hover:bg-[var(--accent-subtle)]" onClick={() => { setEditingEmployee(emp); setIsModalOpen(true) }}>
                       <Pencil size={14} />
                     </Button>
@@ -331,6 +368,56 @@ export default function EmployeesPage() {
         employee={viewingEmployee}
         onEdit={() => { setIsProfileOpen(false); setEditingEmployee(viewingEmployee); setIsModalOpen(true) }}
       />
+
+      {isTransferOpen && transferringEmployee && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="flex w-full max-w-md flex-col overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-2xl">
+            <div className="flex items-center justify-between border-b border-[var(--border)] px-5 py-4">
+              <div>
+                <h3 className="text-base font-semibold text-[var(--text-primary)]">Transfer Employee</h3>
+                <p className="text-xs text-[var(--text-muted)] mt-0.5">{transferringEmployee.name}</p>
+              </div>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="flex justify-between items-center text-sm bg-muted/30 p-3 rounded-md mb-2">
+                <span className="text-muted-foreground">Current Branch</span>
+                <span className="font-medium">{transferringEmployee.branch?.name || 'Unassigned'}</span>
+              </div>
+              
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground">Destination Branch</label>
+                <select 
+                  className="w-full text-sm bg-background border border-border rounded-md p-2"
+                  value={transferTargetBranch}
+                  onChange={e => setTransferTargetBranch(e.target.value)}
+                >
+                  <option value="" disabled>Select a branch</option>
+                  {branches.filter(b => b.id !== transferringEmployee.branchId).map(b => (
+                    <option key={b.id} value={b.id}>{b.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground">Reason (Optional)</label>
+                <textarea 
+                  value={transferReason}
+                  onChange={e => setTransferReason(e.target.value)}
+                  placeholder="Reason for transfer..."
+                  className="w-full text-sm bg-background border border-border rounded-md p-2 min-h-[80px]"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4 border-t border-border mt-4">
+                <Button variant="outline" className="flex-1" onClick={() => setIsTransferOpen(false)}>Cancel</Button>
+                <Button className="flex-1" onClick={handleTransfer} disabled={isTransferring || !transferTargetBranch}>
+                  {isTransferring ? 'Transferring...' : 'Transfer'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
     </>
   )

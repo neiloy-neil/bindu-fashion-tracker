@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 import { sendEmail, leaveRequestEmail } from '@/lib/email'
+import { logger } from '@/lib/logger'
 
 const leaveSchema = z.object({
   employeeId: z.number(),
@@ -62,7 +63,7 @@ export async function GET(req: NextRequest) {
     })
     return NextResponse.json(leaves)
   } catch (error: any) {
-    console.error('Fetch leaves error:', error)
+    logger.error('Fetch leaves error:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }
@@ -122,7 +123,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(leave, { status: 201 })
   } catch (error: any) {
-    console.error('Create leave error:', error)
+    logger.error('Create leave error:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }

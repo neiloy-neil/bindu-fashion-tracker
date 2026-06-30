@@ -42,7 +42,7 @@ export interface DailyEntry {
   notes?: string | null
   actualPhysicalCash?: number | null
   cashDifferenceNote?: string | null
-  eodChecklist?: any | null
+  eodChecklist?: Record<string, unknown> | null
   openingTime?: string | null
   closingTime?: string | null
   

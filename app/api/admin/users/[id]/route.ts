@@ -4,6 +4,7 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import { z } from 'zod'
+import { logger } from '@/lib/logger'
 
 const userUpdateSchema = z.object({
   username: z.string().min(2).optional(),
@@ -75,7 +76,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     })
     return NextResponse.json(user)
   } catch (error: any) {
-    console.error('Failed to update user:', error)
+    logger.error('Failed to update user:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }
@@ -97,7 +98,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     })
     return NextResponse.json(user)
   } catch (error: any) {
-    console.error('Failed to delete user:', error)
+    logger.error('Failed to delete user:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }

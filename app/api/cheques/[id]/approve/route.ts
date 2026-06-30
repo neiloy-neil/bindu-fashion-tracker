@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { logAudit } from '@/lib/audit'
+import { logger } from '@/lib/logger'
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const userRole = req.headers.get('x-user-role')
@@ -59,7 +60,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     return NextResponse.json(result)
   } catch (error) {
-    console.error('Failed to approve cheque:', error)
+    logger.error('Failed to approve cheque:', error)
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Internal Server Error' }, { status: 500 })
   }
 }

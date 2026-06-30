@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
+import { logger } from '@/lib/logger'
 
 export async function GET() {
   const session = await getServerSession(authOptions)
@@ -30,7 +31,7 @@ export async function GET() {
 
     return NextResponse.json({ count })
   } catch (error) {
-    console.error('Failed to fetch pending transfers count:', error)
+    logger.error('Failed to fetch pending transfers count:', error)
     return NextResponse.json({ error: 'Failed to fetch count' }, { status: 500 })
   }
 }

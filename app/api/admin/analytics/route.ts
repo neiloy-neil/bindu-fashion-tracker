@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
+import { logger } from '@/lib/logger'
 
 export async function GET(request: Request) {
   try {
@@ -134,7 +135,7 @@ export async function GET(request: Request) {
       expenseData
     })
   } catch (error: any) {
-    console.error('Analytics Error:', error)
+    logger.error('Analytics Error:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }

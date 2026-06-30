@@ -64,8 +64,8 @@ export function ImportPartyModal({ isOpen, onClose, onSuccess }: ImportPartyModa
       
       setMapping(initialMapping)
       setStep(2)
-    } catch (error: any) {
-      toast.error(error.message)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Import failed')
       setFile(null)
       if (fileInputRef.current) fileInputRef.current.value = ''
     } finally {
@@ -101,8 +101,8 @@ export function ImportPartyModal({ isOpen, onClose, onSuccess }: ImportPartyModa
       
       resetAndClose()
       onSuccess()
-    } catch (error: any) {
-      toast.error(error.message, { id: toastId })
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Unknown error', { id: toastId })
     } finally {
       setIsProcessing(false)
     }
@@ -154,7 +154,7 @@ export function ImportPartyModal({ isOpen, onClose, onSuccess }: ImportPartyModa
               <AlertCircle size={18} className="shrink-0 mt-0.5" />
               <div>
                 <p className="font-semibold">Unmapped columns are safe!</p>
-                <p className="opacity-90 mt-0.5">Any columns you leave as "Save as Extra Data" will be dynamically saved to the party's profile.</p>
+                <p className="opacity-90 mt-0.5">Any columns you leave as &quot;Save as Extra Data&quot; will be dynamically saved to the party&apos;s profile.</p>
               </div>
             </div>
 

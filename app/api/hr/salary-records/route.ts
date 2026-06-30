@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 import { logAudit } from '@/lib/audit'
+import { logger } from '@/lib/logger'
 
 export async function GET(req: NextRequest) {
   const role = req.headers.get('x-user-role')
@@ -108,7 +109,7 @@ export async function GET(req: NextRequest) {
     })
 
     return NextResponse.json({ records: recordsWithAdvances, calculatedLeaves, calculatedAttendance })
-  } catch (error: any) { console.error("PRISMA ERROR:", error);
+  } catch (error: any) { logger.error("PRISMA ERROR:", error);
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
@@ -141,7 +142,7 @@ export async function POST(req: NextRequest) {
     })
 
     const parsed = salaryPayloadSchema.safeParse(rawBody)
-    if (!parsed.success) { console.error("ZOD ERROR:", parsed.error.flatten());
+    if (!parsed.success) { logger.error("ZOD ERROR:", parsed.error.flatten());
       return NextResponse.json({ error: 'Invalid payload', details: parsed.error.flatten() }, { status: 400 })
     }
 

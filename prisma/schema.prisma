@@ -11,21 +11,21 @@ datasource db {
 }
 
 model Branch {
-  id             Int             @id @default(autoincrement())
-  name           String          @unique
-  code           String?         @unique
-  type           String          @default("RETAIL") // RETAIL, WHOLESALE, FACTORY
-  address        String?         @db.Text
+  id             Int                @id @default(autoincrement())
+  name           String             @unique
+  code           String?            @unique
+  type           String             @default("RETAIL") // RETAIL, WHOLESALE, FACTORY
+  address        String?            @db.Text
   contactPerson  String?
   phoneNumber    String?
-  isActive       Boolean         @default(true)
-  shiftStartTime String          @default("09:00")
-  createdAt      DateTime        @default(now())
+  isActive       Boolean            @default(true)
+  shiftStartTime String             @default("09:00")
+  createdAt      DateTime           @default(now())
   entries        DailyEntry[]
   attendances    Attendance[]
-  users          User[]          @relation("UserPrimaryBranch")
+  users          User[]             @relation("UserPrimaryBranch")
   requests       BranchRequest[]
-  managedBy      User[]          @relation("UserManagedBranches")
+  managedBy      User[]             @relation("UserManagedBranches")
   ledgerAccounts LedgerAccount[]
   employees      Employee[]
   transfersOut   EmployeeTransfer[] @relation("BranchTransfersOut")
@@ -33,28 +33,28 @@ model Branch {
 }
 
 model User {
-  id                    Int             @id @default(autoincrement())
-  username              String          @unique
-  email                 String?         @unique
+  id                    Int                @id @default(autoincrement())
+  username              String             @unique
+  email                 String?            @unique
   passwordHash          String
-  role                  String          @default("BRANCH") // ADMIN | SUPER_ADMIN | BRANCH | AUDITOR | AREA_MANAGER | HR_ADMIN | ACCOUNTS
-  isActive              Boolean         @default(true)
+  role                  String             @default("BRANCH") // ADMIN | SUPER_ADMIN | BRANCH | AUDITOR | AREA_MANAGER | HR_ADMIN | ACCOUNTS
+  isActive              Boolean            @default(true)
   branchId              Int?
-  branch                Branch?         @relation("UserPrimaryBranch", fields: [branchId], references: [id])
+  branch                Branch?            @relation("UserPrimaryBranch", fields: [branchId], references: [id])
   editRequests          EditRequest[]
   comments              Comment[]
   accounts              Account[]
   sessions              Session[]
   branchRequests        BranchRequest[]
-  assignedRequests      BranchRequest[] @relation("AssignedBranchRequests")
-  managedBranches       Branch[]        @relation("UserManagedBranches")
-  approvedCheques       Cheque[]        @relation("ChequeApprover")
+  assignedRequests      BranchRequest[]    @relation("AssignedBranchRequests")
+  managedBranches       Branch[]           @relation("UserManagedBranches")
+  approvedCheques       Cheque[]           @relation("ChequeApprover")
   auditLogs             AuditLog[]
   employeeTransfers     EmployeeTransfer[]
-  createdAt             DateTime        @default(now())
-  acknowledgedTransfers Transfer[]      @relation("TransferAcknowledger")
+  createdAt             DateTime           @default(now())
+  acknowledgedTransfers Transfer[]         @relation("TransferAcknowledger")
   salaryRecords         SalaryRecord[]
-  approvedLeaves        LeaveRecord[]   @relation("LeaveApprover")
+  approvedLeaves        LeaveRecord[]      @relation("LeaveApprover")
   notifications         Notification[]
 
   phoneNumber String?
@@ -96,15 +96,16 @@ model DailyEntry {
 }
 
 model Category {
-  id             Int            @id @default(autoincrement())
-  name           String         @unique
-  type           String // "INCOME" or "EXPENSE"
-  isActive       Boolean        @default(true)
-  isDefault      Boolean        @default(false)
-  frequency      String?        // DAILY | WEEKLY | MONTHLY | AS_NEEDED — only relevant for EXPENSE type
-  createdAt      DateTime       @default(now())
-  items          EntryItem[]
-  expenseEntries ExpenseEntry[]
+  id                Int            @id @default(autoincrement())
+  name              String         @unique
+  type              String // "INCOME" or "EXPENSE"
+  isActive          Boolean        @default(true)
+  isDefault         Boolean        @default(false)
+  isAutoTransferred Boolean        @default(false)
+  frequency         String? // DAILY | WEEKLY | MONTHLY | AS_NEEDED — only relevant for EXPENSE type
+  createdAt         DateTime       @default(now())
+  items             EntryItem[]
+  expenseEntries    ExpenseEntry[]
 
   // Sub-category support
   parentId           Int?
@@ -279,10 +280,10 @@ model EmployeeTransfer {
   reason          String?  @db.Text
   createdAt       DateTime @default(now())
 
-  employee        Employee @relation(fields: [employeeId], references: [id])
-  fromBranch      Branch   @relation("BranchTransfersOut", fields: [fromBranchId], references: [id])
-  toBranch        Branch   @relation("BranchTransfersIn", fields: [toBranchId], references: [id])
-  transferredBy   User     @relation(fields: [transferredById], references: [id])
+  employee      Employee @relation(fields: [employeeId], references: [id])
+  fromBranch    Branch   @relation("BranchTransfersOut", fields: [fromBranchId], references: [id])
+  toBranch      Branch   @relation("BranchTransfersIn", fields: [toBranchId], references: [id])
+  transferredBy User     @relation(fields: [transferredById], references: [id])
 
   @@index([employeeId])
   @@index([fromBranchId])
@@ -420,15 +421,17 @@ model Attendance {
   date         DateTime
   checkInTime  DateTime
   checkOutTime DateTime? // Optional checkout time
-  status       String    // PRESENT, ABSENT, LATE, LEAVE
+  status       String // PRESENT, ABSENT, LATE, LEAVE
+  isExcused    Boolean   @default(false)
+  excuseNote   String?   @db.Text
   note         String?   @db.Text
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  employeeId  Int
-  employee    Employee @relation(fields: [employeeId], references: [id])
-  branchId    Int
-  branch      Branch   @relation(fields: [branchId], references: [id])
+  employeeId Int
+  employee   Employee @relation(fields: [employeeId], references: [id])
+  branchId   Int
+  branch     Branch   @relation(fields: [branchId], references: [id])
 
   @@unique([employeeId, date])
   @@index([branchId, date])
@@ -514,7 +517,7 @@ model LeaveRecord {
   employee     Employee @relation(fields: [employeeId], references: [id])
   startDate    DateTime
   endDate      DateTime
-  type         String   // SICK, CASUAL, UNPAID, ANNUAL, MARRIAGE
+  type         String // SICK, CASUAL, UNPAID, ANNUAL, MARRIAGE
   status       String   @default("PENDING") // PENDING, APPROVED, REJECTED
   reason       String?  @db.Text
   approvedById Int?
@@ -536,15 +539,15 @@ model SystemSettings {
 }
 
 model Notification {
-  id         Int      @id @default(autoincrement())
-  userId     Int
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type       String   // TRANSFER_INCOMING | GENERAL
-  title      String
-  body       String   @db.Text
-  metadata   Json?    // e.g. { transferId: 123, branchName: 'Mirpur' }
-  isRead     Boolean  @default(false)
-  createdAt  DateTime @default(now())
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String // TRANSFER_INCOMING | GENERAL
+  title     String
+  body      String   @db.Text
+  metadata  Json? // e.g. { transferId: 123, branchName: 'Mirpur' }
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
 
   @@index([userId, isRead])
   @@index([userId, createdAt])

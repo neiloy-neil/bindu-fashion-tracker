@@ -16,6 +16,10 @@ export default function AttendanceDashboardPage() {
   const [report, setReport] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [selectedRecord, setSelectedRecord] = useState<any | null>(null)
+  const [isExcused, setIsExcused] = useState(false)
+  const [excuseNote, setExcuseNote] = useState('')
+  const [savingRecord, setSavingRecord] = useState(false)
 
   useEffect(() => {
     fetch('/api/branches')
@@ -86,6 +90,48 @@ export default function AttendanceDashboardPage() {
       case 'LATE': return 'L'
       case 'LEAVE': return 'V'
       default: return '-'
+    }
+  }
+
+  const handleCellClick = (record: any, empName: string, dateStr: string) => {
+    if (!record || !record.id) return
+    setSelectedRecord({ ...record, empName, dateStr })
+    setIsExcused(record.isExcused || false)
+    setExcuseNote(record.excuseNote || '')
+  }
+
+  const handleSaveExcuse = async () => {
+    if (!selectedRecord) return
+    setSavingRecord(true)
+    try {
+      const res = await fetch(`/api/hr/attendance/${selectedRecord.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isExcused, excuseNote })
+      })
+      if (!res.ok) throw new Error((await res.json()).error || 'Failed to update')
+      toast.success('Attendance updated')
+      
+      // Update local state to avoid refetching
+      setReport(prev => prev.map(emp => {
+        if (emp.name !== selectedRecord.empName) return emp
+        return {
+          ...emp,
+          attendanceMap: {
+            ...emp.attendanceMap,
+            [selectedRecord.day]: {
+              ...emp.attendanceMap[selectedRecord.day],
+              isExcused,
+              excuseNote
+            }
+          }
+        }
+      }))
+      setSelectedRecord(null)
+    } catch (err: any) {
+      toast.error(err.message)
+    } finally {
+      setSavingRecord(false)
     }
   }
 
@@ -184,12 +230,17 @@ export default function AttendanceDashboardPage() {
                       {daysArray.map(day => {
                         const record = emp.attendanceMap[day]
                         const status = record?.status || ''
-                        const colorClass = getStatusColor(status)
+                        const colorClass = record?.isExcused ? 'bg-green-100 text-green-800 border-green-400 border-2' : getStatusColor(status)
                         const letter = getStatusLetter(status)
                         return (
                           <TableCell key={day} className="text-center px-1 py-2">
-                            <div className={`w-7 h-7 mx-auto rounded flex items-center justify-center text-xs font-semibold border ${colorClass}`} title={record?.checkInTime ? `In: ${format(new Date(record.checkInTime), 'hh:mm a')}` : 'No Record'}>
+                            <div 
+                              onClick={() => handleCellClick({ ...record, day }, emp.name, `${currentMonth}-${String(day).padStart(2, '0')}`)}
+                              className={`w-7 h-7 mx-auto rounded flex items-center justify-center text-xs font-semibold border ${colorClass} ${record?.id ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''}`} 
+                              title={record?.checkInTime ? `In: ${format(new Date(record.checkInTime), 'hh:mm a')}${record.isExcused ? ' (Excused)' : ''}` : 'No Record'}
+                            >
                               {letter}
+                              {record?.isExcused && <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span></span>}
                             </div>
                           </TableCell>
                         )
@@ -202,6 +253,53 @@ export default function AttendanceDashboardPage() {
           )}
         </div>
       </div>
+
+      {selectedRecord && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="flex w-full max-w-md flex-col overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-2xl">
+            <div className="flex items-center justify-between border-b border-[var(--border)] px-5 py-4">
+              <div>
+                <h3 className="text-base font-semibold text-[var(--text-primary)]">Manage Attendance</h3>
+                <p className="text-xs text-[var(--text-muted)] mt-0.5">{selectedRecord.empName} — {selectedRecord.dateStr}</p>
+              </div>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="flex justify-between items-center text-sm bg-muted/30 p-3 rounded-md">
+                <span className="text-muted-foreground">Original Status</span>
+                <Badge variant="outline">{selectedRecord.status}</Badge>
+              </div>
+              <div className="flex justify-between items-center text-sm bg-muted/30 p-3 rounded-md">
+                <span className="text-muted-foreground">Check-in</span>
+                <span className="font-mono">{selectedRecord.checkInTime ? format(new Date(selectedRecord.checkInTime), 'hh:mm a') : 'N/A'}</span>
+              </div>
+              
+              <div className="pt-4 border-t border-border space-y-4">
+                <label className="flex items-center gap-3">
+                  <input type="checkbox" checked={isExcused} onChange={e => setIsExcused(e.target.checked)} className="w-4 h-4 rounded border-border" />
+                  <span className="text-sm font-medium">Mark as Excused</span>
+                </label>
+                
+                {isExcused && (
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-muted-foreground">Excuse Note</label>
+                    <textarea 
+                      value={excuseNote}
+                      onChange={e => setExcuseNote(e.target.value)}
+                      placeholder="Reason for excuse..."
+                      className="w-full text-sm bg-background border border-border rounded-md p-2 min-h-[80px]"
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <Button variant="outline" className="flex-1" onClick={() => setSelectedRecord(null)}>Cancel</Button>
+                <Button className="flex-1" onClick={handleSaveExcuse} disabled={savingRecord}>{savingRecord ? 'Saving...' : 'Save'}</Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }

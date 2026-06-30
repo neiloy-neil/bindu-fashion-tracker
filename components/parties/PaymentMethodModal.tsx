@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import toast from 'react-hot-toast'
-import { Building2, Smartphone, Landmark, CheckCircle2 } from 'lucide-react'
+import { Smartphone, Landmark, CheckCircle2 } from 'lucide-react'
 
 type MethodType = 'BANK' | 'BKASH' | 'NAGAD' | 'OTHER'
 
@@ -52,8 +52,8 @@ export function PaymentMethodModal({ isOpen, onClose, partyId, onSuccess }: { is
         setType('BANK')
         setFormData({ accountNo: '', accountName: '', bankName: '', branchName: '', routingNo: '', isDefault: false })
       }, 300)
-    } catch (err: any) {
-      toast.error(err.message)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Unknown error')
     } finally {
       setLoading(false)
     }

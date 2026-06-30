@@ -78,8 +78,8 @@ export function AddPartyModal({ isOpen, onClose, onSuccess }: AddPartyModalProps
         methodRoutingNo: '',
         methodBranchName: ''
       })
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error')
     } finally {
       setIsSubmitting(false)
     }

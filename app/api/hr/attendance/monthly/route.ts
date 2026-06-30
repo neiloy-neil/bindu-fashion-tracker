@@ -61,10 +61,13 @@ export async function GET(req: NextRequest) {
             }
           },
           select: {
+            id: true,
             date: true,
             status: true,
             checkInTime: true,
-            note: true
+            note: true,
+            isExcused: true,
+            excuseNote: true
           }
         }
       },
@@ -82,9 +85,12 @@ export async function GET(req: NextRequest) {
       emp.attendances.forEach(att => {
         const day = att.date.getDate()
         attendanceMap[day] = {
+          id: att.id,
           status: att.status,
           checkInTime: att.checkInTime,
-          note: att.note
+          note: att.note,
+          isExcused: att.isExcused,
+          excuseNote: att.excuseNote
         }
         
         if (att.status === 'PRESENT') presentDays++

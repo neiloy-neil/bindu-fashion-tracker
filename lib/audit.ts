@@ -6,8 +6,8 @@ export async function logAudit(params: {
   action: 'CREATE' | 'UPDATE' | 'DELETE';
   entityType: string;
   entityId: number;
-  oldValues?: any;
-  newValues?: any;
+  oldValues?: Record<string, unknown> | null;
+  newValues?: Record<string, unknown> | null;
   reason?: string;
 }) {
   try {

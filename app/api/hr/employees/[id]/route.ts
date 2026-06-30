@@ -110,12 +110,27 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const role = req.headers.get('x-user-role')
-  if (!role || (role !== 'ADMIN' && role !== 'HR_ADMIN')) {
+  const userBranchId = req.headers.get('x-user-branch-id')
+  if (!role || !['ADMIN', 'HR_ADMIN', 'BRANCH'].includes(role)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
   try {
     const data = await req.json()
+    
+    // Check ownership if BRANCH
+    if (role === 'BRANCH') {
+      const existing = await prisma.employee.findUnique({ where: { id: parseInt(id) }, select: { branchId: true } })
+      if (!existing || String(existing.branchId) !== String(userBranchId)) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
+      // Strip out salary updates
+      delete data.basicSalary
+      delete data.conveyance
+      delete data.yearlyLeaveAllowance
+      data.branchId = userBranchId // Force keep branch
+    }
+
     const employee = await prisma.employee.update({
       where: { id: parseInt(id) },
       data: {
@@ -147,12 +162,21 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const role = req.headers.get('x-user-role')
-  if (!role || (role !== 'ADMIN' && role !== 'HR_ADMIN')) {
+  const userBranchId = req.headers.get('x-user-branch-id')
+  if (!role || !['ADMIN', 'HR_ADMIN', 'BRANCH'].includes(role)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
   try {
     const employeeId = parseInt(id)
+
+    if (role === 'BRANCH') {
+      const existing = await prisma.employee.findUnique({ where: { id: employeeId }, select: { branchId: true } })
+      if (!existing || String(existing.branchId) !== String(userBranchId)) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
+    }
+
     const salaryRecords = await prisma.salaryRecord.count({
       where: { employeeId }
     })

@@ -33,7 +33,11 @@ export async function GET(req: NextRequest) {
     where.endDate = { gte: startDate }
   }
 
-  if (branchId) {
+  const userBranchId = req.headers.get('x-user-branch-id')
+
+  if (role === 'BRANCH' && userBranchId) {
+    where.employee = { branchId: parseInt(userBranchId) }
+  } else if (branchId) {
     where.employee = { branchId: parseInt(branchId) }
   }
   
@@ -65,7 +69,8 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const role = req.headers.get('x-user-role')
-  if (!role || (role !== 'ADMIN' && role !== 'HR_ADMIN' && role !== 'BRANCH')) {
+  const userBranchId = req.headers.get('x-user-branch-id')
+  if (!role || !['ADMIN', 'HR_ADMIN', 'BRANCH'].includes(role)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
@@ -76,10 +81,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid payload', details: parsed.error.issues }, { status: 400 })
     }
 
+    const employee = await prisma.employee.findUnique({ where: { id: parsed.data.employeeId } })
+    if (!employee) return NextResponse.json({ error: 'Employee not found' }, { status: 404 })
+
+    if (role === 'BRANCH') {
+      if (String(employee.branchId) !== String(userBranchId)) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
+    }
+
+    const status = (role === 'BRANCH' || role === 'ADMIN' || role === 'HR_ADMIN') ? 'APPROVED' : 'PENDING'
+
     const leave = await prisma.leaveRecord.create({
       data: {
         ...parsed.data,
-        status: 'PENDING'
+        status: status
       },
       include: {
         employee: { select: { name: true } }

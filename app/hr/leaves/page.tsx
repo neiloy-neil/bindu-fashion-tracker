@@ -2,21 +2,46 @@
 
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { Check, X, Clock, Search, Filter } from 'lucide-react'
+import { Check, X, Clock, Search, Filter, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
+import { LeaveModal } from '@/components/hr/LeaveModal'
 
 export default function LeaveRequestsPage() {
   const [leaves, setLeaves] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [userRole, setUserRole] = useState<string | null>(null)
+  const [userBranchId, setUserBranchId] = useState<number | null>(null)
 
   useEffect(() => {
-    fetchLeaves()
+    fetchLeavesAndSession()
   }, [])
+
+  const fetchLeavesAndSession = async () => {
+    try {
+      const [res, sessionRes] = await Promise.all([
+        fetch('/api/hr/leaves'),
+        fetch('/api/auth/session')
+      ])
+      if (res.ok) {
+        setLeaves(await res.json())
+      }
+      if (sessionRes.ok) {
+        const session = await sessionRes.json()
+        if (session?.user?.role) setUserRole(session.user.role)
+        if (session?.user?.branchId) setUserBranchId(session.user.branchId)
+      }
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const fetchLeaves = async () => {
     try {
@@ -24,11 +49,7 @@ export default function LeaveRequestsPage() {
       if (res.ok) {
         setLeaves(await res.json())
       }
-    } catch (e) {
-      console.error(e)
-    } finally {
-      setLoading(false)
-    }
+    } catch (e) {}
   }
 
   const updateStatus = async (id: number, status: 'APPROVED' | 'REJECTED') => {
@@ -68,6 +89,12 @@ export default function LeaveRequestsPage() {
               <SelectItem value="REJECTED">Rejected</SelectItem>
             </SelectContent>
           </Select>
+          {(userRole === 'BRANCH' || userRole === 'ADMIN' || userRole === 'HR_ADMIN') && (
+            <Button onClick={() => setIsModalOpen(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add Leave
+            </Button>
+          )}
         </div>
       </div>
 
@@ -156,6 +183,14 @@ export default function LeaveRequestsPage() {
           </Table>
         </div>
       </div>
+
+      <LeaveModal 
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        onSuccess={fetchLeaves}
+        userRole={userRole}
+        userBranchId={userBranchId}
+      />
     </>
   )
 }

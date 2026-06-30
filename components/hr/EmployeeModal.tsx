@@ -55,6 +55,7 @@ interface Props {
   employee: EditableEmployee | null
   branches: { id: number; name: string }[]
   onSuccess: () => void
+  userRole?: string | null
 }
 
 function createInitialFormData(employee: EditableEmployee | null): EmployeeFormData {
@@ -87,6 +88,7 @@ function EmployeeModalForm({
   branches,
   onOpenChange,
   onSuccess,
+  userRole,
 }: Omit<Props, 'open'>) {
   const [tab, setTab] = useState<'basic' | 'hr' | 'transfer'>('basic')
   const [saving, setSaving] = useState(false)
@@ -264,14 +266,18 @@ function EmployeeModalForm({
               <Label>Designation</Label>
               <Input value={formData.designation} onChange={e => handleChange('designation', e.target.value)} />
             </div>
-            <div className="space-y-1.5">
-              <Label>Basic Salary (৳)</Label>
-              <Input type="number" value={formData.basicSalary} onChange={e => handleChange('basicSalary', e.target.value)} />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Conveyance (৳)</Label>
-              <Input type="number" value={formData.conveyance} onChange={e => handleChange('conveyance', e.target.value)} />
-            </div>
+            {userRole !== 'BRANCH' && (
+              <>
+                <div className="space-y-1.5">
+                  <Label>Basic Salary (৳)</Label>
+                  <Input type="number" value={formData.basicSalary} onChange={e => handleChange('basicSalary', e.target.value)} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Conveyance (৳)</Label>
+                  <Input type="number" value={formData.conveyance} onChange={e => handleChange('conveyance', e.target.value)} />
+                </div>
+              </>
+            )}
             <div className="space-y-1.5">
               <Label>Yearly Leave Allowance</Label>
               <Input type="number" value={formData.yearlyLeaveAllowance} onChange={e => handleChange('yearlyLeaveAllowance', e.target.value)} />
@@ -364,18 +370,10 @@ function EmployeeModalForm({
   )
 }
 
-export function EmployeeModal({ open, onOpenChange, employee, branches, onSuccess }: Props) {
+export function EmployeeModal(props: Props) {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      {open ? (
-        <EmployeeModalForm
-          key={`${employee?.id ?? 'new'}-${open ? 'open' : 'closed'}`}
-          employee={employee}
-          branches={branches}
-          onOpenChange={onOpenChange}
-          onSuccess={onSuccess}
-        />
-      ) : null}
+    <Dialog open={props.open} onOpenChange={props.onOpenChange}>
+      <EmployeeModalForm {...props} />
     </Dialog>
   )
 }

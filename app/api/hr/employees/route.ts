@@ -24,12 +24,14 @@ const employeeCreateSchema = z.object({
 
 export async function GET(req: NextRequest) {
   const role = req.headers.get('x-user-role')
-  if (!role || !['ADMIN', 'SUPER_ADMIN', 'HR_ADMIN', 'AUDITOR'].includes(role)) {
+  const userBranchId = req.headers.get('x-user-branch-id')
+  if (!role || !['ADMIN', 'SUPER_ADMIN', 'HR_ADMIN', 'AUDITOR', 'BRANCH'].includes(role)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
   const { searchParams } = new URL(req.url)
-  const branchId = searchParams.get('branchId')
+  const reqBranchId = searchParams.get('branchId')
+  const branchId = role === 'BRANCH' ? userBranchId : reqBranchId
   const active = searchParams.get('active')
 
   try {
@@ -51,7 +53,8 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const role = req.headers.get('x-user-role')
-  if (!role || !['ADMIN', 'SUPER_ADMIN', 'HR_ADMIN'].includes(role)) {
+  const userBranchId = req.headers.get('x-user-branch-id')
+  if (!role || !['ADMIN', 'SUPER_ADMIN', 'HR_ADMIN', 'BRANCH'].includes(role)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
@@ -61,6 +64,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid input', details: parsed.error.issues }, { status: 400 })
     }
     const data = parsed.data
+    if (role === 'BRANCH') {
+      data.branchId = userBranchId ? parseInt(userBranchId) : null
+      data.basicSalary = 0
+      data.conveyance = 1500
+    }
+
     const employee = await prisma.employee.create({
       data: {
         employeeId: data.employeeId || null,

@@ -15,6 +15,7 @@ export default function EmployeesPage() {
   const [employees, setEmployees] = useState<any[]>([])
   const [branches, setBranches] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [userRole, setUserRole] = useState<'ADMIN' | 'HR_ADMIN' | 'AUDITOR' | 'BRANCH' | null>(null)
 
   // Filters
   const [search, setSearch] = useState('')
@@ -38,19 +39,24 @@ export default function EmployeesPage() {
     const loadData = async () => {
       setLoading(true)
       try {
-        const [empRes, branchRes] = await Promise.all([
+        const [empRes, branchRes, sessionRes] = await Promise.all([
           fetch('/api/hr/employees'),
-          fetch('/api/branches')
+          fetch('/api/branches'),
+          fetch('/api/auth/session')
         ])
         
         if (!empRes.ok || !branchRes.ok) throw new Error('Failed to fetch data')
         
         const emps = await empRes.json()
         const brs = await branchRes.json()
+        const session = sessionRes.ok ? await sessionRes.json() : null
 
         if (!cancelled) {
           setEmployees(emps)
           setBranches(brs)
+          if (session?.user?.role) {
+            setUserRole(session.user.role)
+          }
         }
       } catch (err: any) {
         if (!cancelled) {
@@ -240,7 +246,9 @@ export default function EmployeesPage() {
               <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide">ID</TableHead>
               <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide">Name & Role</TableHead>
               <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide">Branch</TableHead>
-              <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-right">Basic Salary</TableHead>
+              {userRole !== 'BRANCH' && (
+                <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-right">Basic Salary</TableHead>
+              )}
               <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide">Status</TableHead>
               <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-right">Actions</TableHead>
             </TableRow>
@@ -280,7 +288,11 @@ export default function EmployeesPage() {
                     <div className="text-xs text-[var(--text-muted)]">{emp.designation || '—'}</div>
                   </TableCell>
                   <TableCell className="text-[var(--text-primary)]">{emp.branch?.name || '—'}</TableCell>
-                  <TableCell className="tabular-nums text-right text-[var(--text-secondary)]">{emp.basicSalary.toLocaleString()} ৳</TableCell>
+                  {userRole !== 'BRANCH' && (
+                    <TableCell className="text-right font-medium text-[var(--text-primary)]">
+                      ৳{emp.basicSalary.toLocaleString()}
+                    </TableCell>
+                  )}
                   <TableCell>
                     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold tabular-nums ${emp.isActive ? 'bg-[var(--success-subtle)] text-[var(--success)]' : 'bg-[var(--danger-subtle)] text-[var(--danger)]'}`}>
                       {emp.isActive ? 'Active' : 'Inactive'}
@@ -304,12 +316,13 @@ export default function EmployeesPage() {
         </Table>
       </div>
 
-      <EmployeeModal 
+      <EmployeeModal
         open={isModalOpen}
         onOpenChange={setIsModalOpen}
         employee={editingEmployee}
         branches={branches}
-        onSuccess={() => setReloadNonce((value) => value + 1)}
+        onSuccess={() => setReloadNonce(n => n + 1)}
+        userRole={userRole}
       />
 
       <EmployeeProfileModal 

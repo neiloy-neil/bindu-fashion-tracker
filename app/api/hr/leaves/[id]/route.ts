@@ -10,8 +10,9 @@ const statusSchema = z.object({
 export async function PATCH(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   const role = req.headers.get('x-user-role')
   const userId = req.headers.get('x-user-id')
+  const userBranchId = req.headers.get('x-user-branch-id')
 
-  if (!role || (role !== 'ADMIN' && role !== 'HR_ADMIN')) {
+  if (!role || !['ADMIN', 'HR_ADMIN', 'BRANCH'].includes(role)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
@@ -26,8 +27,17 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
       return NextResponse.json({ error: 'Invalid payload', details: parsed.error.flatten() }, { status: 400 })
     }
 
-    const currentLeave = await prisma.leaveRecord.findUnique({ where: { id } })
+    const currentLeave = await prisma.leaveRecord.findUnique({ 
+      where: { id },
+      include: { employee: { select: { branchId: true } } }
+    })
     if (!currentLeave) return NextResponse.json({ error: 'Leave not found' }, { status: 404 })
+
+    if (role === 'BRANCH') {
+      if (String(currentLeave.employee.branchId) !== String(userBranchId)) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
+    }
 
     const updated = await prisma.leaveRecord.update({
       where: { id },

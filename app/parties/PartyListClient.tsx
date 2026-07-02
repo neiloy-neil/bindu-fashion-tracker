@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
-import { Search, Plus, Phone, MapPin, Building2, ChevronRight, Upload, Filter, ArrowUpDown } from 'lucide-react'
+import { Search, Plus, Phone, MapPin, Building2, ChevronRight, Upload, Filter, ArrowUpDown, Download } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { AddPartyModal } from '@/components/parties/AddPartyModal'
@@ -95,6 +95,15 @@ export default function PartyListClient({ initialParties }: { initialParties: an
           </p>
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto">
+          <Button 
+            variant="outline"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2"
+            asChild
+          >
+            <a href="/api/parties/import/template" download>
+              <Download size={16} /> Demo Sheet
+            </a>
+          </Button>
           <Button 
             onClick={() => setIsImporting(true)}
             variant="outline"

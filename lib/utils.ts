@@ -34,6 +34,11 @@ export function computeTotals(entry: any) {
           openingBalance += item.amount || 0
         } else if (item.category.type === 'INCOME') {
           totalSale += item.amount || 0
+          
+          // Digital sales (auto-transferred) are not physical cash, so we deduct them from the expected net balance
+          if (item.category.isAutoTransferred) {
+            totalExpense += item.amount || 0
+          }
         } else if (item.category.type === 'EXPENSE') {
           totalExpense += item.amount || 0
         }

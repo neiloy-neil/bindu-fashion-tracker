@@ -379,7 +379,7 @@ export function NewEntryForm({ initialData, userId }: Props) {
           {showExpense && (
             <div className="p-4 sm:p-5 space-y-8">
               <ExpenseSection control={control} register={form.register} setValue={setValue} expenseCategories={expenseCategories} inputClass={inputClass} selectClass={selectClass} errors={errors} generateId={generateId} />
-              <TransferSection control={control} register={form.register} accounts={accounts} branches={branches} inputClass={inputClass} selectClass={selectClass} errors={errors} generateId={generateId} />
+              <TransferSection control={control} register={form.register} accounts={accounts} branches={branches} currentBranchId={branchId} inputClass={inputClass} selectClass={selectClass} errors={errors} generateId={generateId} />
               <AdvanceSalarySection control={control} register={form.register} employees={employees} inputClass={inputClass} selectClass={selectClass} errors={errors} generateId={generateId} />
               <PaymentSection control={control} register={form.register} setValue={setValue} parties={parties} inputClass={inputClass} selectClass={selectClass} errors={errors} generateId={generateId} />
             </div>

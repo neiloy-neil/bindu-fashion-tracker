@@ -8,6 +8,7 @@ interface Props {
   register: UseFormRegister<NewEntryFormValues>
   accounts: Account[]
   branches: Branch[]
+  currentBranchId?: string
   inputClass: string
   selectClass: string
   errors: FieldErrors<NewEntryFormValues>
@@ -22,6 +23,7 @@ interface TransferRowProps {
   remove: (idx: number) => void
   accounts: Account[]
   branches: Branch[]
+  currentBranchId?: string
   inputClass: string
   selectClass: string
   transferValues: NewEntryFormValues['transfers']
@@ -34,6 +36,7 @@ function TransferRow({
   remove,
   accounts,
   branches,
+  currentBranchId,
   inputClass,
   selectClass,
   transferValues,
@@ -44,6 +47,11 @@ function TransferRow({
   const filteredAccounts = selectedBranchId
     ? accounts.filter(a => a.branchId === selectedBranchId)
     : accounts
+
+  // Filter out the current branch from the "To Branch" dropdown
+  const filteredBranches = currentBranchId 
+    ? branches.filter(b => String(b.id) !== currentBranchId)
+    : branches
 
   return (
     <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-lg p-4 mb-3 relative group">
@@ -63,8 +71,8 @@ function TransferRow({
             className={selectClass}
             {...register(`transfers.${idx}.branchId` as const)}
           >
-            <option value="">Any Branch</option>
-            {branches.map(b => (
+            <option value="">Select Branch</option>
+            {filteredBranches.map(b => (
               <option key={b.id} value={b.id}>{b.name}</option>
             ))}
           </select>
@@ -113,7 +121,7 @@ function TransferRow({
   )
 }
 
-export function TransferSection({ control, register, accounts, branches, inputClass, selectClass, errors, generateId }: Props) {
+export function TransferSection({ control, register, accounts, branches, currentBranchId, inputClass, selectClass, errors, generateId }: Props) {
   const { fields, append, remove } = useFieldArray({
     control,
     name: 'transfers'
@@ -133,6 +141,7 @@ export function TransferSection({ control, register, accounts, branches, inputCl
           remove={remove}
           accounts={accounts}
           branches={branches}
+          currentBranchId={currentBranchId}
           inputClass={inputClass}
           selectClass={selectClass}
           transferValues={transferValues || []}

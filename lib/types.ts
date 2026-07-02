@@ -16,6 +16,7 @@ export interface Category {
   type: 'INCOME' | 'EXPENSE'
   isActive: boolean
   isDefault: boolean
+  isAutoTransferred?: boolean
   frequency?: string | null // DAILY | WEEKLY | MONTHLY | AS_NEEDED — only set for EXPENSE type
   requiresAttachment: boolean
 }

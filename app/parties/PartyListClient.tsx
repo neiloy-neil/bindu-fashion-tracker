@@ -2,13 +2,14 @@
 
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
-import { Search, Plus, Phone, MapPin, Building2, ChevronRight, Upload, Filter, ArrowUpDown, Download } from 'lucide-react'
+import { Search, Plus, Phone, MapPin, Building2, ChevronRight, Upload, Filter, ArrowUpDown, Download, Trash2 } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { AddPartyModal } from '@/components/parties/AddPartyModal'
 import { ImportPartyModal } from '@/components/parties/ImportPartyModal'
 import { Button } from '@/components/ui/button'
 import { useRouter } from 'next/navigation'
+import toast from 'react-hot-toast'
 
 export default function PartyListClient({ initialParties }: { initialParties: any[] }) {
   const [parties, setParties] = useState(initialParties)
@@ -27,6 +28,28 @@ export default function PartyListClient({ initialParties }: { initialParties: an
     if (res.ok) {
       const data = await res.json()
       setParties(data)
+    }
+  }
+
+  const handleDelete = async (id: number, name: string) => {
+    if (!window.confirm(`Are you sure you want to delete ${name}? This action cannot be undone.`)) return
+    
+    const loadingToast = toast.loading('Deleting party...')
+    try {
+      const res = await fetch(`/api/parties/${id}`, {
+        method: 'DELETE'
+      })
+      
+      if (!res.ok) {
+        const error = await res.json()
+        throw new Error(error.error || 'Failed to delete party')
+      }
+      
+      toast.success('Party deleted successfully', { id: loadingToast })
+      setParties(parties.filter(p => p.id !== id))
+      router.refresh()
+    } catch (error: any) {
+      toast.error(error.message, { id: loadingToast })
     }
   }
 
@@ -263,11 +286,22 @@ export default function PartyListClient({ initialParties }: { initialParties: an
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button asChild variant="secondary" size="sm" className="flex items-center gap-1 ml-auto text-xs h-8">
-                          <Link href={`/parties/${party.id}`}>
-                            View Details <ChevronRight size={14} />
-                          </Link>
-                        </Button>
+                        <div className="flex justify-end items-center gap-2">
+                          <Button asChild variant="secondary" size="sm" className="flex items-center gap-1 text-xs h-8">
+                            <Link href={`/parties/${party.id}`}>
+                              View Details <ChevronRight size={14} />
+                            </Link>
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            onClick={() => handleDelete(party.id, party.name)}
+                            title="Delete Party"
+                          >
+                            <Trash2 size={14} />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))

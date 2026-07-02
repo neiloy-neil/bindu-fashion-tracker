@@ -12,9 +12,13 @@ export default async function NewEntryPage() {
   if (!session?.user) redirect('/login')
   if (session.user.role !== 'ADMIN' && session.user.role !== 'BRANCH') redirect('/entries')
 
-  const [branches, categories, accounts, parties, expenseCategories, employees] = await Promise.all([
+  const [branches, allBranches, categories, accounts, parties, expenseCategories, employees] = await Promise.all([
     prisma.branch.findMany({
       where: { isActive: true, ...(session.user.role === 'BRANCH' ? { id: session.user.branchId ?? -1 } : {}) },
+      orderBy: { name: 'asc' },
+    }),
+    prisma.branch.findMany({
+      where: { isActive: true },
       orderBy: { name: 'asc' },
     }),
     prisma.category.findMany({ where: { isActive: true, type: 'INCOME' }, orderBy: { name: 'asc' } }) as Promise<Category[]>,
@@ -26,7 +30,7 @@ export default async function NewEntryPage() {
 
   return (
     <NewEntryForm
-      initialData={{ branches, categories, accounts, parties, expenseCategories, employees }}
+      initialData={{ branches, allBranches, categories, accounts, parties, expenseCategories, employees }}
       userId={session.user.id}
     />
   )

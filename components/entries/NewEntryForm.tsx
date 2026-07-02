@@ -33,6 +33,7 @@ function ErrorMsg({ error }: { error?: { message?: string } }) {
 interface Props {
   initialData: {
     branches: Branch[]
+    allBranches?: Branch[]
     categories: Category[]
     accounts: Account[]
     parties: Party[]
@@ -44,7 +45,7 @@ interface Props {
 
 export function NewEntryForm({ initialData, userId }: Props) {
   const router = useRouter()
-  const { branches, categories, accounts, parties, expenseCategories, employees } = initialData
+  const { branches, allBranches, categories, accounts, parties, expenseCategories, employees } = initialData
   
   const [loading, setLoading] = useState(false)
   const [showChecklistModal, setShowChecklistModal] = useState(false)
@@ -379,7 +380,7 @@ export function NewEntryForm({ initialData, userId }: Props) {
           {showExpense && (
             <div className="p-4 sm:p-5 space-y-8">
               <ExpenseSection control={control} register={form.register} setValue={setValue} expenseCategories={expenseCategories} inputClass={inputClass} selectClass={selectClass} errors={errors} generateId={generateId} />
-              <TransferSection control={control} register={form.register} accounts={accounts} branches={branches} currentBranchId={branchId} inputClass={inputClass} selectClass={selectClass} errors={errors} generateId={generateId} />
+              <TransferSection control={control} register={form.register} accounts={accounts} branches={allBranches || branches} currentBranchId={branchId} inputClass={inputClass} selectClass={selectClass} errors={errors} generateId={generateId} />
               <AdvanceSalarySection control={control} register={form.register} employees={employees} inputClass={inputClass} selectClass={selectClass} errors={errors} generateId={generateId} />
               <PaymentSection control={control} register={form.register} setValue={setValue} parties={parties} inputClass={inputClass} selectClass={selectClass} errors={errors} generateId={generateId} />
             </div>

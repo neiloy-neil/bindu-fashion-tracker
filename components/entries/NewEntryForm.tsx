@@ -136,7 +136,7 @@ export function NewEntryForm({ initialData, userId }: Props) {
     const run = async () => {
       try {
         await new Promise(r => setTimeout(r, 300))
-        const dataUrl = await toPng(el, { quality: 0.8, pixelRatio: 1 })
+        const dataUrl = await toPng(el, { quality: 0.8, pixelRatio: 1, backgroundColor: 'var(--bg-card)' })
         const link = document.createElement('a')
         const branchName = branches.find(b => String(b.id) === String(pendingReportData.branch?.id))?.name
           || pendingReportData.branch?.name || 'Branch'

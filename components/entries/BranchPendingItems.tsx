@@ -22,9 +22,22 @@ interface EditRequest {
   entry: { date: string; branch: { name: string } }
 }
 
+interface BranchCheque {
+  id: number
+  status: string
+  issueDate: string
+  withdrawDate: string
+  payment: {
+    amount: number
+    party: { name: string }
+    dailyEntry: { date: string } | null
+  }
+}
+
 export default function BranchPendingItems() {
   const [expenses, setExpenses] = useState<PendingExpense[]>([])
   const [editRequests, setEditRequests] = useState<EditRequest[]>([])
+  const [cheques, setCheques] = useState<BranchCheque[]>([])
   const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
@@ -33,7 +46,8 @@ export default function BranchPendingItems() {
       fetch('/api/expense-entries?status=PENDING').then(r => r.json()),
       fetch('/api/expense-entries?status=REJECTED').then(r => r.json()),
       fetch('/api/edit-requests').then(r => r.json()),
-    ]).then(([pending, rejected, editData]) => {
+      fetch('/api/cheques/branch').then(r => r.ok ? r.json() : { cheques: [] }),
+    ]).then(([pending, rejected, editData, chequeData]) => {
       if (cancelled) return
       const allExpenses = [
         ...(pending.expenses || []),
@@ -41,13 +55,14 @@ export default function BranchPendingItems() {
       ]
       setExpenses(allExpenses)
       setEditRequests(editData.requests || [])
+      setCheques(chequeData.cheques || [])
       setLoaded(true)
     }).catch(() => { if (!cancelled) setLoaded(true) })
     return () => { cancelled = true }
   }, [])
 
   if (!loaded) return null
-  if (expenses.length === 0 && editRequests.length === 0) return null
+  if (expenses.length === 0 && editRequests.length === 0 && cheques.length === 0) return null
 
   const pendingExpenses = expenses.filter(e => e.approvalStatus === 'PENDING')
   const rejectedExpenses = expenses.filter(e => e.approvalStatus === 'REJECTED')
@@ -100,6 +115,36 @@ export default function BranchPendingItems() {
                 )}
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {cheques.length > 0 && (
+        <div className="rounded-xl border border-[var(--border)] border-l-4 border-l-[var(--info)] bg-[var(--surface)] p-4">
+          <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-[var(--text-primary)]">
+            <span>🏦</span> My Cheques
+          </div>
+          <div className="flex flex-col gap-2">
+            {cheques.map(cheque => {
+              const statusColor = cheque.status === 'APPROVED'
+                ? 'text-[var(--success)] bg-[var(--success)]/10'
+                : cheque.status === 'REJECTED'
+                ? 'text-[var(--danger)] bg-[var(--danger)]/10'
+                : 'text-[var(--warning)] bg-[var(--warning)]/10'
+              const statusLabel = cheque.status === 'APPROVED' ? 'CLEARED' : cheque.status === 'REJECTED' ? 'BOUNCED' : 'PENDING'
+              return (
+                <div key={cheque.id} className="flex items-center justify-between text-sm rounded-lg bg-[var(--surface-raised)] px-3 py-2 border border-[var(--border)]">
+                  <span className="text-[var(--text-secondary)]">
+                    <span className="font-medium text-[var(--text-primary)]">{cheque.payment.party.name}</span>
+                    <span className="ml-2 text-[var(--text-muted)]">withdraw {new Date(cheque.withdrawDate).toLocaleDateString('en-BD', { day: 'numeric', month: 'short' })}</span>
+                  </span>
+                  <div className="flex items-center gap-3">
+                    <span className="font-mono font-bold tabular-nums">৳{formatCurrency(cheque.payment.amount)}</span>
+                    <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${statusColor}`}>{statusLabel}</span>
+                  </div>
+                </div>
+              )
+            })}
           </div>
         </div>
       )}

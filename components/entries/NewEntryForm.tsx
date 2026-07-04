@@ -113,6 +113,8 @@ export function NewEntryForm({ initialData, userId }: Props) {
 
   const selectedBranchObj = useMemo(() => branches.find(b => String(b.id) === branchId), [branches, branchId])
   const isFactory = selectedBranchObj?.type === 'FACTORY'
+  const isHeadOffice = selectedBranchObj?.type === 'HEAD_OFFICE'
+  const hideIncome = isFactory || isHeadOffice
 
   useEffect(() => {
     let timeoutId: NodeJS.Timeout
@@ -166,7 +168,7 @@ export function NewEntryForm({ initialData, userId }: Props) {
   }, [draftKey, form])
 
   useEffect(() => {
-    if (branchId && date && categories.length > 0) {
+    if (branchId && date && categories.length > 0 && !hideIncome) {
       fetch(`/api/branches/${branchId}/last-balance?date=${date}`)
         .then(r => r.json())
         .then(data => {
@@ -187,7 +189,7 @@ export function NewEntryForm({ initialData, userId }: Props) {
           }
         }).catch(() => toast.error('Could not load the latest opening balance'))
     }
-  }, [branchId, date, categories, setValue, form, branches.length])
+  }, [branchId, date, categories, setValue, form, branches.length, hideIncome])
 
   const onSubmitFinal = async () => {
     const data = form.getValues()
@@ -378,41 +380,46 @@ export function NewEntryForm({ initialData, userId }: Props) {
           </div>
         </div>
 
-        {/* Income Section — factory only shows Opening Balance */}
-        <div className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)]">
-          <button type="button" aria-expanded={showIncome}
-            className="flex w-full items-center justify-between gap-3 border-b border-[var(--border)] bg-[var(--surface)] p-4 text-left"
-            onClick={() => setShowIncome(!showIncome)}
-          >
-            <h2 className="text-lg font-semibold flex flex-wrap items-center gap-2 min-w-0">
-              {isFactory ? '🏦 Opening Balance' : '💰 Income & Collections'}
-              <span className="text-xs bg-[var(--success)]/20 text-[var(--success)] px-2 py-0.5 rounded ml-2 font-mono">
-                {formatCurrency(totals.totalAmount)}
-              </span>
-            </h2>
-            {showIncome ? <ChevronDown size={20} className="text-muted-foreground" /> : <ChevronRight size={20} className="text-muted-foreground" />}
-          </button>
+        {/* Income Section — hidden for factory and head office (income comes via transfers) */}
+        {!hideIncome && (
+          <div className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)]">
+            <button type="button" aria-expanded={showIncome}
+              className="flex w-full items-center justify-between gap-3 border-b border-[var(--border)] bg-[var(--surface)] p-4 text-left"
+              onClick={() => setShowIncome(!showIncome)}
+            >
+              <h2 className="text-lg font-semibold flex flex-wrap items-center gap-2 min-w-0">
+                💰 Income & Collections
+                <span className="text-xs bg-[var(--success)]/20 text-[var(--success)] px-2 py-0.5 rounded ml-2 font-mono">
+                  {formatCurrency(totals.totalAmount)}
+                </span>
+              </h2>
+              {showIncome ? <ChevronDown size={20} className="text-muted-foreground" /> : <ChevronRight size={20} className="text-muted-foreground" />}
+            </button>
+            {showIncome && (
+              <div className="p-4 sm:p-5">
+                <IncomeSection
+                  control={control}
+                  register={form.register}
+                  setValue={setValue}
+                  categories={categories}
+                  inputClass={inputClass}
+                  selectClass={selectClass}
+                  errors={errors}
+                  generateId={generateId}
+                />
+              </div>
+            )}
+          </div>
+        )}
 
-          {showIncome && (
-            <div className="p-4 sm:p-5">
-              {isFactory && (
-                <div className="mb-4 p-3 rounded-lg bg-[var(--info-subtle)] border border-[var(--info)]/30 text-sm text-[var(--info)]">
-                  Opening balance is auto-filled from the previous day's closing balance. Funds received from Head Office are tracked via the <strong>Transfers</strong> system.
-                </div>
-              )}
-              <IncomeSection
-                control={control}
-                register={form.register}
-                setValue={setValue}
-                categories={isFactory ? categories.filter(c => c.name === 'Opening Balance') : categories}
-                inputClass={inputClass}
-                selectClass={selectClass}
-                errors={errors}
-                generateId={generateId}
-              />
-            </div>
-          )}
-        </div>
+        {/* Info banner for factory/HO explaining where their income comes from */}
+        {hideIncome && (
+          <div className="p-4 rounded-xl border border-[var(--info)]/30 bg-[var(--info-subtle)] text-sm text-[var(--info)]">
+            {isHeadOffice
+              ? '🏢 Head Office income is received from branch transfers. Use the Incoming Transfers section to acknowledge funds from branches.'
+              : '🏭 Factory funds are received from Head Office via transfers. Use the Incoming Transfers section to acknowledge funds.'}
+          </div>
+        )}
 
         {/* Unified Expenses Section */}
         <div className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)]">
@@ -421,7 +428,7 @@ export function NewEntryForm({ initialData, userId }: Props) {
             onClick={() => setShowExpense(!showExpense)}
           >
             <h2 className="text-lg font-semibold flex flex-wrap items-center gap-2 min-w-0">
-              💸 {isFactory ? 'Factory Expenses' : 'Expenses & Dispersals'}
+              💸 {isFactory ? 'Factory Expenses' : isHeadOffice ? 'Head Office Expenses' : 'Expenses & Dispersals'}
               <span className="text-xs bg-destructive/20 text-destructive px-2 py-0.5 rounded ml-2 font-mono">
                 {formatCurrency(totals.totalExpense)}
               </span>
@@ -432,9 +439,10 @@ export function NewEntryForm({ initialData, userId }: Props) {
           {showExpense && (
             <div className="p-4 sm:p-5 space-y-8">
               <ExpenseSection control={control} register={form.register} setValue={setValue} expenseCategories={expenseCategories} inputClass={inputClass} selectClass={selectClass} errors={errors} generateId={generateId} />
+              {/* HO can send transfers to factory; factory cannot send transfers out */}
               {!isFactory && <TransferSection control={control} register={form.register} accounts={accounts} branches={allBranches || branches} currentBranchId={branchId} inputClass={inputClass} selectClass={selectClass} errors={errors} generateId={generateId} />}
               <AdvanceSalarySection control={control} register={form.register} employees={employees} inputClass={inputClass} selectClass={selectClass} errors={errors} generateId={generateId} />
-              {!isFactory && <PaymentSection control={control} register={form.register} setValue={setValue} parties={parties} inputClass={inputClass} selectClass={selectClass} errors={errors} generateId={generateId} />}
+              {!hideIncome && <PaymentSection control={control} register={form.register} setValue={setValue} parties={parties} inputClass={inputClass} selectClass={selectClass} errors={errors} generateId={generateId} />}
             </div>
           )}
         </div>

@@ -65,8 +65,8 @@ function Entries() {
       ])
 
       if (!cancelled) {
-        setBranches(branchData)
-        setCategories(categoryData)
+        setBranches(Array.isArray(branchData) ? branchData : [])
+        setCategories(Array.isArray(categoryData) ? categoryData : [])
         if (session?.user) {
           setUserRole(session.user.role)
         }

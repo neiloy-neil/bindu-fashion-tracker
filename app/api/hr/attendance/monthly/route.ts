@@ -65,6 +65,7 @@ export async function GET(req: NextRequest) {
             date: true,
             status: true,
             checkInTime: true,
+            checkOutTime: true,
             note: true,
             isExcused: true,
             excuseNote: true
@@ -88,6 +89,7 @@ export async function GET(req: NextRequest) {
           id: att.id,
           status: att.status,
           checkInTime: att.checkInTime,
+          checkOutTime: att.checkOutTime,
           note: att.note,
           isExcused: att.isExcused,
           excuseNote: att.excuseNote

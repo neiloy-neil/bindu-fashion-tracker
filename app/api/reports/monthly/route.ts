@@ -33,14 +33,19 @@ export async function GET(req: NextRequest) {
         },
         select: {
           branchId: true,
-          // Only pull income items, filtered at DB level — excludes Opening Balance
+          // Income items — excludes Opening Balance
           items: {
             where: { category: { type: 'INCOME', name: { not: 'Opening Balance' } } },
             select: { amount: true },
           },
-          expenseEntries: { where: { isTransferEntry: false }, select: { amount: true } },
+          // Cash received from other branches — must be included to match daily report totals
+          receivedTransfers: { select: { amount: true } },
+          expenseEntries: {
+            where: { isTransferEntry: false },
+            select: { amount: true, approvalStatus: true },
+          },
           transfers: { select: { amount: true } },
-          payments: { select: { amount: true } },
+          payments: { select: { amount: true, approvalStatus: true } },
           advanceSalaries: { select: { amount: true, type: true } },
         },
       }),
@@ -51,6 +56,7 @@ export async function GET(req: NextRequest) {
       const branchEntries = entries.filter(e => e.branchId === b.id)
 
       let totalIncome = 0
+      let totalReceivedTransfers = 0
       let totalExpense = 0
       let totalTransfers = 0
       let totalPayments = 0
@@ -58,21 +64,34 @@ export async function GET(req: NextRequest) {
 
       branchEntries.forEach(entry => {
         totalIncome += entry.items.reduce((sum, item) => sum + item.amount, 0)
-        totalExpense += entry.expenseEntries.reduce((sum, exp) => sum + exp.amount, 0)
+        totalReceivedTransfers += entry.receivedTransfers.reduce((sum, t) => sum + t.amount, 0)
+        // Only count approved expenses — pending/rejected are flagged separately
+        totalExpense += entry.expenseEntries
+          .filter(e => e.approvalStatus !== 'REJECTED')
+          .reduce((sum, exp) => sum + exp.amount, 0)
         totalTransfers += entry.transfers.reduce((sum, tr) => sum + tr.amount, 0)
-        totalPayments += entry.payments.reduce((sum, p) => sum + p.amount, 0)
-        totalAdvances += entry.advanceSalaries.filter(a => a.type === 'CASH').reduce((sum, a) => sum + (a.amount ?? 0), 0)
+        // Only count approved payments; pending branch payments excluded until approved
+        totalPayments += entry.payments
+          .filter(p => p.approvalStatus === 'APPROVED')
+          .reduce((sum, p) => sum + p.amount, 0)
+        totalAdvances += entry.advanceSalaries
+          .filter(a => a.type === 'CASH')
+          .reduce((sum, a) => sum + (a.amount ?? 0), 0)
       })
+
+      const grossIncome = totalIncome + totalReceivedTransfers
 
       return {
         branchId: b.id,
         branchName: b.name,
         totalIncome,
+        totalReceivedTransfers,
+        grossIncome,
         totalExpense,
         totalTransfers,
         totalPayments,
         totalAdvances,
-        netCashFlow: totalIncome - totalExpense - totalTransfers - totalPayments - totalAdvances
+        netCashFlow: grossIncome - totalExpense - totalTransfers - totalPayments - totalAdvances,
       }
     })
 

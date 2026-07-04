@@ -86,13 +86,15 @@ export default function MonthlyReportPage() {
 
   // Calculate totals
   const totals = branchData.reduce((acc, curr) => ({
+    grossIncome: acc.grossIncome + curr.grossIncome,
     totalIncome: acc.totalIncome + curr.totalIncome,
+    totalReceivedTransfers: acc.totalReceivedTransfers + curr.totalReceivedTransfers,
     totalExpense: acc.totalExpense + curr.totalExpense,
     totalTransfers: acc.totalTransfers + curr.totalTransfers,
     totalPayments: acc.totalPayments + curr.totalPayments,
     totalAdvances: acc.totalAdvances + curr.totalAdvances,
     netCashFlow: acc.netCashFlow + curr.netCashFlow
-  }), { totalIncome: 0, totalExpense: 0, totalTransfers: 0, totalPayments: 0, totalAdvances: 0, netCashFlow: 0 })
+  }), { grossIncome: 0, totalIncome: 0, totalReceivedTransfers: 0, totalExpense: 0, totalTransfers: 0, totalPayments: 0, totalAdvances: 0, netCashFlow: 0 })
 
   return (
     <>
@@ -167,9 +169,9 @@ export default function MonthlyReportPage() {
                   <TableHeader>
                     <TableRow className="hover:bg-transparent border-[var(--border)]">
                       <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide">Branch</TableHead>
-                      <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-right">Income</TableHead>
+                      <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-right">Total Income</TableHead>
                       <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-right">Expense</TableHead>
-                      <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-right">Transfers</TableHead>
+                      <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-right">Transfers Out</TableHead>
                       <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-right">Payments</TableHead>
                       <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-right">Advances</TableHead>
                       <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-right">Net Cash Flow</TableHead>
@@ -179,7 +181,14 @@ export default function MonthlyReportPage() {
                     {branchData.map((b) => (
                       <TableRow key={b.branchId} className="border-[var(--border)] hover:bg-[var(--surface-raised)] transition-colors">
                         <TableCell className="font-medium text-[var(--text-primary)] whitespace-nowrap">{b.branchName}</TableCell>
-                        <TableCell className="text-right tabular-nums text-[var(--success)] font-medium">Tk {formatCurrency(b.totalIncome)}</TableCell>
+                        <TableCell className="text-right tabular-nums text-[var(--success)] font-medium">
+                          Tk {formatCurrency(b.grossIncome)}
+                          {b.totalReceivedTransfers > 0 && (
+                            <div className="text-[10px] text-[var(--text-muted)] font-normal">
+                              Sales Tk {formatCurrency(b.totalIncome)} + Received Tk {formatCurrency(b.totalReceivedTransfers)}
+                            </div>
+                          )}
+                        </TableCell>
                         <TableCell className="text-right tabular-nums text-[var(--danger)]">Tk {formatCurrency(b.totalExpense)}</TableCell>
                         <TableCell className="text-right tabular-nums text-[var(--danger)]">Tk {formatCurrency(b.totalTransfers)}</TableCell>
                         <TableCell className="text-right tabular-nums text-[var(--danger)]">Tk {formatCurrency(b.totalPayments)}</TableCell>
@@ -192,7 +201,7 @@ export default function MonthlyReportPage() {
                     {selectedBranchId === 'all' && branchData.length > 1 && (
                       <TableRow className="border-[var(--border)] bg-[var(--surface-raised)] hover:bg-[var(--surface-raised)]">
                         <TableCell className="font-bold uppercase text-[var(--text-primary)]">Consolidated Total</TableCell>
-                        <TableCell className="text-right tabular-nums font-bold text-[var(--success)]">Tk {formatCurrency(totals.totalIncome)}</TableCell>
+                        <TableCell className="text-right tabular-nums font-bold text-[var(--success)]">Tk {formatCurrency(totals.grossIncome)}</TableCell>
                         <TableCell className="text-right tabular-nums font-bold text-[var(--danger)]">Tk {formatCurrency(totals.totalExpense)}</TableCell>
                         <TableCell className="text-right tabular-nums font-bold text-[var(--danger)]">Tk {formatCurrency(totals.totalTransfers)}</TableCell>
                         <TableCell className="text-right tabular-nums font-bold text-[var(--danger)]">Tk {formatCurrency(totals.totalPayments)}</TableCell>

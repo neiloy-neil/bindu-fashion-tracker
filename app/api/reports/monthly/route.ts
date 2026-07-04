@@ -33,12 +33,13 @@ export async function GET(req: NextRequest) {
         },
         select: {
           branchId: true,
-          // Income items — excludes Opening Balance
+          // Income items — excludes Opening Balance and auto-booked Branch Transfer Received
+          // (received transfers are counted separately via receivedTransfers relation to avoid double-counting)
           items: {
-            where: { category: { type: 'INCOME', name: { not: 'Opening Balance' } } },
+            where: { category: { type: 'INCOME', name: { notIn: ['Opening Balance', 'Branch Transfer Received'] } } },
             select: { amount: true },
           },
-          // Cash received from other branches — must be included to match daily report totals
+          // Cash received from other branches via inter-branch transfer acknowledgment
           receivedTransfers: { select: { amount: true } },
           expenseEntries: {
             where: { isTransferEntry: false },

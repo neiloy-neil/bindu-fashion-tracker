@@ -72,7 +72,8 @@ function SectionTotal({ label, amount }: { label: string; amount: number }) {
 export default function DailyReportTemplate({ entryData }: { entryData: ReportEntryData | null }) {
   if (!entryData) return null
 
-  const incomeItems = entryData.items?.filter(item => item.category?.type === 'INCOME' && item.amount > 0) ?? []
+  // Exclude auto-booked "Branch Transfer Received" items — received transfers are shown separately below
+  const incomeItems = entryData.items?.filter(item => item.category?.type === 'INCOME' && item.amount > 0 && item.category?.name !== 'Branch Transfer Received') ?? []
   const receivedTransfers = entryData.receivedTransfers ?? []
   const expenseEntries = (entryData.expenseEntries ?? []).filter(e => !e.isTransferEntry)
   const transfers = entryData.transfers ?? []

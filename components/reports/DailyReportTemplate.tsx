@@ -51,6 +51,10 @@ type ReportEntryData = {
   date: string
   openingTime?: string | null
   closingTime?: string | null
+  actualPhysicalCash?: number | null
+  expectedNetBalance?: number | null
+  cashDifferenceNote?: string | null
+  notes?: string | null
   branch?: { name: string } | null
   items?: ReportEntryItem[]
   receivedTransfers?: ReportReceivedTransfer[]
@@ -313,6 +317,54 @@ export default function DailyReportTemplate({ entryData }: { entryData: ReportEn
               <SectionTotal label="Payments Subtotal" amount={totalPayments} />
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* Cash Reconciliation */}
+      {(entryData.actualPhysicalCash != null || entryData.notes) && (
+        <div className="mb-8">
+          {sectionHeader('Cash Reconciliation')}
+          <div className="rounded-xl border border-[var(--border)] overflow-hidden">
+            <table className="w-full text-sm">
+              <tbody>
+                <tr className="border-b border-[var(--border)] bg-[var(--bg-card)]">
+                  <td className="px-4 py-3 text-[var(--text-secondary)] font-medium">Expected Cash in Hand</td>
+                  <td className="px-4 py-3 text-right font-bold tabular-nums font-mono text-[var(--accent)]">
+                    ৳{formatCurrency(entryData.expectedNetBalance ?? (totalIncome - grandTotalExpenses))}
+                  </td>
+                </tr>
+                {entryData.actualPhysicalCash != null && (
+                  <tr className="border-b border-[var(--border)] bg-[var(--bg-card)]">
+                    <td className="px-4 py-3 text-[var(--text-secondary)] font-medium">Actual Physical Cash</td>
+                    <td className="px-4 py-3 text-right font-bold tabular-nums font-mono text-[var(--success)]">
+                      ৳{formatCurrency(entryData.actualPhysicalCash)}
+                    </td>
+                  </tr>
+                )}
+                {entryData.actualPhysicalCash != null && entryData.expectedNetBalance != null && Math.abs(entryData.actualPhysicalCash - entryData.expectedNetBalance) > 0.01 && (
+                  <tr className="border-b border-[var(--border)] bg-[var(--danger)]/5">
+                    <td className="px-4 py-3 font-medium text-[var(--danger)]">Discrepancy</td>
+                    <td className="px-4 py-3 text-right font-bold tabular-nums font-mono text-[var(--danger)]">
+                      ৳{formatCurrency(Math.abs(entryData.actualPhysicalCash - entryData.expectedNetBalance))}
+                      {' '}({entryData.actualPhysicalCash > entryData.expectedNetBalance ? 'surplus' : 'shortage'})
+                    </td>
+                  </tr>
+                )}
+                {entryData.cashDifferenceNote && (
+                  <tr className="border-b border-[var(--border)] bg-[var(--bg-card)]">
+                    <td className="px-4 py-3 text-[var(--text-secondary)] font-medium">Discrepancy Note</td>
+                    <td className="px-4 py-3 text-[var(--text-secondary)] italic">{entryData.cashDifferenceNote}</td>
+                  </tr>
+                )}
+                {entryData.notes && (
+                  <tr className="bg-[var(--bg-card)]">
+                    <td className="px-4 py-3 text-[var(--text-secondary)] font-medium">Notes</td>
+                    <td className="px-4 py-3 text-[var(--text-secondary)]">{entryData.notes}</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 

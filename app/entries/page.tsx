@@ -15,6 +15,7 @@ import { downloadWorkbook } from '@/lib/excel-export'
 import { useSearchParams } from 'next/navigation'
 import { BrandSpinner } from '@/components/ui/BrandSpinner'
 import { Button } from '@/components/ui/button'
+import BranchPendingItems from '@/components/entries/BranchPendingItems'
 
 function Entries() {
   const searchParams = useSearchParams()
@@ -369,6 +370,7 @@ function Entries() {
       </div>
 
       <div className="flex-1 min-h-0 flex flex-col p-4 md:p-6 overflow-auto">
+        {userRole === 'BRANCH' && <BranchPendingItems />}
         {loading || categories.length === 0 ? (
           <div className="flex items-center justify-center h-[300px] gap-3">
             <BrandSpinner />

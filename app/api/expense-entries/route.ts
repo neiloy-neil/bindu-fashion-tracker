@@ -11,7 +11,12 @@ const createExpenseEntrySchema = z.object({
 
 export async function GET(req: NextRequest) {
   const userRole = req.headers.get('x-user-role')
-  if (userRole !== 'ADMIN' && userRole !== 'SUPER_ADMIN') {
+  const userBranchId = req.headers.get('x-user-branch-id')
+
+  const isAdmin = userRole === 'ADMIN' || userRole === 'SUPER_ADMIN'
+  const isBranch = userRole === 'BRANCH'
+
+  if (!isAdmin && !isBranch) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
@@ -19,11 +24,15 @@ export async function GET(req: NextRequest) {
   const status = searchParams.get('status') // PENDING | APPROVED | REJECTED
 
   try {
+    const where: Record<string, unknown> = { isTransferEntry: false }
+    if (status) where.approvalStatus = status
+    // Branch users can only see their own branch's expenses
+    if (isBranch && userBranchId) {
+      where.dailyEntry = { branchId: parseInt(userBranchId, 10) }
+    }
+
     const expenses = await prisma.expenseEntry.findMany({
-      where: {
-        isTransferEntry: false,
-        ...(status ? { approvalStatus: status } : {}),
-      },
+      where,
       include: {
         category: { select: { name: true } },
         dailyEntry: {

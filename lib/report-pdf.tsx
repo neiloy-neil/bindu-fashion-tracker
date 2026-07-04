@@ -19,6 +19,7 @@ type DailyReportData = {
 type MonthlyBranchRow = {
   branchName: string
   totalIncome: number
+  grossIncome?: number
   totalExpense: number
   totalTransfers: number
   totalPayments: number

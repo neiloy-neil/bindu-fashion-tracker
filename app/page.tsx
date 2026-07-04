@@ -10,8 +10,8 @@ import AdminEditRequests from '@/components/dashboard/AdminEditRequests'
 import AdminExpenseApprovals from '@/components/dashboard/AdminExpenseApprovals'
 import AdminPaymentApprovals from '@/components/dashboard/AdminPaymentApprovals'
 import RecentActivity from '@/components/dashboard/RecentActivity'
-import PdfGenerator from '@/components/dashboard/PdfGenerator'
-import ExcelExport from '@/components/dashboard/ExcelExport'
+import { downloadWorkbook } from '@/lib/excel-export'
+import { exportSummaryReportPdf } from '@/lib/report-pdf'
 import { MorningCheckInWidget } from '@/components/hr/MorningCheckInWidget'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -22,7 +22,7 @@ import {
 } from 'recharts'
 import {
   FileText, Users, DollarSign, AlertCircle, CheckCircle,
-  Clock, ChevronRight, BarChart2,
+  Clock, ChevronRight, BarChart2, Download, FileSpreadsheet, ChevronDown,
 } from 'lucide-react'
 
 const COLORS = ['#F4881F', '#2A356E', '#2F9E6B', '#FA9A3E', '#4A537A', '#11162B', '#E8E2D5']
@@ -42,18 +42,25 @@ function formatDate(dateStr: string) {
 }
 
 function StatCard({
-  label, value, context, valueClass = 'text-[var(--text-primary)]',
+  label, value, context, valueClass = 'text-[var(--text-primary)]', accent,
 }: {
   label: string
   value: React.ReactNode
   context: string
   valueClass?: string
+  accent?: string
 }) {
   return (
-    <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5 space-y-1.5 hover:border-[var(--border-strong)] transition-colors duration-150">
-      <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wide">{label}</p>
-      <p className={cn('text-2xl font-bold tabular-nums leading-none', valueClass)}>{value}</p>
-      <p className="text-xs text-[var(--text-muted)]">{context}</p>
+    <div
+      className="rounded-xl bg-[var(--surface)] p-5 flex flex-col gap-2"
+      style={{
+        boxShadow: '0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04)',
+        borderTop: accent ? `3px solid ${accent}` : '3px solid transparent',
+      }}
+    >
+      <p className="text-[11px] font-medium text-[var(--text-muted)] tracking-wide">{label}</p>
+      <p className={cn('text-[28px] font-bold tabular-nums leading-none tracking-tight', valueClass)}>{value}</p>
+      <p className="text-[11px] text-[var(--text-muted)]">{context}</p>
     </div>
   )
 }
@@ -214,7 +221,7 @@ function PendingItems({
   const allClear = chequesCount === 0 && transfersCount === 0 && payroll?.processedCount > 0
 
   return (
-    <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
+    <div className="rounded-xl bg-[var(--surface)] p-5" style={{boxShadow:'0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04)'}}>
       <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-4">Pending Actions</h3>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {chequesCount > 0 && (
@@ -305,6 +312,61 @@ function BranchSlipStatus({ month, year }: { month: number; year: number }) {
       <Link href="/hr/slips" className="text-xs font-semibold text-[var(--accent)] hover:underline">
         View Slip →
       </Link>
+    </div>
+  )
+}
+
+function ExportMenu({ data, month, year, branchName }: { data: SummaryStats; month: number; year: number; branchName?: string }) {
+  const [open, setOpen] = useState(false)
+
+  const handleExcel = async () => {
+    setOpen(false)
+    const branchRows = data.branchStats.map(b => ({ branch: b.branchName, totalSales: b.totalSale, totalExpenses: b.totalExpense, netBalance: b.netBalance, physicalCash: b.physicalCash || 0 }))
+    const dailyRows = data.dailyTrend.map(d => ({ date: d.date, sales: d.totalSale, expenses: d.totalExpense, netBalance: d.totalSale - d.totalExpense }))
+    const expenseRows = data.expenseBreakdown.map(e => ({ category: e.category, amount: e.amount }))
+    await downloadWorkbook(`Dashboard_Summary_${branchName ? branchName.replace(/\s+/g, '_') + '_' : ''}${year}_${month}.xlsx`, [
+      { name: 'Branches', columns: [{ header: 'Branch', key: 'branch', width: 22 }, { header: 'Total Sales', key: 'totalSales', width: 14 }, { header: 'Total Expenses', key: 'totalExpenses', width: 14 }, { header: 'Net Balance', key: 'netBalance', width: 14 }, { header: 'Physical Cash', key: 'physicalCash', width: 14 }], rows: branchRows },
+      { name: 'Daily Trend', columns: [{ header: 'Date', key: 'date', width: 14 }, { header: 'Sales', key: 'sales', width: 14 }, { header: 'Expenses', key: 'expenses', width: 14 }, { header: 'Net Balance', key: 'netBalance', width: 14 }], rows: dailyRows },
+      { name: 'Expense Breakdown', columns: [{ header: 'Category', key: 'category', width: 24 }, { header: 'Amount', key: 'amount', width: 14 }], rows: expenseRows },
+    ])
+  }
+
+  const handlePdf = async () => {
+    setOpen(false)
+    await exportSummaryReportPdf(data, month, year, branchName)
+  }
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen(v => !v)}
+        className="flex items-center gap-1.5 h-8 px-3 rounded-lg border border-[var(--border-strong)] bg-[var(--surface)] text-[13px] font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--accent)] transition-colors"
+      >
+        <Download size={14} />
+        Export
+        <ChevronDown size={13} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 top-9 z-50 w-48 rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-lg overflow-hidden">
+            <button
+              onClick={handleExcel}
+              className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-[var(--text-secondary)] hover:bg-[var(--surface-raised)] hover:text-[var(--text-primary)] transition-colors"
+            >
+              <FileSpreadsheet size={14} className="text-[var(--success)]" />
+              Export as Excel
+            </button>
+            <button
+              onClick={handlePdf}
+              className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-[var(--text-secondary)] hover:bg-[var(--surface-raised)] hover:text-[var(--text-primary)] transition-colors"
+            >
+              <FileText size={14} className="text-[var(--danger)]" />
+              Download PDF Report
+            </button>
+          </div>
+        </>
+      )}
     </div>
   )
 }
@@ -408,39 +470,25 @@ function Dashboard() {
               userRole={userRole}
             />
             {data && (
-              <>
-                <ExcelExport
-                  data={data}
-                  month={month}
-                  year={year}
-                  branchName={
-                    userRole === 'BRANCH'
-                      ? branches[0]?.name
-                      : branchId !== 'all'
-                      ? branches.find(b => String(b.id) === branchId)?.name
-                      : undefined
-                  }
-                />
-                <PdfGenerator
-                  data={data}
-                  month={month}
-                  year={year}
-                  branchName={
-                    userRole === 'BRANCH'
-                      ? branches[0]?.name
-                      : branchId !== 'all'
-                      ? branches.find(b => String(b.id) === branchId)?.name
-                      : undefined
-                  }
-                />
-              </>
+              <ExportMenu
+                data={data}
+                month={month}
+                year={year}
+                branchName={
+                  userRole === 'BRANCH'
+                    ? branches[0]?.name
+                    : branchId !== 'all'
+                    ? branches.find(b => String(b.id) === branchId)?.name
+                    : undefined
+                }
+              />
             )}
           </div>
         )}
       </div>
 
       {/* Body */}
-      <div className="flex-1 p-6 space-y-6 min-h-0">
+      <div className="flex-1 p-6 space-y-5 min-h-0">
 
         {(userRole === 'ADMIN' || userRole === 'BRANCH') && (
           <PendingItems
@@ -491,23 +539,27 @@ function Dashboard() {
                   value={`৳${formatCurrency(data.totalSales)}`}
                   context={`${MONTHS[month - 1]} ${year}`}
                   valueClass="text-[var(--success)]"
+                  accent="var(--success)"
                 />
                 <StatCard
                   label="Total Expenses"
                   value={`৳${formatCurrency(data.totalExpenses)}`}
                   context={`${MONTHS[month - 1]} ${year}`}
+                  accent="var(--danger)"
                 />
                 <StatCard
                   label="Net Balance"
                   value={`৳${formatCurrency(Math.abs(data.netBalance))}`}
                   context={data.netBalance >= 0 ? 'Profit' : 'Loss'}
                   valueClass={data.netBalance >= 0 ? 'text-[var(--success)]' : 'text-[var(--danger)]'}
+                  accent={data.netBalance >= 0 ? 'var(--success)' : 'var(--danger)'}
                 />
                 {userRole === 'ADMIN' && (
                   <StatCard
                     label="Active Branches"
                     value={data.branchStats.length}
                     context="With activity this period"
+                    accent="var(--accent)"
                   />
                 )}
                 {(userRole === 'ADMIN' || userRole === 'SUPER_ADMIN') && (
@@ -517,12 +569,14 @@ function Dashboard() {
                       value={`৳${formatCurrency(data.pettyCash || 0)}`}
                       context="Latest physical cash"
                       valueClass="text-[var(--info)]"
+                      accent="var(--info)"
                     />
                     <StatCard
                       label="Total Payable"
                       value={`৳${formatCurrency(data.totalPayable || 0)}`}
                       context="Owed to parties"
                       valueClass="text-[var(--warning)]"
+                      accent="var(--warning)"
                     />
                   </>
                 )}
@@ -531,18 +585,19 @@ function Dashboard() {
                   value={`৳${formatCurrency(data.branchStats.reduce((sum, b) => sum + (b.physicalCash || 0), 0))}`}
                   context="In branch drawers"
                   valueClass="text-[var(--warning)]"
+                  accent="var(--warning)"
                 />
               </div>
 
               {/* Charts row */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                <div className="lg:col-span-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
+                <div className="lg:col-span-2 rounded-xl bg-[var(--surface)] p-5" style={{boxShadow:'0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04)'}}>
                   <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-4">
                     Daily Sales vs Expenses
                   </h3>
                   <ResponsiveContainer width="100%" height={240}>
                     <LineChart data={data.dailyTrend} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                       <XAxis
                         dataKey="date"
                         tickFormatter={(v) => new Date(v).getDate().toString()}
@@ -566,7 +621,7 @@ function Dashboard() {
                   </ResponsiveContainer>
                 </div>
 
-                <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
+                <div className="rounded-xl bg-[var(--surface)] p-5" style={{boxShadow:'0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04)'}}>
                   <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-2">
                     Expense Breakdown
                   </h3>
@@ -614,13 +669,13 @@ function Dashboard() {
               {userRole !== 'BRANCH' && (
                 <>
                   {/* Branch performance bar chart */}
-                  <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
+                  <div className="rounded-xl bg-[var(--surface)] p-5" style={{boxShadow:'0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04)'}}>
                     <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-4">
                       Branch-wise Performance
                     </h3>
                     <ResponsiveContainer width="100%" height={220}>
                       <BarChart data={data.branchStats} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                         <XAxis
                           dataKey="branchName"
                           tick={{ fill: 'var(--text-secondary)', fontSize: 11 }}

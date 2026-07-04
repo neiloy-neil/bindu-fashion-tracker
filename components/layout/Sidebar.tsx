@@ -25,7 +25,7 @@ export function Sidebar({ isOpen, setIsOpen }: { isOpen?: boolean, setIsOpen?: (
     const loadSidebarData = async () => {
       try {
         const savedTheme = typeof window !== 'undefined' ? localStorage.getItem('theme') : null
-        const lightMode = savedTheme === 'light'
+        const lightMode = savedTheme !== 'dark'
         document.documentElement.classList.toggle('light', lightMode)
 
         const [sessionRes, transferRes, chequeRes] = await Promise.all([
@@ -80,6 +80,13 @@ export function Sidebar({ isOpen, setIsOpen }: { isOpen?: boolean, setIsOpen?: (
     }
   }
 
+  const sectionHeader = (label: string, first = false) => (
+    <div className={cn('flex items-center gap-2 px-3 pb-1', first ? 'pt-2' : 'pt-5')}>
+      <span className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-widest whitespace-nowrap">{label}</span>
+      <span className="flex-1 h-px bg-[var(--border)]" />
+    </div>
+  )
+
   const navItem = (href: string, label: string, icon: React.ReactNode, badge?: number) => {
     const isActive = href === '/' ? pathname === '/' : pathname.startsWith(href)
     return (
@@ -88,19 +95,19 @@ export function Sidebar({ isOpen, setIsOpen }: { isOpen?: boolean, setIsOpen?: (
         href={href}
         onClick={() => setIsOpen?.(false)}
         className={cn(
-          'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium',
+          'flex items-center gap-2.5 px-3 py-[6px] rounded-lg text-[13px] font-medium',
           'transition-all duration-150 w-full active:scale-[0.97] select-none',
           isActive
             ? 'bg-[var(--accent-subtle)] text-[var(--accent)]'
             : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-raised)]'
         )}
       >
-        <span className="w-[18px] h-[18px] flex-shrink-0 flex items-center justify-center">
+        <span className="w-[16px] h-[16px] flex-shrink-0 flex items-center justify-center opacity-80">
           {icon}
         </span>
         <span className="flex-1 truncate">{label}</span>
         {badge ? (
-          <span className="text-[10px] font-bold bg-[var(--danger)] text-white rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 ml-auto flex-shrink-0">
+          <span className="text-[10px] font-bold bg-[var(--accent)] text-white rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 ml-auto flex-shrink-0">
             {badge > 99 ? '99+' : badge}
           </span>
         ) : null}
@@ -119,25 +126,22 @@ export function Sidebar({ isOpen, setIsOpen }: { isOpen?: boolean, setIsOpen?: (
       <aside className={`sidebar z-50 ${isOpen ? 'mobile-open' : ''}`}>
 
         {/* Logo area */}
-        <div className="flex items-center gap-3 h-14 px-4 border-b border-[var(--border)] flex-shrink-0">
-          <Image src="/bindu-logo.webp" width={28} height={28} className="object-contain flex-shrink-0" alt="Bindu" />
+        <div className="flex items-center gap-2.5 h-13 px-4 border-b border-[var(--border)] flex-shrink-0">
+          <Image src="/bindu-logo.webp" width={26} height={26} className="object-contain flex-shrink-0" alt="Bindu" />
           <div>
-            <p className="text-[15px] font-semibold text-[var(--text-primary)] leading-none">
+            <p className="text-[14px] font-semibold text-[var(--text-primary)] leading-none">
               Bindu Premium
             </p>
-            <p className="text-[11px] text-[var(--text-muted)] mt-0.5 leading-none">
+            <p className="text-[10px] text-[var(--text-muted)] mt-0.5 leading-none">
               Tracking & Insights
             </p>
           </div>
         </div>
 
         {/* Nav area */}
-        <nav className="flex-1 overflow-y-auto px-2 py-3">
+        <nav className="flex-1 overflow-y-auto px-2 py-2">
 
-          {/* Main */}
-          <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-widest px-3 pt-5 pb-1.5 first:pt-2">
-            Main
-          </p>
+          {sectionHeader('Main', true)}
           {navItem('/', 'Dashboard', (
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
               <rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" />
@@ -147,9 +151,7 @@ export function Sidebar({ isOpen, setIsOpen }: { isOpen?: boolean, setIsOpen?: (
           {/* Cash Flow */}
           {role !== 'HR_ADMIN' && (
             <>
-              <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-widest px-3 pt-5 pb-1.5 first:pt-2">
-                Cash Flow
-              </p>
+              {sectionHeader('Cash Flow')}
               {navItem('/entries/new', 'Daily Entry', (
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
                   <circle cx="12" cy="12" r="9" /><path d="M12 8v8M8 12h8" />
@@ -178,24 +180,12 @@ export function Sidebar({ isOpen, setIsOpen }: { isOpen?: boolean, setIsOpen?: (
             </>
           )}
 
-          {/* HR & Payroll */}
+          {/* HR */}
           {(role === 'ADMIN' || role === 'HR_ADMIN' || role === 'BRANCH') && (
             <>
-              <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-widest px-3 pt-5 pb-1.5 first:pt-2">
-                HR & Payroll
-              </p>
-                  {navItem('/hr/employees', 'Employees', (
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
-                  ))}
-              {(role === 'ADMIN' || role === 'HR_ADMIN') && (
-                <>
-                  {navItem('/hr/salary', 'Salary Processing', (
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><rect x="2" y="7" width="20" height="14" rx="2" ry="2" /><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" /></svg>
-                  ))}
-                </>
-              )}
-              {navItem('/hr/slips', 'Salary Slips', (
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><polyline points="10 9 9 9 8 9" /></svg>
+              {sectionHeader('HR')}
+              {navItem('/hr/employees', 'Employees', (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
               ))}
               {navItem('/hr/attendance', 'Attendance', (
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /><path d="M8 14h.01" /><path d="M12 14h.01" /><path d="M16 14h.01" /><path d="M8 18h.01" /><path d="M12 18h.01" /><path d="M16 18h.01" /></svg>
@@ -203,8 +193,21 @@ export function Sidebar({ isOpen, setIsOpen }: { isOpen?: boolean, setIsOpen?: (
               {navItem('/hr/leaves', 'Leave Tracking', (
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>
               ))}
+            </>
+          )}
+
+          {/* Payroll */}
+          {(role === 'ADMIN' || role === 'HR_ADMIN' || role === 'BRANCH') && (
+            <>
+              {sectionHeader('Payroll')}
+              {navItem('/hr/slips', 'Salary Slips', (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><polyline points="10 9 9 9 8 9" /></svg>
+              ))}
               {(role === 'ADMIN' || role === 'HR_ADMIN') && (
                 <>
+                  {navItem('/hr/salary', 'Salary Processing', (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><rect x="2" y="7" width="20" height="14" rx="2" ry="2" /><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" /></svg>
+                  ))}
                   {navItem('/hr/eid', 'Eid Bonus', (
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10" /><path d="M12 8v4l3 3" /></svg>
                   ))}
@@ -219,9 +222,7 @@ export function Sidebar({ isOpen, setIsOpen }: { isOpen?: boolean, setIsOpen?: (
           {/* Parties & Payments */}
           {role === 'ADMIN' && (
             <>
-              <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-widest px-3 pt-5 pb-1.5 first:pt-2">
-                Parties & Payments
-              </p>
+              {sectionHeader('Parties & Payments')}
               {navItem('/parties', 'Party List', (
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
                   <rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect><rect x="9" y="9" width="6" height="6"></rect>
@@ -235,12 +236,10 @@ export function Sidebar({ isOpen, setIsOpen }: { isOpen?: boolean, setIsOpen?: (
             </>
           )}
 
-          {/* Admin */}
+          {/* Manage */}
           {role === 'ADMIN' && (
             <>
-              <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-widest px-3 pt-5 pb-1.5 first:pt-2">
-                Admin
-              </p>
+              {sectionHeader('Manage')}
               {navItem('/admin/users', 'Users', (
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
               ))}
@@ -250,34 +249,41 @@ export function Sidebar({ isOpen, setIsOpen }: { isOpen?: boolean, setIsOpen?: (
               {navItem('/categories', 'Categories', (
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><line x1="8" y1="6" x2="21" y2="6" /><line x1="8" y1="12" x2="21" y2="12" /><line x1="8" y1="18" x2="21" y2="18" /><line x1="3" y1="6" x2="3.01" y2="6" /><line x1="3" y1="12" x2="3.01" y2="12" /><line x1="3" y1="18" x2="3.01" y2="18" /></svg>
               ))}
+            </>
+          )}
+
+          {/* System */}
+          {role === 'ADMIN' && (
+            <>
+              {sectionHeader('System')}
+              {navItem('/admin/settings', 'Settings', (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>
+              ))}
               {navItem('/admin/requests', 'Support Requests', (
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" /></svg>
               ))}
               {navItem('/admin/audit-logs', 'Audit Logs', (
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><polyline points="10 9 9 9 8 9" /></svg>
               ))}
-              {navItem('/admin/settings', 'Settings', (
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>
-              ))}
             </>
           )}
         </nav>
 
         {/* Bottom area */}
-        <div className="flex-shrink-0 border-t border-[var(--border)] px-3 py-3 space-y-0.5">
+        <div className="flex-shrink-0 border-t border-[var(--border)] px-3 py-2 space-y-0.5">
           <button
             onClick={toggleTheme}
-            className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)] hover:bg-[var(--surface-raised)]"
+            className="flex items-center gap-2.5 w-full px-3 py-[6px] rounded-lg text-[13px] text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)] hover:bg-[var(--surface-raised)]"
           >
-            {isLightMode ? <Moon size={16} /> : <Sun size={16} />}
+            {isLightMode ? <Moon size={15} /> : <Sun size={15} />}
             <span>{isLightMode ? 'Dark Mode' : 'Light Mode'}</span>
           </button>
 
           <button
             onClick={handleLogout}
-            className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm text-[var(--text-muted)] transition-colors hover:text-[var(--danger)] hover:bg-[var(--danger-subtle)]"
+            className="flex items-center gap-2.5 w-full px-3 py-[6px] rounded-lg text-[13px] text-[var(--text-muted)] transition-colors hover:text-[var(--danger)] hover:bg-[var(--danger-subtle)]"
           >
-            <LogOut size={16} />
+            <LogOut size={15} />
             <span>Sign Out</span>
           </button>
         </div>

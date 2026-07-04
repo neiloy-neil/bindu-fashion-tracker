@@ -17,6 +17,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      className="light"
       style={{
         ['--font-body' as string]: '"Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif',
         ['--font-display' as string]: '"Fraunces", Georgia, "Times New Roman", serif',

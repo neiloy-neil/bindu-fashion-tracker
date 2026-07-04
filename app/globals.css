@@ -74,31 +74,37 @@
 
 /* ─── Light theme ───────────────────────────────── */
 .light {
-  --background:          #FAFAFA;
+  --background:          #F5F4F1;
   --surface:             #FFFFFF;
-  --surface-raised:      #F8F9FC;
-  --surface-overlay:     #F0F2F8;
-  --border:              rgba(0,0,0,0.08);
-  --border-strong:       rgba(0,0,0,0.14);
+  --surface-raised:      #EEECEA;
+  --surface-overlay:     #E6E3DF;
+  --border:              rgba(0,0,0,0.09);
+  --border-strong:       rgba(0,0,0,0.16);
 
-  --text-primary:        #0F172A;
-  --text-secondary:      #475569;
-  --text-muted:          #94A3B8;
-  --text-disabled:       #CBD5E1;
+  --text-primary:        #1A1917;
+  --text-secondary:      #4A4845;
+  --text-muted:          #9A9790;
+  --text-disabled:       #C5C2BC;
 
-  --accent:              #F4881F;
-  --accent-hover:        #E07010;
-  --accent-subtle:       rgba(244,136,31,0.10);
-  --accent-ring:         rgba(244,136,31,0.25);
+  --accent:              #E5521A;
+  --accent-hover:        #CC4715;
+  --accent-subtle:       rgba(229,82,26,0.09);
+  --accent-ring:         rgba(229,82,26,0.22);
 
-  --success:             #059669;
-  --success-subtle:      rgba(5,150,105,0.10);
-  --danger:              #ED4024;
-  --danger-subtle:       rgba(237,64,36,0.10);
-  --warning:             #D97706;
-  --warning-subtle:      rgba(217,119,6,0.10);
-  --info:                #2563EB;
-  --info-subtle:         rgba(37,99,235,0.10);
+  --success:             #1A7D45;
+  --success-subtle:      rgba(26,125,69,0.09);
+  --danger:              #C9331A;
+  --danger-hover:        #B02D17;
+  --danger-subtle:       rgba(201,51,26,0.09);
+  --warning:             #C07A10;
+  --warning-subtle:      rgba(192,122,16,0.09);
+  --info:                #1E55CC;
+  --info-subtle:         rgba(30,85,204,0.09);
+
+  --status-success-bg:   rgba(26,125,69,0.10);
+  --status-success-text: #1A7D45;
+  --status-draft-bg:     rgba(154,151,144,0.12);
+  --status-draft-text:   #4A4845;
 
   --foreground:            var(--text-primary);
   --card:                  var(--surface);
@@ -106,13 +112,13 @@
   --popover:               var(--surface);
   --popover-foreground:    var(--text-primary);
   --primary:               var(--accent);
-  --primary-foreground:    var(--brand-ivory);
+  --primary-foreground:    #FFFFFF;
   --secondary:             var(--surface-raised);
   --secondary-foreground:  var(--text-primary);
   --muted:                 var(--surface-raised);
   --muted-foreground:      var(--text-muted);
   --destructive:           var(--danger);
-  --destructive-foreground: var(--brand-ivory);
+  --destructive-foreground: #FFFFFF;
   --input:                 var(--border);
   --ring:                  var(--accent);
   --bg-card:               var(--surface);
@@ -276,15 +282,21 @@ body {
   .mobile-sticky-bar { left: 240px; }
 }
 
-/* ─── Dark toast override ───────────────────────── */
+/* ─── Toast override ─────────────────────────────── */
 .dark-toast {
   background: var(--surface-raised) !important;
   color: var(--text-primary) !important;
   border: 1px solid var(--border-strong) !important;
   font-size: 14px !important;
   border-radius: 10px !important;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.3) !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12) !important;
   animation: toastSlideIn 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+.light .dark-toast {
+  background: #FFFFFF !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-strong) !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.10) !important;
 }
 
 /* ─── Micro-interaction utilities ───────────────── */

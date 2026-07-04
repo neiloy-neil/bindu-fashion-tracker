@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "bindu-fashion-tracker",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "port": 3000
+    },
+    {
+      "name": "bindu-salary",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "D:/AI/bindu-salary", "run", "dev", "--", "-p", "3001"],
+      "port": 3001
+    }
+  ]
+}

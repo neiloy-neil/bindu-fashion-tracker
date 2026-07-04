@@ -1,6 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
+export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  const branchId = parseInt(id)
+
+  const branch = await prisma.branch.findUnique({
+    where: { id: branchId },
+    include: {
+      _count: { select: { employees: true, entries: true } },
+      employees: {
+        where: { isActive: true },
+        select: { id: true, name: true, designation: true, employeeId: true },
+        orderBy: { name: 'asc' },
+        take: 10,
+      },
+      entries: {
+        orderBy: { date: 'desc' },
+        take: 7,
+        select: {
+          id: true,
+          date: true,
+          items: { select: { amount: true, category: { select: { type: true } } } },
+          expenseEntries: {
+            where: { approvalStatus: 'APPROVED' },
+            select: { amount: true },
+          },
+        },
+      },
+    },
+  })
+
+  if (!branch) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  return NextResponse.json(branch)
+}
+
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const role = req.headers.get('x-user-role')
   if (role !== 'ADMIN') {

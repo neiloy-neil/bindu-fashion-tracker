@@ -116,6 +116,10 @@ export function NewEntryForm({ initialData, userId }: Props) {
   const isHeadOffice = selectedBranchObj?.type === 'HEAD_OFFICE'
   const hideIncome = isFactory || isHeadOffice
 
+  const branchType = selectedBranchObj?.type ?? ''
+  const filterByBranchType = <T extends { applicableTo?: string[] }>(cats: T[]): T[] =>
+    cats.filter(c => !c.applicableTo?.length || c.applicableTo.includes(branchType))
+
   useEffect(() => {
     let timeoutId: NodeJS.Timeout
     const subscription = form.watch((value) => {
@@ -401,7 +405,7 @@ export function NewEntryForm({ initialData, userId }: Props) {
                   control={control}
                   register={form.register}
                   setValue={setValue}
-                  categories={categories}
+                  categories={filterByBranchType(categories)}
                   inputClass={inputClass}
                   selectClass={selectClass}
                   errors={errors}
@@ -438,7 +442,7 @@ export function NewEntryForm({ initialData, userId }: Props) {
 
           {showExpense && (
             <div className="p-4 sm:p-5 space-y-8">
-              <ExpenseSection control={control} register={form.register} setValue={setValue} expenseCategories={expenseCategories} inputClass={inputClass} selectClass={selectClass} errors={errors} generateId={generateId} />
+              <ExpenseSection control={control} register={form.register} setValue={setValue} expenseCategories={filterByBranchType(expenseCategories)} inputClass={inputClass} selectClass={selectClass} errors={errors} generateId={generateId} />
               {/* HO can send transfers to factory; factory cannot send transfers out */}
               {!isFactory && <TransferSection control={control} register={form.register} accounts={accounts} branches={allBranches || branches} currentBranchId={branchId} inputClass={inputClass} selectClass={selectClass} errors={errors} generateId={generateId} />}
               <AdvanceSalarySection control={control} register={form.register} employees={employees} inputClass={inputClass} selectClass={selectClass} errors={errors} generateId={generateId} />

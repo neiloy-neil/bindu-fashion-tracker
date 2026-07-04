@@ -34,7 +34,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { name, type, frequency, isActive, isDefault, parentId, requiresAttachment, isAutoTransferred } = await request.json()
+    const { name, type, frequency, isActive, isDefault, parentId, requiresAttachment, isAutoTransferred, applicableTo } = await request.json()
     if (!name?.trim()) return NextResponse.json({ error: 'Name is required' }, { status: 400 })
     if (!type || !['INCOME', 'EXPENSE'].includes(type)) return NextResponse.json({ error: 'Type must be INCOME or EXPENSE' }, { status: 400 })
     if (type === 'EXPENSE' && !frequency && !parentId) return NextResponse.json({ error: 'Frequency is required for expense categories' }, { status: 400 })
@@ -60,6 +60,7 @@ export async function POST(request: Request) {
         isAutoTransferred: isAutoTransferred ?? false,
         requiresAttachment: !!requiresAttachment,
         parentId: parentId ? Number(parentId) : null,
+        applicableTo: Array.isArray(applicableTo) ? applicableTo : [],
       },
     })
 

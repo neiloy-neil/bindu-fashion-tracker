@@ -112,6 +112,7 @@ model Category {
   parent             Category?  @relation("CategoryChildren", fields: [parentId], references: [id])
   children           Category[] @relation("CategoryChildren")
   requiresAttachment Boolean    @default(true)
+  applicableTo       String[]   @default([]) // empty = all branch types; otherwise e.g. ["RETAIL","WHOLESALE"]
 }
 
 model EntryItem {

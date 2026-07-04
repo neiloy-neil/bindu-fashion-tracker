@@ -10,7 +10,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 
     const { id } = await params
     const categoryId = parseInt(id)
-    const { name, type, frequency, isActive, parentId, requiresAttachment, isAutoTransferred } = await request.json()
+    const { name, type, frequency, isActive, parentId, requiresAttachment, isAutoTransferred, applicableTo } = await request.json()
 
     const existing = await prisma.category.findUnique({ where: { id: categoryId } })
     if (!existing) return NextResponse.json({ error: 'Category not found' }, { status: 404 })
@@ -29,6 +29,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
         ...(parentId !== undefined && { parentId: parentId ? Number(parentId) : null }),
         ...(requiresAttachment !== undefined && { requiresAttachment: !!requiresAttachment }),
         ...(isAutoTransferred !== undefined && { isAutoTransferred: !!isAutoTransferred }),
+        ...(applicableTo !== undefined && { applicableTo: Array.isArray(applicableTo) ? applicableTo : [] }),
       },
     })
 

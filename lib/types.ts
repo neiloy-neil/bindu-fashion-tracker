@@ -19,6 +19,7 @@ export interface Category {
   isAutoTransferred?: boolean
   frequency?: string | null // DAILY | WEEKLY | MONTHLY | AS_NEEDED — only set for EXPENSE type
   requiresAttachment: boolean
+  applicableTo: string[] // empty = all branch types; e.g. ["RETAIL","FACTORY"]
 }
 
 export interface EntryItem {

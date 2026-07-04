@@ -16,6 +16,13 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 
+const BRANCH_TYPES = [
+  { value: 'RETAIL',      label: 'Retail' },
+  { value: 'WHOLESALE',   label: 'Wholesale' },
+  { value: 'FACTORY',     label: 'Factory' },
+  { value: 'HEAD_OFFICE', label: 'Head Office' },
+]
+
 // Extended Category type with children
 type CategoryWithChildren = {
   id: number
@@ -27,6 +34,7 @@ type CategoryWithChildren = {
   parentId?: number | null
   requiresAttachment?: boolean
   isAutoTransferred?: boolean
+  applicableTo?: string[]
   children?: CategoryWithChildren[]
 }
 
@@ -118,6 +126,19 @@ function CategoryRow({
             </span>
           )}
         </td>
+        <td className="px-4 py-3">
+          {cat.applicableTo && cat.applicableTo.length > 0 ? (
+            <div className="flex flex-wrap gap-1">
+              {cat.applicableTo.map(bt => (
+                <span key={bt} className="inline-flex px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[var(--accent-subtle)] text-[var(--accent)]">
+                  {BRANCH_TYPES.find(b => b.value === bt)?.label ?? bt}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <span className="text-xs text-[var(--text-muted)]">All</span>
+          )}
+        </td>
         <td className="px-4 py-3 text-right">
           <div className="flex items-center justify-end gap-1">
             {/* Add Sub-category button — only for top-level categories */}
@@ -199,13 +220,14 @@ function CategoryTable({
                 <th className="px-4 py-2.5 text-left text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide">Frequency</th>
               )}
               <th className="px-4 py-2.5 text-left text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide">Status</th>
+              <th className="px-4 py-2.5 text-left text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide">Applies To</th>
               <th className="px-4 py-2.5 text-right text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide">Actions</th>
             </tr>
           </thead>
           <tbody>
             {topLevel.length === 0 ? (
               <tr>
-                <td colSpan={showFrequency ? 4 : 3} className="py-6 text-center text-[var(--text-secondary)] italic text-sm">
+                <td colSpan={showFrequency ? 5 : 4} className="py-6 text-center text-[var(--text-secondary)] italic text-sm">
                   No categories yet.
                 </td>
               </tr>
@@ -243,6 +265,7 @@ export default function CategoriesPage() {
   const [isActive, setIsActive] = useState(true)
   const [requiresAttachment, setRequiresAttachment] = useState(true)
   const [isAutoTransferred, setIsAutoTransferred] = useState(false)
+  const [applicableTo, setApplicableTo] = useState<string[]>([])
 
   const incomeCategories = categories.filter(c => c.type === 'INCOME')
   const expenseCategories = categories.filter(c => c.type === 'EXPENSE')
@@ -280,7 +303,8 @@ export default function CategoriesPage() {
         isActive,
         isAutoTransferred,
         requiresAttachment,
-        parentId: parentCategory?.id || null
+        parentId: parentCategory?.id || null,
+        applicableTo,
       }
 
       const res = await fetch(url, {
@@ -318,6 +342,7 @@ export default function CategoriesPage() {
     setIsActive(true)
     setRequiresAttachment(true)
     setIsAutoTransferred(false)
+    setApplicableTo([])
     setShowModal(true)
   }
 
@@ -330,6 +355,7 @@ export default function CategoriesPage() {
     setIsActive(cat.isActive)
     setRequiresAttachment(cat.requiresAttachment ?? true)
     setIsAutoTransferred(cat.isAutoTransferred ?? false)
+    setApplicableTo(cat.applicableTo ?? [])
     setShowModal(true)
   }
 
@@ -342,6 +368,7 @@ export default function CategoriesPage() {
     setIsActive(true)
     setRequiresAttachment(true)
     setIsAutoTransferred(false)
+    setApplicableTo(parent.applicableTo ?? [])
     setShowModal(true)
   }
 
@@ -481,6 +508,31 @@ export default function CategoriesPage() {
                     </Label>
                   </div>
                 )}
+              </div>
+
+              {/* Branch Type Scope */}
+              <div className="rounded-lg border border-[var(--border)] p-4 space-y-3">
+                <div>
+                  <p className="text-sm font-medium text-[var(--text-primary)]">Visible to Branch Types</p>
+                  <p className="text-xs text-[var(--text-muted)] mt-0.5">Leave all unchecked to show in every branch type.</p>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {BRANCH_TYPES.map(bt => (
+                    <label key={bt.value} className="flex items-center gap-2.5 cursor-pointer group">
+                      <Checkbox
+                        checked={applicableTo.includes(bt.value)}
+                        onCheckedChange={(checked) =>
+                          setApplicableTo(prev =>
+                            checked ? [...prev, bt.value] : prev.filter(v => v !== bt.value)
+                          )
+                        }
+                      />
+                      <span className="text-sm text-[var(--text-primary)] group-hover:text-[var(--accent)] transition-colors">
+                        {bt.label}
+                      </span>
+                    </label>
+                  ))}
+                </div>
               </div>
 
               <div className="flex gap-3 pt-4 border-t border-[var(--border)]">

@@ -318,17 +318,17 @@ function MonthlyReportDocument({
   const monthName = new Date(year, month - 1, 1).toLocaleString('default', { month: 'long' })
   const isConsolidated = selectedBranchId === 'all'
   const totals = branchData.reduce((acc, curr) => ({
-    totalIncome: acc.totalIncome + curr.totalIncome,
+    grossIncome: acc.grossIncome + (curr.grossIncome ?? curr.totalIncome),
     totalExpense: acc.totalExpense + curr.totalExpense,
     totalTransfers: acc.totalTransfers + curr.totalTransfers,
     totalPayments: acc.totalPayments + curr.totalPayments,
     totalAdvances: acc.totalAdvances + curr.totalAdvances,
     netCashFlow: acc.netCashFlow + curr.netCashFlow,
-  }), { totalIncome: 0, totalExpense: 0, totalTransfers: 0, totalPayments: 0, totalAdvances: 0, netCashFlow: 0 })
+  }), { grossIncome: 0, totalExpense: 0, totalTransfers: 0, totalPayments: 0, totalAdvances: 0, netCashFlow: 0 })
 
   const rows = branchData.map((item) => [
     item.branchName,
-    amount(item.totalIncome),
+    amount(item.grossIncome ?? item.totalIncome),
     amount(item.totalExpense),
     amount(item.totalTransfers),
     amount(item.totalPayments),
@@ -339,7 +339,7 @@ function MonthlyReportDocument({
   if (isConsolidated && branchData.length > 1) {
     rows.push([
       'TOTALS',
-      amount(totals.totalIncome),
+      amount(totals.grossIncome),
       amount(totals.totalExpense),
       amount(totals.totalTransfers),
       amount(totals.totalPayments),

@@ -10,6 +10,8 @@ import { Button } from '@/components/ui/button'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { Plus, User, Pencil, Trash2, Upload, Download, ArrowRightLeft } from 'lucide-react'
 import { downloadEmployeeTemplate, parseEmployeeSheet } from '@/lib/hr/excel'
+import type { EmployeeSheetRow } from '@/lib/hr/excel'
+import { ImportPreviewModal } from '@/components/hr/ImportPreviewModal'
 
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState<any[]>([])
@@ -38,6 +40,9 @@ export default function EmployeesPage() {
   const [isTransferring, setIsTransferring] = useState(false)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Import preview state
+  const [previewRows, setPreviewRows] = useState<EmployeeSheetRow[] | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -162,6 +167,7 @@ export default function EmployeesPage() {
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
+    if (fileInputRef.current) fileInputRef.current.value = ''
 
     try {
       const { rows, errors } = await parseEmployeeSheet(file)
@@ -169,13 +175,17 @@ export default function EmployeesPage() {
         toast.error(errors[0])
         return
       }
+      setPreviewRows(rows)
+    } catch (err: any) {
+      toast.error(`Failed to read file: ${err.message}`)
+    }
+  }
 
-      // Upload parsed rows one by one (or batch if API supports, we will do one by one here for simplicity)
-      toast.loading(`Importing ${rows.length} employees...`, { id: 'import' })
-      
-      let imported = 0
-      for (const row of rows) {
-        // find branch id
+  const handleConfirmImport = async (validRows: EmployeeSheetRow[]) => {
+    toast.loading(`Importing ${validRows.length} employees...`, { id: 'import' })
+    let imported = 0
+    try {
+      for (const row of validRows) {
         const branchMatch = branches.find(b => b.name.toLowerCase() === row.branch.toLowerCase())
         const payload = {
           employeeId: row.employeeId,
@@ -196,7 +206,6 @@ export default function EmployeesPage() {
           photoUrl: row.photoUrl,
           isActive: true
         }
-
         await fetch('/api/hr/employees', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -204,13 +213,11 @@ export default function EmployeesPage() {
         })
         imported++
       }
-
       toast.success(`Imported ${imported} employees`, { id: 'import' })
+      setPreviewRows(null)
       setReloadNonce((value) => value + 1)
     } catch (err: any) {
       toast.error(`Import failed: ${err.message}`, { id: 'import' })
-    } finally {
-      if (fileInputRef.current) fileInputRef.current.value = ''
     }
   }
 
@@ -368,6 +375,16 @@ export default function EmployeesPage() {
         employee={viewingEmployee}
         onEdit={() => { setIsProfileOpen(false); setEditingEmployee(viewingEmployee); setIsModalOpen(true) }}
       />
+
+      {previewRows && (
+        <ImportPreviewModal
+          rows={previewRows}
+          existingEmployeeIds={new Set(employees.map((e: any) => e.employeeId).filter(Boolean))}
+          branches={branches}
+          onConfirm={handleConfirmImport}
+          onCancel={() => setPreviewRows(null)}
+        />
+      )}
 
       {isTransferOpen && transferringEmployee && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">

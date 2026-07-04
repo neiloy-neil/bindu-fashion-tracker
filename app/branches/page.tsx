@@ -22,6 +22,7 @@ const TYPE_LABELS: Record<string, string> = {
   RETAIL: 'Retail',
   WHOLESALE: 'Wholesale',
   FACTORY: 'Factory',
+  HEAD_OFFICE: 'Head Office',
 }
 
 const emptyForm = {
@@ -233,6 +234,7 @@ export default function BranchesPage() {
                 <option value="RETAIL">Retail</option>
                 <option value="WHOLESALE">Wholesale</option>
                 <option value="FACTORY">Factory</option>
+                <option value="HEAD_OFFICE">Head Office</option>
               </select>
             </div>
 

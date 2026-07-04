@@ -378,32 +378,37 @@ export function NewEntryForm({ initialData, userId }: Props) {
           </div>
         </div>
 
-        {/* Income Section */}
+        {/* Income Section — factory only shows Opening Balance */}
         <div className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)]">
           <button type="button" aria-expanded={showIncome}
             className="flex w-full items-center justify-between gap-3 border-b border-[var(--border)] bg-[var(--surface)] p-4 text-left"
             onClick={() => setShowIncome(!showIncome)}
           >
             <h2 className="text-lg font-semibold flex flex-wrap items-center gap-2 min-w-0">
-              💰 Income & Collections
+              {isFactory ? '🏦 Opening Balance' : '💰 Income & Collections'}
               <span className="text-xs bg-[var(--success)]/20 text-[var(--success)] px-2 py-0.5 rounded ml-2 font-mono">
                 {formatCurrency(totals.totalAmount)}
               </span>
             </h2>
             {showIncome ? <ChevronDown size={20} className="text-muted-foreground" /> : <ChevronRight size={20} className="text-muted-foreground" />}
           </button>
-          
+
           {showIncome && (
             <div className="p-4 sm:p-5">
-              <IncomeSection 
+              {isFactory && (
+                <div className="mb-4 p-3 rounded-lg bg-[var(--info-subtle)] border border-[var(--info)]/30 text-sm text-[var(--info)]">
+                  Opening balance is auto-filled from the previous day's closing balance. Funds received from Head Office are tracked via the <strong>Transfers</strong> system.
+                </div>
+              )}
+              <IncomeSection
                 control={control}
                 register={form.register}
                 setValue={setValue}
-                categories={categories} 
-                inputClass={inputClass} 
-                selectClass={selectClass} 
-                errors={errors} 
-                generateId={generateId} 
+                categories={isFactory ? categories.filter(c => c.name === 'Opening Balance') : categories}
+                inputClass={inputClass}
+                selectClass={selectClass}
+                errors={errors}
+                generateId={generateId}
               />
             </div>
           )}
@@ -416,20 +421,20 @@ export function NewEntryForm({ initialData, userId }: Props) {
             onClick={() => setShowExpense(!showExpense)}
           >
             <h2 className="text-lg font-semibold flex flex-wrap items-center gap-2 min-w-0">
-              💸 Expenses & Dispersals
+              💸 {isFactory ? 'Factory Expenses' : 'Expenses & Dispersals'}
               <span className="text-xs bg-destructive/20 text-destructive px-2 py-0.5 rounded ml-2 font-mono">
                 {formatCurrency(totals.totalExpense)}
               </span>
             </h2>
             {showExpense ? <ChevronDown size={20} className="text-muted-foreground" /> : <ChevronRight size={20} className="text-muted-foreground" />}
           </button>
-          
+
           {showExpense && (
             <div className="p-4 sm:p-5 space-y-8">
               <ExpenseSection control={control} register={form.register} setValue={setValue} expenseCategories={expenseCategories} inputClass={inputClass} selectClass={selectClass} errors={errors} generateId={generateId} />
-              <TransferSection control={control} register={form.register} accounts={accounts} branches={allBranches || branches} currentBranchId={branchId} inputClass={inputClass} selectClass={selectClass} errors={errors} generateId={generateId} />
+              {!isFactory && <TransferSection control={control} register={form.register} accounts={accounts} branches={allBranches || branches} currentBranchId={branchId} inputClass={inputClass} selectClass={selectClass} errors={errors} generateId={generateId} />}
               <AdvanceSalarySection control={control} register={form.register} employees={employees} inputClass={inputClass} selectClass={selectClass} errors={errors} generateId={generateId} />
-              <PaymentSection control={control} register={form.register} setValue={setValue} parties={parties} inputClass={inputClass} selectClass={selectClass} errors={errors} generateId={generateId} />
+              {!isFactory && <PaymentSection control={control} register={form.register} setValue={setValue} parties={parties} inputClass={inputClass} selectClass={selectClass} errors={errors} generateId={generateId} />}
             </div>
           )}
         </div>

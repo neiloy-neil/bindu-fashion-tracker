@@ -6,7 +6,7 @@ import { NewEntryFormValues } from '@/lib/schemas'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { SearchableSelect } from '@/components/ui/SearchableSelect'
 
 interface Props {
   control: Control<NewEntryFormValues>
@@ -50,16 +50,15 @@ export function IncomeSection({ control, register, setValue, categories, inputCl
                 control={control}
                 name={`incomeItems.${idx}.categoryId` as const}
                 render={({ field }) => (
-                  <Select value={field.value ? String(field.value) : undefined} onValueChange={field.onChange} disabled={isOpeningBalance}>
-                    <SelectTrigger className={`h-10 w-full text-sm ${isOpeningBalance ? 'opacity-70 pointer-events-none' : ''}`}>
-                      <SelectValue placeholder="Select Category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories
-                        .filter(c => c.type === 'INCOME' && (c.name !== 'Opening Balance' || String(c.id) === String(currentCategoryId)))
-                        .map(c => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                  <SearchableSelect
+                    value={field.value ? String(field.value) : ''}
+                    onChange={field.onChange}
+                    disabled={isOpeningBalance}
+                    placeholder="Select Category"
+                    options={categories
+                      .filter(c => c.type === 'INCOME' && (c.name !== 'Opening Balance' || String(c.id) === String(currentCategoryId)))
+                      .map(c => ({ value: String(c.id), label: c.name }))}
+                  />
                 )}
               />
               {errors.incomeItems?.[idx]?.categoryId?.message && <span className="text-xs text-destructive mt-1 block">{errors.incomeItems[idx].categoryId.message}</span>}

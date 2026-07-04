@@ -1,7 +1,8 @@
-import { useFieldArray, Control, UseFormRegister, FieldErrors, useWatch } from 'react-hook-form'
+import { useFieldArray, Control, UseFormRegister, FieldErrors, useWatch, Controller } from 'react-hook-form'
 import { Plus, X } from 'lucide-react'
 import { Account, Branch } from '@/lib/types'
 import { NewEntryFormValues } from '@/lib/schemas'
+import { SearchableSelect } from '@/components/ui/SearchableSelect'
 
 interface Props {
   control: Control<NewEntryFormValues>
@@ -18,6 +19,7 @@ interface Props {
 // ─── TransferRow — top-level component to prevent remounting on parent re-renders
 interface TransferRowProps {
   idx: number
+  control: Control<NewEntryFormValues>
   register: UseFormRegister<NewEntryFormValues>
   errors: FieldErrors<NewEntryFormValues>
   remove: (idx: number) => void
@@ -31,6 +33,7 @@ interface TransferRowProps {
 
 function TransferRow({
   idx,
+  control,
   register,
   errors,
   remove,
@@ -67,26 +70,35 @@ function TransferRow({
         {/* To Branch selector */}
         <div>
           <label className="block text-[10px] font-medium text-[var(--text-muted)] mb-1">To Branch</label>
-          <select
-            className={selectClass}
-            {...register(`transfers.${idx}.branchId` as const)}
-          >
-            <option value="">Select Branch</option>
-            {filteredBranches.map(b => (
-              <option key={b.id} value={b.id}>{b.name}</option>
-            ))}
-          </select>
+          <Controller
+            control={control}
+            name={`transfers.${idx}.branchId` as const}
+            render={({ field }) => (
+              <SearchableSelect
+                value={field.value ? String(field.value) : ''}
+                onChange={field.onChange}
+                placeholder="Select Branch"
+                options={filteredBranches.map(b => ({ value: String(b.id), label: b.name }))}
+              />
+            )}
+          />
         </div>
 
         {/* Account selector — filtered by branch */}
         <div>
           <label className="block text-[10px] font-medium text-[var(--text-muted)] mb-1">Account / Method</label>
-          <select className={selectClass} {...register(`transfers.${idx}.accountId` as const)}>
-            <option value="">Select Account</option>
-            {filteredAccounts.map(a => (
-              <option key={a.id} value={a.id}>{a.name}</option>
-            ))}
-          </select>
+          <Controller
+            control={control}
+            name={`transfers.${idx}.accountId` as const}
+            render={({ field }) => (
+              <SearchableSelect
+                value={field.value ? String(field.value) : ''}
+                onChange={field.onChange}
+                placeholder="Select Account"
+                options={filteredAccounts.map(a => ({ value: String(a.id), label: a.name }))}
+              />
+            )}
+          />
           {errors.transfers?.[idx]?.accountId?.message && (
             <span className="text-xs text-destructive mt-1 block">{errors.transfers[idx].accountId.message}</span>
           )}
@@ -136,6 +148,7 @@ export function TransferSection({ control, register, accounts, branches, current
         <TransferRow
           key={field.id}
           idx={idx}
+          control={control}
           register={register}
           errors={errors}
           remove={remove}

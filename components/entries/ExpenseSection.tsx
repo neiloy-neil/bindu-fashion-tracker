@@ -1,10 +1,11 @@
 'use client'
 
-import { useFieldArray, Control, UseFormRegister, UseFormSetValue, useWatch, FieldErrors } from 'react-hook-form'
+import { useFieldArray, Control, UseFormRegister, UseFormSetValue, useWatch, FieldErrors, Controller } from 'react-hook-form'
 import { Plus, X, Paperclip, ChevronDown, ChevronRight } from 'lucide-react'
 import { useState } from 'react'
 import { Category } from '@/lib/types'
 import { NewEntryFormValues } from '@/lib/schemas'
+import { SearchableSelect } from '@/components/ui/SearchableSelect'
 
 interface Props {
   control: Control<NewEntryFormValues>
@@ -33,6 +34,7 @@ interface ExpenseRowProps {
   fieldId: string
   expenses: NewEntryFormValues['expenseEntries']
   expenseCategories: Category[]
+  control: Control<NewEntryFormValues>
   register: UseFormRegister<NewEntryFormValues>
   setValue: UseFormSetValue<NewEntryFormValues>
   errors: FieldErrors<NewEntryFormValues>
@@ -45,6 +47,7 @@ function ExpenseRow({
   idx,
   expenses,
   expenseCategories,
+  control,
   register,
   setValue,
   errors,
@@ -66,12 +69,18 @@ function ExpenseRow({
       </button>
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
         <div>
-          <select className={selectClass} {...register(`expenseEntries.${idx}.categoryId` as const)}>
-            <option value="">Select Category</option>
-            {availableCats.map(c => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
-          </select>
+          <Controller
+            control={control}
+            name={`expenseEntries.${idx}.categoryId` as const}
+            render={({ field }) => (
+              <SearchableSelect
+                value={field.value ? String(field.value) : ''}
+                onChange={field.onChange}
+                placeholder="Select Category"
+                options={availableCats.map(c => ({ value: String(c.id), label: c.name }))}
+              />
+            )}
+          />
           {errors.expenseEntries?.[idx]?.categoryId?.message && (
             <span className="text-xs text-destructive mt-1 block">{errors.expenseEntries[idx].categoryId.message}</span>
           )}
@@ -147,6 +156,7 @@ export function ExpenseSection({ control, register, setValue, expenseCategories,
           fieldId={fields[idx].id}
           expenses={expenses}
           expenseCategories={expenseCategories}
+          control={control}
           register={register}
           setValue={setValue}
           errors={errors}
@@ -204,6 +214,7 @@ export function ExpenseSection({ control, register, setValue, expenseCategories,
               fieldId={fields[idx].id}
               expenses={expenses}
               expenseCategories={expenseCategories}
+              control={control}
               register={register}
               setValue={setValue}
               errors={errors}

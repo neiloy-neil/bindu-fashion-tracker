@@ -1,0 +1,170 @@
+'use client'
+
+import { useState, useRef, useEffect, useId } from 'react'
+import { ChevronDown, Search, Check } from 'lucide-react'
+import { cn } from '@/lib/utils'
+
+interface Option {
+  value: string
+  label: string
+  group?: string
+}
+
+interface Props {
+  options: Option[]
+  value?: string
+  onChange: (value: string) => void
+  placeholder?: string
+  disabled?: boolean
+  className?: string
+  searchPlaceholder?: string
+}
+
+export function SearchableSelect({
+  options,
+  value,
+  onChange,
+  placeholder = 'Select…',
+  disabled = false,
+  className,
+  searchPlaceholder = 'Search…',
+}: Props) {
+  const [open, setOpen] = useState(false)
+  const [query, setQuery] = useState('')
+  const containerRef = useRef<HTMLDivElement>(null)
+  const searchRef = useRef<HTMLInputElement>(null)
+  const id = useId()
+
+  const selected = options.find(o => o.value === value)
+
+  // Close on outside click
+  useEffect(() => {
+    if (!open) return
+    const handler = (e: MouseEvent) => {
+      if (!containerRef.current?.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [open])
+
+  // Focus search when opening
+  useEffect(() => {
+    if (open) {
+      setQuery('')
+      setTimeout(() => searchRef.current?.focus(), 0)
+    }
+  }, [open])
+
+  const filtered = query.trim()
+    ? options.filter(o => o.label.toLowerCase().includes(query.toLowerCase()))
+    : options
+
+  // Group options if any have a group field
+  const hasGroups = options.some(o => o.group)
+  const groups: Record<string, Option[]> = {}
+  if (hasGroups) {
+    for (const o of filtered) {
+      const g = o.group ?? ''
+      if (!groups[g]) groups[g] = []
+      groups[g].push(o)
+    }
+  }
+
+  const handleSelect = (val: string) => {
+    onChange(val)
+    setOpen(false)
+    setQuery('')
+  }
+
+  return (
+    <div ref={containerRef} className={cn('relative', className)}>
+      <button
+        type="button"
+        role="combobox"
+        aria-expanded={open}
+        aria-haspopup="listbox"
+        aria-controls={id}
+        disabled={disabled}
+        onClick={() => !disabled && setOpen(o => !o)}
+        className={cn(
+          'flex h-10 w-full items-center justify-between rounded-md border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)]',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]',
+          'disabled:opacity-50 disabled:pointer-events-none',
+          open && 'ring-2 ring-[var(--accent)] border-[var(--accent)]'
+        )}
+      >
+        <span className={cn('truncate', !selected && 'text-[var(--text-muted)]')}>
+          {selected?.label ?? placeholder}
+        </span>
+        <ChevronDown size={14} className={cn('ml-2 shrink-0 text-[var(--text-muted)] transition-transform', open && 'rotate-180')} />
+      </button>
+
+      {open && (
+        <div
+          id={id}
+          role="listbox"
+          className={cn(
+            'absolute z-50 mt-1 w-full min-w-[180px] rounded-lg border border-[var(--border)] bg-[var(--surface)] shadow-lg',
+            'animate-in fade-in-0 zoom-in-95'
+          )}
+        >
+          {/* Search input */}
+          <div className="flex items-center gap-2 border-b border-[var(--border)] px-3 py-2">
+            <Search size={13} className="shrink-0 text-[var(--text-muted)]" />
+            <input
+              ref={searchRef}
+              type="text"
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              placeholder={searchPlaceholder}
+              className="flex-1 bg-transparent text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none"
+            />
+          </div>
+
+          {/* Options */}
+          <div className="max-h-56 overflow-y-auto py-1">
+            {filtered.length === 0 ? (
+              <div className="px-3 py-4 text-center text-xs text-[var(--text-muted)]">No results</div>
+            ) : hasGroups ? (
+              Object.entries(groups).map(([group, opts]) => (
+                <div key={group}>
+                  {group && (
+                    <div className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+                      {group}
+                    </div>
+                  )}
+                  {opts.map(o => (
+                    <OptionItem key={o.value} option={o} selected={value === o.value} onSelect={handleSelect} />
+                  ))}
+                </div>
+              ))
+            ) : (
+              filtered.map(o => (
+                <OptionItem key={o.value} option={o} selected={value === o.value} onSelect={handleSelect} />
+              ))
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function OptionItem({ option, selected, onSelect }: { option: Option; selected: boolean; onSelect: (v: string) => void }) {
+  return (
+    <button
+      type="button"
+      role="option"
+      aria-selected={selected}
+      onClick={() => onSelect(option.value)}
+      className={cn(
+        'flex w-full items-center gap-2 px-3 py-2 text-sm text-left transition-colors',
+        'hover:bg-[var(--surface-raised)] focus-visible:bg-[var(--surface-raised)] outline-none',
+        selected && 'text-[var(--accent)] font-medium'
+      )}
+    >
+      <Check size={13} className={cn('shrink-0', selected ? 'opacity-100 text-[var(--accent)]' : 'opacity-0')} />
+      {option.label}
+    </button>
+  )
+}

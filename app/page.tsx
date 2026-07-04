@@ -8,6 +8,7 @@ import { formatCurrency, cn } from '@/lib/utils'
 import { SummaryStats, Branch } from '@/lib/types'
 import AdminEditRequests from '@/components/dashboard/AdminEditRequests'
 import AdminExpenseApprovals from '@/components/dashboard/AdminExpenseApprovals'
+import AdminPaymentApprovals from '@/components/dashboard/AdminPaymentApprovals'
 import RecentActivity from '@/components/dashboard/RecentActivity'
 import PdfGenerator from '@/components/dashboard/PdfGenerator'
 import ExcelExport from '@/components/dashboard/ExcelExport'
@@ -478,6 +479,7 @@ function Dashboard() {
               {userRole === 'ADMIN' && (
                 <div>
                   <AdminExpenseApprovals />
+                  <AdminPaymentApprovals />
                   <AdminEditRequests />
                 </div>
               )}

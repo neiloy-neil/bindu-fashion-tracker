@@ -53,17 +53,43 @@ export default function AdminEditRequests() {
 
   if (loading || requests.length === 0) return null
 
-  const describeChanges = (changesStr: string) => {
+  const describeChanges = (changesStr: string, entry: any) => {
     try {
       const changes = JSON.parse(changesStr)
+      const lines: string[] = []
+
       if (Array.isArray(changes.items) && changes.items.length > 0) {
-        return 'Items changed'
+        changes.items.forEach((item: any) => {
+          const current = entry?.items?.find((i: any) => i.categoryId === item.categoryId)
+          const catName = current?.category?.name || `Category #${item.categoryId}`
+          const from = current ? `৳${Number(current.amount).toLocaleString()}` : 'new'
+          lines.push(`Income "${catName}": ${from} → ৳${Number(item.amount).toLocaleString()}`)
+        })
       }
 
-      const keys = Object.keys(changes)
-      return keys.length > 0 ? `${keys.join(', ')} changed` : 'Pending field changes'
+      if (Array.isArray(changes.expenseEntries) && changes.expenseEntries.length > 0) {
+        changes.expenseEntries.forEach((exp: any) => {
+          const current = entry?.expenseEntries?.find((e: any) => e.id === exp.id)
+          const catName = current?.category?.name || `Expense #${exp.id}`
+          const from = current ? `৳${Number(current.amount).toLocaleString()}` : 'new'
+          lines.push(`Expense "${catName}": ${from} → ৳${Number(exp.amount).toLocaleString()}`)
+        })
+      }
+
+      if (changes.actualPhysicalCash !== undefined)
+        lines.push(`Physical cash: ৳${Number(changes.actualPhysicalCash).toLocaleString()}`)
+      if (changes.openingTime !== undefined)
+        lines.push(`Opening time: ${changes.openingTime}`)
+      if (changes.closingTime !== undefined)
+        lines.push(`Closing time: ${changes.closingTime}`)
+      if (changes.notes !== undefined)
+        lines.push(`Notes updated`)
+      if (changes.cashDifferenceNote !== undefined)
+        lines.push(`Discrepancy note updated`)
+
+      return lines.length > 0 ? lines : ['No recognised changes']
     } catch {
-      return 'Pending field changes'
+      return ['Pending field changes']
     }
   }
 
@@ -82,8 +108,10 @@ export default function AdminEditRequests() {
               <div className="mt-1 text-[var(--text-secondary)]">
                 Reason: <span className="italic">{req.reason || 'No reason provided'}</span>
               </div>
-              <div className="mt-1 text-xs font-medium text-[var(--warning)]">
-                {describeChanges(req.changes)}
+              <div className="mt-1 text-xs font-medium text-[var(--warning)] space-y-0.5">
+                {describeChanges(req.changes, req.entry).map((line: string, i: number) => (
+                  <div key={i}>→ {line}</div>
+                ))}
               </div>
             </div>
             <div className="flex gap-2 items-center">

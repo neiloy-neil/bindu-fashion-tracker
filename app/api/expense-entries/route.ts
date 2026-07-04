@@ -9,6 +9,36 @@ const createExpenseEntrySchema = z.object({
   note:         z.string().max(500).optional().nullable(),
 })
 
+export async function GET(req: NextRequest) {
+  const userRole = req.headers.get('x-user-role')
+  if (userRole !== 'ADMIN' && userRole !== 'SUPER_ADMIN') {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  const { searchParams } = new URL(req.url)
+  const status = searchParams.get('status') // PENDING | APPROVED | REJECTED
+
+  try {
+    const expenses = await prisma.expenseEntry.findMany({
+      where: {
+        isTransferEntry: false,
+        ...(status ? { approvalStatus: status } : {}),
+      },
+      include: {
+        category: { select: { name: true } },
+        dailyEntry: {
+          select: { id: true, date: true, branch: { select: { name: true } } },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+    })
+    return NextResponse.json({ expenses })
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+}
+
 export async function POST(req: NextRequest) {
   const userRole = req.headers.get('x-user-role')
   const userBranchId = req.headers.get('x-user-branch-id')

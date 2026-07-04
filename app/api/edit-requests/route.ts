@@ -30,7 +30,11 @@ export async function GET(req: NextRequest) {
       where: whereClause,
       include: {
         entry: {
-          include: { branch: true }
+          include: {
+            branch: true,
+            items: { include: { category: true } },
+            expenseEntries: { include: { category: true }, where: { isTransferEntry: false } },
+          }
         },
         requestedBy: true
       },
@@ -108,7 +112,7 @@ export async function PATCH(req: NextRequest) {
         where: { id: requestId },
         include: {
           entry: {
-            include: { items: true }
+            include: { items: true, expenseEntries: true }
           }
         }
       })
@@ -128,11 +132,13 @@ export async function PATCH(req: NextRequest) {
         expectedNetBalance?: number
         notes?: string
         cashDifferenceNote?: string
+        openingTime?: string
+        closingTime?: string
         items?: {
           upsert: Array<{
             where: { entryId_categoryId: { entryId: number; categoryId: number } }
-            update: { amount: number }
-            create: { categoryId: number; amount: number }
+            update: { amount: number; note?: string }
+            create: { categoryId: number; amount: number; note?: string }
           }>
         }
       } = {}
@@ -141,36 +147,45 @@ export async function PATCH(req: NextRequest) {
       if (changes.expectedNetBalance !== undefined) updateData.expectedNetBalance = changes.expectedNetBalance
       if (changes.notes !== undefined) updateData.notes = changes.notes
       if (changes.cashDifferenceNote !== undefined) updateData.cashDifferenceNote = changes.cashDifferenceNote
+      if (changes.openingTime !== undefined) updateData.openingTime = changes.openingTime
+      if (changes.closingTime !== undefined) updateData.closingTime = changes.closingTime
 
       if (changes.items?.length) {
         updateData.items = {
           upsert: changes.items.map(item => ({
-            where: {
-              entryId_categoryId: {
-                entryId: editReq.entryId,
-                categoryId: item.categoryId
-              }
-            },
-            update: { amount: item.amount },
-            create: {
-              categoryId: item.categoryId,
-              amount: item.amount
-            }
+            where: { entryId_categoryId: { entryId: editReq.entryId, categoryId: item.categoryId } },
+            update: { amount: item.amount, ...(item.note !== undefined && { note: item.note }) },
+            create: { categoryId: item.categoryId, amount: item.amount, note: item.note },
           }))
         }
       }
 
-      const [updatedEntry] = await prisma.$transaction([
-        prisma.dailyEntry.update({
-          where: { id: editReq.entryId },
-          data: updateData,
-          include: { items: true }
-        }),
-        prisma.editRequest.update({
-          where: { id: requestId },
-          data: { status: 'APPROVED' }
-        })
-      ])
+      const [updatedEntry] = await prisma.$transaction(async tx => {
+        // Apply expense entry changes (update by id, must belong to this entry)
+        if (changes.expenseEntries?.length) {
+          for (const exp of changes.expenseEntries) {
+            await tx.expenseEntry.updateMany({
+              where: { id: exp.id, dailyEntryId: editReq.entryId, isTransferEntry: false },
+              data: {
+                amount: exp.amount,
+                ...(exp.note !== undefined && { note: exp.note }),
+              },
+            })
+          }
+        }
+
+        return Promise.all([
+          tx.dailyEntry.update({
+            where: { id: editReq.entryId },
+            data: updateData,
+            include: { items: true, expenseEntries: true },
+          }),
+          tx.editRequest.update({
+            where: { id: requestId },
+            data: { status: 'APPROVED' },
+          }),
+        ])
+      })
       
       const userId = parseInt(req.headers.get('x-user-id') || '0')
       if (userId) {

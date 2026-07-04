@@ -35,6 +35,8 @@ type ReportExpenseEntry = {
   note?: string | null
   category?: { name: string } | null
   isTransferEntry?: boolean
+  approvalStatus?: string | null
+  rejectionReason?: string | null
 }
 
 type ReportAdvanceSalary = {
@@ -95,10 +97,6 @@ export default function DailyReportTemplate({ entryData }: { entryData: ReportEn
     <h3 className="text-[var(--accent)] font-semibold uppercase tracking-wider font-bold text-sm mb-4 border-b border-[var(--border)] pb-2">{title}</h3>
   )
 
-  const emptyRow = (msg: string) => (
-    <div className="text-[var(--text-secondary)] italic text-sm py-2">{msg}</div>
-  )
-
   return (
     <div className="bg-[var(--bg-card)] p-8 rounded-xl border border-[var(--border)] shadow-xl text-foreground">
       {/* Header */}
@@ -106,8 +104,8 @@ export default function DailyReportTemplate({ entryData }: { entryData: ReportEn
         <Image src="/bindu-logo.webp" alt="Bindu Premium" width={192} height={64} className="h-16 w-auto mx-auto mb-4 object-contain" />
         <h1 className="text-3xl font-bold mb-2" style={{ fontFamily: 'var(--font-display)', color: 'var(--accent)' }}>Bindu Premium — Daily Report</h1>
         <div className="flex justify-center gap-8 text-[var(--text-secondary)] mb-6">
-          <span>Branch: <strong className="text-foreground">{entryData.branch?.name}</strong></span>
-          <span>Date: <strong className="text-foreground">{formatDate(entryData.date)}</strong></span>
+          <span className="text-base">Branch: <strong className="text-foreground text-xl">{entryData.branch?.name}</strong></span>
+          <span className="text-base">Date: <strong className="text-foreground text-xl">{formatDate(entryData.date)}</strong></span>
         </div>
 
         {/* Summary cards — visible at a glance before reading sections */}
@@ -149,66 +147,68 @@ export default function DailyReportTemplate({ entryData }: { entryData: ReportEn
       </div>
 
       {/* Income */}
-      <div className="mb-8">
-        {sectionHeader('Income')}
-        {incomeItems.length > 0 ? (
-          <table className="w-full text-sm text-left mb-4">
-            <thead className="text-xs text-[var(--text-secondary)] uppercase bg-[var(--bg-primary)] border-b border-[var(--border)]">
-              <tr>
-                <th className="px-4 py-3">Category</th>
-                <th className="px-4 py-3">Note</th>
-                <th className="px-4 py-3 text-right">Amount</th>
-              </tr>
-            </thead>
-            <tbody>
-              {incomeItems.map((item, i) => (
-                <tr key={i} className="border-b border-[var(--border)] last:border-0 bg-[var(--bg-card)]">
-                  <td className="px-4 py-3 font-medium text-foreground">{item.category?.name || '-'}</td>
-                  <td className="px-4 py-3 text-[var(--text-secondary)]">{item.note || '-'}{item.partyName ? ` — ${item.partyName}` : ''}</td>
-                  <td className="px-4 py-3 text-right font-bold tabular-nums font-mono text-[var(--accent)]">৳{formatCurrency(item.amount)}</td>
-                </tr>
-              ))}
-              <SectionTotal label="Income Subtotal" amount={incomeItems.reduce((s, i) => s + i.amount, 0)} />
-            </tbody>
-          </table>
-        ) : emptyRow('No income items recorded.')}
-
-        {receivedTransfers.length > 0 && (
-          <div className="mt-4">
-            <h4 className="text-[var(--accent)] font-semibold text-xs uppercase mb-2">Acknowledged Incoming Transfers</h4>
-            <table className="w-full text-sm text-left">
+      {(incomeItems.length > 0 || receivedTransfers.length > 0) && (
+        <div className="mb-8">
+          {sectionHeader('Income')}
+          {incomeItems.length > 0 && (
+            <table className="w-full text-sm text-left mb-4">
               <thead className="text-xs text-[var(--text-secondary)] uppercase bg-[var(--bg-primary)] border-b border-[var(--border)]">
                 <tr>
-                  <th className="px-4 py-3">From Branch</th>
+                  <th className="px-4 py-3">Category</th>
                   <th className="px-4 py-3">Note</th>
                   <th className="px-4 py-3 text-right">Amount</th>
                 </tr>
               </thead>
               <tbody>
-                {receivedTransfers.map((item, i) => (
+                {incomeItems.map((item, i) => (
                   <tr key={i} className="border-b border-[var(--border)] last:border-0 bg-[var(--bg-card)]">
-                    <td className="px-4 py-3 font-medium text-foreground">{item.dailyEntry?.branch?.name || '-'}</td>
-                    <td className="px-4 py-3 text-[var(--text-secondary)]">{item.note || '-'}</td>
+                    <td className="px-4 py-3 font-medium text-foreground">{item.category?.name || '-'}</td>
+                    <td className="px-4 py-3 text-[var(--text-secondary)]">{item.note || '-'}{item.partyName ? ` — ${item.partyName}` : ''}</td>
                     <td className="px-4 py-3 text-right font-bold tabular-nums font-mono text-[var(--accent)]">৳{formatCurrency(item.amount)}</td>
                   </tr>
                 ))}
+                <SectionTotal label="Income Subtotal" amount={incomeItems.reduce((s, i) => s + i.amount, 0)} />
               </tbody>
             </table>
-          </div>
-        )}
+          )}
 
-        <div className="mt-3 flex justify-end">
-          <div className="bg-[var(--accent)]/10 border border-[var(--accent)]/30 rounded-lg px-6 py-2 text-right">
-            <div className="text-xs text-[var(--text-secondary)] uppercase tracking-wider">Total Income</div>
-            <div className="text-xl font-bold font-mono text-[var(--accent)]">৳{formatCurrency(totalIncome)}</div>
+          {receivedTransfers.length > 0 && (
+            <div className="mt-4">
+              <h4 className="text-[var(--accent)] font-semibold text-xs uppercase mb-2">Acknowledged Incoming Transfers</h4>
+              <table className="w-full text-sm text-left">
+                <thead className="text-xs text-[var(--text-secondary)] uppercase bg-[var(--bg-primary)] border-b border-[var(--border)]">
+                  <tr>
+                    <th className="px-4 py-3">From Branch</th>
+                    <th className="px-4 py-3">Note</th>
+                    <th className="px-4 py-3 text-right">Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {receivedTransfers.map((item, i) => (
+                    <tr key={i} className="border-b border-[var(--border)] last:border-0 bg-[var(--bg-card)]">
+                      <td className="px-4 py-3 font-medium text-foreground">{item.dailyEntry?.branch?.name || '-'}</td>
+                      <td className="px-4 py-3 text-[var(--text-secondary)]">{item.note || '-'}</td>
+                      <td className="px-4 py-3 text-right font-bold tabular-nums font-mono text-[var(--accent)]">৳{formatCurrency(item.amount)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          <div className="mt-3 flex justify-end">
+            <div className="bg-[var(--accent)]/10 border border-[var(--accent)]/30 rounded-lg px-6 py-2 text-right">
+              <div className="text-xs text-[var(--text-secondary)] uppercase tracking-wider">Total Income</div>
+              <div className="text-xl font-bold font-mono text-[var(--accent)]">৳{formatCurrency(totalIncome)}</div>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Expenses */}
-      <div className="mb-8">
-        {sectionHeader('Expenses')}
-        {expenseEntries.length > 0 ? (
+      {expenseEntries.length > 0 && (
+        <div className="mb-8">
+          {sectionHeader('Expenses')}
           <table className="w-full text-sm text-left">
             <thead className="text-xs text-[var(--text-secondary)] uppercase bg-[var(--bg-primary)] border-b border-[var(--border)]">
               <tr>
@@ -218,23 +218,34 @@ export default function DailyReportTemplate({ entryData }: { entryData: ReportEn
               </tr>
             </thead>
             <tbody>
-              {expenseEntries.map((item, i) => (
-                <tr key={i} className="border-b border-[var(--border)] last:border-0 bg-[var(--bg-card)]">
-                  <td className="px-4 py-3 font-medium text-foreground">{item.category?.name || '-'}</td>
-                  <td className="px-4 py-3 text-[var(--text-secondary)]">{item.note || '-'}</td>
-                  <td className="px-4 py-3 text-right font-bold tabular-nums font-mono text-[var(--accent)]">৳{formatCurrency(item.amount)}</td>
-                </tr>
-              ))}
+              {expenseEntries.map((item, i) => {
+                const isPending = item.approvalStatus === 'PENDING'
+                const isRejected = item.approvalStatus === 'REJECTED'
+                return (
+                  <tr key={i} className={`border-b border-[var(--border)] last:border-0 ${isRejected ? 'opacity-50' : 'bg-[var(--bg-card)]'}`}>
+                    <td className="px-4 py-3 font-medium text-foreground">
+                      {item.category?.name || '-'}
+                      {isPending && <span className="ml-2 text-[10px] font-bold px-1.5 py-0.5 rounded bg-[var(--warning)]/20 text-[var(--warning)]">PENDING</span>}
+                      {isRejected && <span className="ml-2 text-[10px] font-bold px-1.5 py-0.5 rounded bg-[var(--danger)]/20 text-[var(--danger)]">REJECTED</span>}
+                    </td>
+                    <td className="px-4 py-3 text-[var(--text-secondary)]">
+                      {item.note || '-'}
+                      {isRejected && item.rejectionReason && <span className="block text-[10px] text-[var(--danger)] mt-0.5">Reason: {item.rejectionReason}</span>}
+                    </td>
+                    <td className="px-4 py-3 text-right font-bold tabular-nums font-mono text-[var(--accent)]">৳{formatCurrency(item.amount)}</td>
+                  </tr>
+                )
+              })}
               <SectionTotal label="Expenses Subtotal" amount={totalExpenses} />
             </tbody>
           </table>
-        ) : emptyRow('No expenses recorded.')}
-      </div>
+        </div>
+      )}
 
       {/* Transfers */}
-      <div className="mb-8">
-        {sectionHeader('Transfers')}
-        {transfers.length > 0 ? (
+      {transfers.length > 0 && (
+        <div className="mb-8">
+          {sectionHeader('Transfers')}
           <table className="w-full text-sm text-left">
             <thead className="text-xs text-[var(--text-secondary)] uppercase bg-[var(--bg-primary)] border-b border-[var(--border)]">
               <tr>
@@ -254,13 +265,13 @@ export default function DailyReportTemplate({ entryData }: { entryData: ReportEn
               <SectionTotal label="Transfers Subtotal" amount={totalTransfers} />
             </tbody>
           </table>
-        ) : emptyRow('No transfers recorded.')}
-      </div>
+        </div>
+      )}
 
       {/* Party Payments */}
-      <div className="mb-8">
-        {sectionHeader('Party Payments')}
-        {payments.length > 0 ? (
+      {payments.length > 0 && (
+        <div className="mb-8">
+          {sectionHeader('Party Payments')}
           <table className="w-full text-sm text-left">
             <thead className="text-xs text-[var(--text-secondary)] uppercase bg-[var(--bg-primary)] border-b border-[var(--border)]">
               <tr>
@@ -301,13 +312,13 @@ export default function DailyReportTemplate({ entryData }: { entryData: ReportEn
               <SectionTotal label="Payments Subtotal" amount={totalPayments} />
             </tbody>
           </table>
-        ) : emptyRow('No party payments recorded.')}
-      </div>
+        </div>
+      )}
 
       {/* Advance Salary */}
-      <div className="mb-8">
-        {sectionHeader('Advance Salary')}
-        {advanceSalaries.length > 0 ? (
+      {advanceSalaries.length > 0 && (
+        <div className="mb-8">
+          {sectionHeader('Advance Salary')}
           <table className="w-full text-sm text-left">
             <thead className="text-xs text-[var(--text-secondary)] uppercase bg-[var(--bg-primary)] border-b border-[var(--border)]">
               <tr>
@@ -333,8 +344,8 @@ export default function DailyReportTemplate({ entryData }: { entryData: ReportEn
               {totalAdvanceCash > 0 && <SectionTotal label="Advance Cash Subtotal" amount={totalAdvanceCash} />}
             </tbody>
           </table>
-        ) : emptyRow('No advance salary recorded.')}
-      </div>
+        </div>
+      )}
 
     </div>
   )

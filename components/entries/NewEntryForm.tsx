@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useForm, useFieldArray, useWatch, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod' // wait, the original used '@hookform/resolvers/zod'
@@ -9,7 +9,8 @@ import { Account, Branch, Category, Employee, Party } from '@/lib/types'
 import { computeTotals, formatCurrency } from '@/lib/utils'
 import { dhakaDateString, NewEntryPayload } from '@/lib/new-entry'
 import toast from 'react-hot-toast'
-import { ChevronDown, ChevronRight, TrendingUp, TrendingDown } from 'lucide-react'
+import { ChevronDown, ChevronRight, Save, CheckCircle } from 'lucide-react'
+import { toPng } from 'html-to-image'
 
 import { IncomeSection } from './IncomeSection'
 import { ExpenseSection } from './ExpenseSection'
@@ -17,6 +18,7 @@ import { TransferSection } from './TransferSection'
 import { PaymentSection } from './PaymentSection'
 import { AdvanceSalarySection } from './AdvanceSalarySection'
 import { EODChecklistModal } from './EODChecklistModal'
+import DailyReportTemplate from '@/components/reports/DailyReportTemplate'
 import { BrandSpinner } from '@/components/ui/BrandSpinner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -49,6 +51,9 @@ export function NewEntryForm({ initialData, userId }: Props) {
   
   const [loading, setLoading] = useState(false)
   const [showChecklistModal, setShowChecklistModal] = useState(false)
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null)
+  const [pendingReportData, setPendingReportData] = useState<any>(null)
+  const reportRef = useRef<HTMLDivElement>(null)
 
   const [showIncome, setShowIncome] = useState(true)
   const [showExpense, setShowExpense] = useState(true)
@@ -115,6 +120,7 @@ export function NewEntryForm({ initialData, userId }: Props) {
       clearTimeout(timeoutId)
       timeoutId = setTimeout(() => {
         localStorage.setItem(draftKey, JSON.stringify(value))
+        setLastSavedAt(new Date())
       }, 1000)
     })
     return () => {
@@ -122,6 +128,30 @@ export function NewEntryForm({ initialData, userId }: Props) {
       subscription.unsubscribe()
     }
   }, [form.watch, draftKey])
+
+  // When report data is ready, capture PNG then navigate away
+  useEffect(() => {
+    if (!pendingReportData || !reportRef.current) return
+    const el = reportRef.current
+    const run = async () => {
+      try {
+        await new Promise(r => setTimeout(r, 300))
+        const dataUrl = await toPng(el, { quality: 0.8, pixelRatio: 1 })
+        const link = document.createElement('a')
+        const branchName = branches.find(b => String(b.id) === String(pendingReportData.branch?.id))?.name
+          || pendingReportData.branch?.name || 'Branch'
+        link.download = `DailyReport_${branchName.replace(/\s+/g, '_')}_${pendingReportData.date}.png`
+        link.href = dataUrl
+        link.click()
+      } catch (err) {
+        console.error('PNG export failed', err)
+        toast.error('Report PNG export failed — you can download it from the Daily Report page.')
+      } finally {
+        router.push('/entries')
+      }
+    }
+    void run()
+  }, [pendingReportData])
 
   useEffect(() => {
     const draft = localStorage.getItem(draftKey)
@@ -243,24 +273,18 @@ export function NewEntryForm({ initialData, userId }: Props) {
       }
       
       localStorage.removeItem(draftKey)
-      
-      // Auto-download Daily Report PDF
+
+      // Fetch report data then render → PNG download (handled by useEffect watching pendingReportData)
       try {
-        const dateStr = payload.date
-        const branchName = branches.find(b => b.id === payload.branchId)?.name || 'Branch'
-        const reportRes = await fetch(`/api/reports/daily?branchId=${payload.branchId}&date=${dateStr}`)
+        const reportRes = await fetch(`/api/reports/daily?branchId=${payload.branchId}&date=${payload.date}`)
         if (!reportRes.ok) throw new Error('Failed to fetch report')
         const reportData = await reportRes.json()
-        
-        const { exportReportAsPdf } = await import('@/lib/exportPdf')
-        await exportReportAsPdf(reportData, branchName, dateStr)
-        
-        toast.success('Register closed — daily report downloaded.', { id: uploadToast })
+        toast.success('Register closed — preparing PNG report…', { id: uploadToast })
+        setPendingReportData(reportData)
       } catch {
-        toast.error('Register closed and saved successfully. Report download failed — you can re-download it from the Daily Report page.', { id: uploadToast, duration: 8000 })
+        toast.error('Saved successfully. Report PNG failed — download it from the Daily Report page.', { id: uploadToast, duration: 8000 })
+        router.push('/entries')
       }
-
-      router.push('/entries')
 
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Error saving entry', { id: uploadToast })
@@ -287,6 +311,29 @@ export function NewEntryForm({ initialData, userId }: Props) {
           <p className="text-sm text-[var(--text-muted)] mt-1">
             Submit the end-of-day financial report for {isFactory ? 'your factory.' : 'your branch.'}
           </p>
+        </div>
+        <div className="flex items-center gap-3 shrink-0">
+          {lastSavedAt ? (
+            <span className="flex items-center gap-1.5 text-xs text-[var(--success)] bg-[var(--success)]/10 border border-[var(--success)]/30 px-2.5 py-1 rounded-full">
+              <CheckCircle size={12} />
+              Draft saved {lastSavedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </span>
+          ) : (
+            <span className="text-xs text-[var(--text-muted)]">Auto-saves as you type</span>
+          )}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="gap-1.5 text-xs"
+            onClick={() => {
+              localStorage.setItem(draftKey, JSON.stringify(form.getValues()))
+              setLastSavedAt(new Date())
+              toast.success('Draft saved')
+            }}
+          >
+            <Save size={13} /> Save Draft
+          </Button>
         </div>
       </div>
       <div className="flex-1 p-6 space-y-6 min-h-0 flex flex-col overflow-auto">
@@ -454,15 +501,25 @@ export function NewEntryForm({ initialData, userId }: Props) {
       </form>
 
       {showChecklistModal && (
-        <EODChecklistModal 
+        <EODChecklistModal
           control={control}
           register={form.register}
-          setShowChecklistModal={setShowChecklistModal} 
-          onSubmitFinal={onSubmitFinal} 
+          setShowChecklistModal={setShowChecklistModal}
+          onSubmitFinal={onSubmitFinal}
         />
       )}
         </div>
       </div>
+
+      {/* Off-screen report container used only for PNG capture */}
+      {pendingReportData && (
+        <div
+          ref={reportRef}
+          style={{ position: 'fixed', left: '-9999px', top: 0, width: '960px', zIndex: -1 }}
+        >
+          <DailyReportTemplate entryData={pendingReportData} />
+        </div>
+      )}
     </>
   )
 }

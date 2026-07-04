@@ -83,9 +83,9 @@ export default function DailyReportPage() {
     el.style.background = 'var(--bg-card)' // match dark theme
     
     try {
-      const dataUrl = type === 'png' 
-        ? await toPng(el, { quality: 1, backgroundColor: 'var(--bg-card)', pixelRatio: 2 })
-        : await toJpeg(el, { quality: 1, backgroundColor: 'var(--bg-card)', pixelRatio: 2 })
+      const dataUrl = type === 'png'
+        ? await toPng(el, { quality: 0.8, backgroundColor: 'var(--bg-card)', pixelRatio: 1 })
+        : await toJpeg(el, { quality: 0.8, backgroundColor: 'var(--bg-card)', pixelRatio: 1 })
       
       const link = document.createElement('a')
       const branchName = branches.find(b => b.id === parseInt(selectedBranchId))?.name || 'Branch'
@@ -116,7 +116,7 @@ export default function DailyReportPage() {
     const toastId = toast.loading('Preparing image for WhatsApp...')
     
     try {
-      const dataUrl = await toJpeg(el, { quality: 1, backgroundColor: 'var(--bg-card)', pixelRatio: 2 })
+      const dataUrl = await toJpeg(el, { quality: 0.8, backgroundColor: 'var(--bg-card)', pixelRatio: 1 })
       const blob = await (await fetch(dataUrl)).blob()
       
       const branchName = branches.find(b => b.id === parseInt(selectedBranchId))?.name || 'Branch'

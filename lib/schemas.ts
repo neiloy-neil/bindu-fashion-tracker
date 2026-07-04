@@ -54,13 +54,29 @@ export const editRequestSchema = z.object({
     items: z.array(z.object({
       categoryId: idSchema,
       amount: nonNegativeNumberSchema,
+      note: z.string().trim().max(2000).optional(),
+    })).max(20).optional(),
+    expenseEntries: z.array(z.object({
+      id: idSchema,
+      amount: nonNegativeNumberSchema,
+      note: z.string().trim().max(2000).optional(),
     })).max(20).optional(),
     actualPhysicalCash: finiteNumberSchema.optional(),
     expectedNetBalance: finiteNumberSchema.optional(),
     notes: z.string().trim().max(2000).optional(),
     cashDifferenceNote: z.string().trim().max(2000).optional(),
+    openingTime: hhmmSchema.optional(),
+    closingTime: hhmmSchema.optional(),
   }).strict().refine(
-    changes => Boolean(changes.items?.length) || changes.actualPhysicalCash !== undefined || changes.expectedNetBalance !== undefined || changes.notes !== undefined || changes.cashDifferenceNote !== undefined,
+    changes =>
+      Boolean(changes.items?.length) ||
+      Boolean(changes.expenseEntries?.length) ||
+      changes.actualPhysicalCash !== undefined ||
+      changes.expectedNetBalance !== undefined ||
+      changes.notes !== undefined ||
+      changes.cashDifferenceNote !== undefined ||
+      changes.openingTime !== undefined ||
+      changes.closingTime !== undefined,
     { message: 'At least one allowed change is required' }
   ),
   reason: z.string().optional().nullable()

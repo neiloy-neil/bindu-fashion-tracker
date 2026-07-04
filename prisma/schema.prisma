@@ -371,6 +371,8 @@ model ExpenseEntry {
   note            String?
   attachmentUrl   String?
   isTransferEntry Boolean  @default(false) // Auto-booked on acknowledge — excluded from expense totals in reports
+  approvalStatus  String   @default("APPROVED") // PENDING | APPROVED | REJECTED
+  rejectionReason String?
   createdAt       DateTime @default(now())
 
   dailyEntry DailyEntry @relation(fields: [dailyEntryId], references: [id])
@@ -378,6 +380,7 @@ model ExpenseEntry {
 
   @@index([dailyEntryId])
   @@index([categoryId])
+  @@index([approvalStatus])
 }
 
 model Employee {

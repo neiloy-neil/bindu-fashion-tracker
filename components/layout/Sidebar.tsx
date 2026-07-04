@@ -89,7 +89,7 @@ export function Sidebar({ isOpen, setIsOpen }: { isOpen?: boolean, setIsOpen?: (
         onClick={() => setIsOpen?.(false)}
         className={cn(
           'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium',
-          'transition-colors duration-150 w-full',
+          'transition-all duration-150 w-full active:scale-[0.97] select-none',
           isActive
             ? 'bg-[var(--accent-subtle)] text-[var(--accent)]'
             : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-raised)]'

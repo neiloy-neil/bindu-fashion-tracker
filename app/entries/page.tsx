@@ -158,13 +158,13 @@ function Entries() {
         body: JSON.stringify(payload),
       })
       if (!res.ok) throw new Error()
-      
+
       const updatedEntry = await res.json()
-      
+
       setEntries((prev) =>
         prev.map((e) => e.id === editCell.id ? updatedEntry : e)
       )
-      toast.success('Cell saved!')
+      toast.success('Saved', { duration: 1500 })
     } catch {
       toast.error('Failed to save')
     } finally {

@@ -24,7 +24,17 @@ export default function RootLayout({
     >
       <body className="transition-colors duration-300 font-sans antialiased text-[var(--text-primary)] bg-[var(--bg-primary)]">
         <Providers>
-          <Toaster position="top-right" toastOptions={{ className: 'dark-toast' }} />
+          <Toaster
+            position="top-right"
+            gutter={10}
+            toastOptions={{
+              className: 'dark-toast',
+              duration: 3500,
+              success: { duration: 3000, iconTheme: { primary: 'var(--success)', secondary: 'var(--surface-raised)' } },
+              error:   { duration: 5000, iconTheme: { primary: 'var(--danger)',  secondary: 'var(--surface-raised)' } },
+              loading: { duration: Infinity, iconTheme: { primary: 'var(--accent)', secondary: 'var(--surface-raised)' } },
+            }}
+          />
           <LayoutWrapper>
             {children}
           </LayoutWrapper>

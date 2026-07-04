@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 export default function AdminEditRequests() {
   const [requests, setRequests] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [actionLoadingId, setActionLoadingId] = useState<number | null>(null)
   const [viewingEntry, setViewingEntry] = useState<{ entry: any, changes: string } | null>(null)
 
   useEffect(() => {
@@ -37,6 +38,8 @@ export default function AdminEditRequests() {
   }, [])
 
   const handleAction = async (requestId: number, status: 'APPROVED' | 'REJECTED') => {
+    setActionLoadingId(requestId)
+    const t = toast.loading(status === 'APPROVED' ? 'Applying changes…' : 'Rejecting request…')
     try {
       const res = await fetch('/api/edit-requests', {
         method: 'PATCH',
@@ -44,10 +47,12 @@ export default function AdminEditRequests() {
         body: JSON.stringify({ requestId, status })
       })
       if (!res.ok) throw new Error('Failed to update request')
-      toast.success(`Request ${status.toLowerCase()}`)
+      toast.success(`Request ${status.toLowerCase()}`, { id: t })
       setRequests((current) => current.filter((request) => request.id !== requestId))
     } catch (e: any) {
-      toast.error(e.message)
+      toast.error(e.message, { id: t })
+    } finally {
+      setActionLoadingId(null)
     }
   }
 
@@ -100,7 +105,7 @@ export default function AdminEditRequests() {
       </div>
       <div className="flex flex-col gap-3">
         {requests.map(req => (
-          <div key={req.id} className="flex items-center justify-between rounded-xl border border-[var(--border)] bg-[var(--surface-raised)] p-3 text-sm">
+          <div key={req.id} className="flex items-center justify-between rounded-xl border border-[var(--border)] bg-[var(--surface-raised)] p-3 text-sm animate-pop-in">
             <div>
               <div className="font-semibold text-[var(--text-primary)]">
                 {req.entry.branch.name} Branch <span className="text-[var(--text-muted)]">— for entry on {formatDate(req.entry.date)}</span>
@@ -118,8 +123,10 @@ export default function AdminEditRequests() {
               <Button size="icon" variant="ghost" className="h-8 w-8 text-[var(--accent)] hover:text-[var(--accent)] hover:bg-[var(--accent)]/10" title="View Full Entry" onClick={() => setViewingEntry({ entry: req.entry, changes: req.changes })}>
                 <Eye size={18} />
               </Button>
-              <Button size="sm" onClick={() => handleAction(req.id, 'APPROVED')}>Approve</Button>
-              <Button variant="outline" size="sm" onClick={() => handleAction(req.id, 'REJECTED')}>Reject</Button>
+              <Button size="sm" disabled={actionLoadingId === req.id} onClick={() => handleAction(req.id, 'APPROVED')}>
+                {actionLoadingId === req.id ? <span className="w-3 h-3 rounded-full border-2 border-white/40 border-t-white animate-spin" /> : 'Approve'}
+              </Button>
+              <Button variant="outline" size="sm" disabled={actionLoadingId === req.id} onClick={() => handleAction(req.id, 'REJECTED')}>Reject</Button>
             </div>
           </div>
         ))}

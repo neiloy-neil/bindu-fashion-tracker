@@ -25,6 +25,7 @@ export default function AdminExpenseApprovals() {
   const [loading, setLoading] = useState(true)
   const [rejectingId, setRejectingId] = useState<number | null>(null)
   const [rejectReason, setRejectReason] = useState('')
+  const [actionLoadingId, setActionLoadingId] = useState<number | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -37,31 +38,43 @@ export default function AdminExpenseApprovals() {
   }, [])
 
   const handleApprove = async (id: number) => {
-    const res = await fetch(`/api/expense-entries/${id}/approve`, { method: 'POST' })
-    if (res.ok) {
-      toast.success('Expense approved')
-      setExpenses(prev => prev.filter(e => e.id !== id))
-    } else {
-      const data = await res.json()
-      toast.error(data.error || 'Failed to approve')
+    setActionLoadingId(id)
+    const t = toast.loading('Approving expense…')
+    try {
+      const res = await fetch(`/api/expense-entries/${id}/approve`, { method: 'POST' })
+      if (res.ok) {
+        toast.success('Expense approved', { id: t })
+        setExpenses(prev => prev.filter(e => e.id !== id))
+      } else {
+        const data = await res.json()
+        toast.error(data.error || 'Failed to approve', { id: t })
+      }
+    } finally {
+      setActionLoadingId(null)
     }
   }
 
   const handleReject = async (id: number) => {
     if (!rejectReason.trim()) { toast.error('Please enter a rejection reason'); return }
-    const res = await fetch(`/api/expense-entries/${id}/reject`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ reason: rejectReason }),
-    })
-    if (res.ok) {
-      toast.success('Expense rejected')
-      setExpenses(prev => prev.filter(e => e.id !== id))
-      setRejectingId(null)
-      setRejectReason('')
-    } else {
-      const data = await res.json()
-      toast.error(data.error || 'Failed to reject')
+    setActionLoadingId(id)
+    const t = toast.loading('Rejecting expense…')
+    try {
+      const res = await fetch(`/api/expense-entries/${id}/reject`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason: rejectReason }),
+      })
+      if (res.ok) {
+        toast.success('Expense rejected', { id: t })
+        setExpenses(prev => prev.filter(e => e.id !== id))
+        setRejectingId(null)
+        setRejectReason('')
+      } else {
+        const data = await res.json()
+        toast.error(data.error || 'Failed to reject', { id: t })
+      }
+    } finally {
+      setActionLoadingId(null)
     }
   }
 
@@ -78,7 +91,7 @@ export default function AdminExpenseApprovals() {
       </div>
       <div className="flex flex-col gap-3">
         {expenses.map(exp => (
-          <div key={exp.id} className="rounded-xl border border-[var(--border)] bg-[var(--surface-raised)] p-3 text-sm">
+          <div key={exp.id} className="rounded-xl border border-[var(--border)] bg-[var(--surface-raised)] p-3 text-sm animate-pop-in">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <div className="font-semibold text-[var(--text-primary)]">
@@ -94,11 +107,14 @@ export default function AdminExpenseApprovals() {
                 </div>
               </div>
               <div className="flex shrink-0 flex-col gap-2 items-end">
-                <Button size="sm" onClick={() => handleApprove(exp.id)}>Approve</Button>
+                <Button size="sm" disabled={actionLoadingId === exp.id} onClick={() => handleApprove(exp.id)}>
+                  {actionLoadingId === exp.id ? <span className="w-3 h-3 rounded-full border-2 border-white/40 border-t-white animate-spin" /> : 'Approve'}
+                </Button>
                 <Button
                   variant="outline"
                   size="sm"
                   className="border-[var(--danger)]/40 text-[var(--danger)] hover:bg-[var(--danger)]/10"
+                  disabled={actionLoadingId === exp.id}
                   onClick={() => { setRejectingId(exp.id); setRejectReason('') }}
                 >
                   Reject

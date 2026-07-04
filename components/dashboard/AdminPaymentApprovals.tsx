@@ -23,6 +23,7 @@ interface PendingPayment {
 export default function AdminPaymentApprovals() {
   const [payments, setPayments] = useState<PendingPayment[]>([])
   const [loading, setLoading] = useState(true)
+  const [actionLoadingId, setActionLoadingId] = useState<number | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -35,25 +36,37 @@ export default function AdminPaymentApprovals() {
   }, [])
 
   const handleApprove = async (id: number) => {
-    const res = await fetch(`/api/payments/${id}/approve`, { method: 'POST' })
-    if (res.ok) {
-      toast.success('Payment approved')
-      setPayments(prev => prev.filter(p => p.id !== id))
-    } else {
-      const data = await res.json()
-      toast.error(data.error || 'Failed to approve')
+    setActionLoadingId(id)
+    const t = toast.loading('Approving payment…')
+    try {
+      const res = await fetch(`/api/payments/${id}/approve`, { method: 'POST' })
+      if (res.ok) {
+        toast.success('Payment approved', { id: t })
+        setPayments(prev => prev.filter(p => p.id !== id))
+      } else {
+        const data = await res.json()
+        toast.error(data.error || 'Failed to approve', { id: t })
+      }
+    } finally {
+      setActionLoadingId(null)
     }
   }
 
   const handleReject = async (id: number) => {
     if (!confirm('Reject this payment? The party balance will not be affected.')) return
-    const res = await fetch(`/api/payments/${id}/reject`, { method: 'POST' })
-    if (res.ok) {
-      toast.success('Payment rejected')
-      setPayments(prev => prev.filter(p => p.id !== id))
-    } else {
-      const data = await res.json()
-      toast.error(data.error || 'Failed to reject')
+    setActionLoadingId(id)
+    const t = toast.loading('Rejecting payment…')
+    try {
+      const res = await fetch(`/api/payments/${id}/reject`, { method: 'POST' })
+      if (res.ok) {
+        toast.success('Payment rejected', { id: t })
+        setPayments(prev => prev.filter(p => p.id !== id))
+      } else {
+        const data = await res.json()
+        toast.error(data.error || 'Failed to reject', { id: t })
+      }
+    } finally {
+      setActionLoadingId(null)
     }
   }
 
@@ -70,7 +83,7 @@ export default function AdminPaymentApprovals() {
       </div>
       <div className="flex flex-col gap-3">
         {payments.map(p => (
-          <div key={p.id} className="rounded-xl border border-[var(--border)] bg-[var(--surface-raised)] p-3 text-sm">
+          <div key={p.id} className="rounded-xl border border-[var(--border)] bg-[var(--surface-raised)] p-3 text-sm animate-pop-in">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <div className="font-semibold text-[var(--text-primary)]">
@@ -87,11 +100,14 @@ export default function AdminPaymentApprovals() {
                 </div>
               </div>
               <div className="flex shrink-0 gap-2">
-                <Button size="sm" onClick={() => handleApprove(p.id)}>Approve</Button>
+                <Button size="sm" disabled={actionLoadingId === p.id} onClick={() => handleApprove(p.id)}>
+                  {actionLoadingId === p.id ? <span className="w-3 h-3 rounded-full border-2 border-white/40 border-t-white animate-spin" /> : 'Approve'}
+                </Button>
                 <Button
                   variant="outline"
                   size="sm"
                   className="border-[var(--danger)]/40 text-[var(--danger)] hover:bg-[var(--danger)]/10"
+                  disabled={actionLoadingId === p.id}
                   onClick={() => handleReject(p.id)}
                 >
                   Reject

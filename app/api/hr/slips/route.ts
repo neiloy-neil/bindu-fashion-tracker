@@ -29,16 +29,19 @@ export async function GET(req: NextRequest) {
     if (!userBranchId) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
-    // Branch managers see all employees in their branch
+    // Branch managers see all employees in their branch, but only approved slips
     effectiveBranchId = userBranchId
     effectiveEmployeeId = employeeId ?? null // allow filtering by specific employee within branch
   }
+
+  const isBranch = role === 'BRANCH'
 
   try {
     const records = await prisma.salaryRecord.findMany({
       where: {
         month: parseInt(month),
         year: parseInt(year),
+        ...(isBranch ? { lockedAt: { not: null } } : {}),
         ...(effectiveBranchId ? { employee: { branchId: parseInt(effectiveBranchId) } } : {}),
         ...(effectiveEmployeeId ? { employeeId: parseInt(effectiveEmployeeId) } : {})
       },

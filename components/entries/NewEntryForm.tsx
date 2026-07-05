@@ -141,8 +141,12 @@ export function NewEntryForm({ initialData, userId }: Props) {
     const el = reportRef.current
     const run = async () => {
       try {
-        await new Promise(r => setTimeout(r, 300))
-        const dataUrl = await toPng(el, { quality: 0.8, pixelRatio: 1, backgroundColor: 'var(--bg-card)' })
+        // Wait for logo and any other images to load before capturing
+        await Promise.all(Array.from(el.querySelectorAll('img')).map(img =>
+          img.complete ? Promise.resolve() : new Promise(r => { img.onload = r; img.onerror = r })
+        ))
+        await new Promise(r => setTimeout(r, 400))
+        const dataUrl = await toPng(el, { quality: 0.95, pixelRatio: 2, backgroundColor: '#ffffff' })
         const link = document.createElement('a')
         const branchName = branches.find(b => String(b.id) === String(pendingReportData.branch?.id))?.name
           || pendingReportData.branch?.name || 'Branch'
@@ -345,7 +349,21 @@ export function NewEntryForm({ initialData, userId }: Props) {
       <div className="flex-1 p-6 space-y-6 min-h-0 flex flex-col overflow-auto">
         <div className="max-w-5xl mx-auto w-full pb-32">
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={handleSubmit(onSubmit, (errs) => {
+        const messages = Object.values(errs).flatMap(e => {
+          if (!e) return []
+          if (typeof e.message === 'string') return [e.message]
+          // nested arrays (incomeItems, expenseEntries, etc.)
+          if (Array.isArray(e)) {
+            return (e as any[]).flatMap(item =>
+              item ? Object.values(item).map((f: any) => f?.message).filter(Boolean) : []
+            )
+          }
+          return Object.values(e as Record<string, any>).map((f: any) => f?.message).filter(Boolean)
+        })
+        const first = messages[0]
+        toast.error(first ? `Validation error: ${first}` : 'Please fix the highlighted fields before closing the register.')
+      })} className="space-y-6">
         
         {/* Branch & Meta Section */}
         <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 sm:p-5">
@@ -528,14 +546,21 @@ export function NewEntryForm({ initialData, userId }: Props) {
         </div>
       </div>
 
-      {/* Off-screen report container used only for PNG capture */}
+      {/* Report capture: overlay hides it from user, report renders in viewport for html-to-image */}
       {pendingReportData && (
-        <div
-          ref={reportRef}
-          style={{ position: 'fixed', left: '-9999px', top: 0, width: '960px', zIndex: -1 }}
-        >
-          <DailyReportTemplate entryData={pendingReportData} />
-        </div>
+        <>
+          <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.88)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 12 }}>
+            <div style={{ width: 40, height: 40, border: '3px solid rgba(255,255,255,0.2)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+            <span style={{ color: '#fff', fontSize: 15, fontWeight: 500 }}>Generating report…</span>
+          </div>
+          <div
+            ref={reportRef}
+            className="light"
+            style={{ position: 'fixed', left: 0, top: 0, width: '960px', zIndex: 9998, background: '#ffffff', pointerEvents: 'none' }}
+          >
+            <DailyReportTemplate entryData={pendingReportData} />
+          </div>
+        </>
       )}
     </>
   )

@@ -6,7 +6,7 @@ import type { Branch, SystemSettings } from '@prisma/client'
 import type { SalaryCalc } from '@/lib/hr/calculations'
 import { formatTaka } from '@/lib/hr/calculations'
 import { toast } from 'sonner'
-import { Download, FileText, Search, X } from 'lucide-react'
+import { Download, FileText, Search, X, Lock, LockOpen } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -31,6 +31,8 @@ function SlipsContent() {
   const [localSearch, setLocalSearch] = useState('')
 
   const [role, setRole] = useState<'ADMIN' | 'HR_ADMIN' | 'BRANCH' | null>(null)
+  const [isLocked, setIsLocked] = useState(false)
+  const [locking, setLocking] = useState(false)
 
   // Debounce search
   useEffect(() => {
@@ -61,7 +63,7 @@ function SlipsContent() {
         }
         
         const slips: SalaryCalc[] = await slipsRes.json()
-        
+
         if (empsRes.ok) {
           await empsRes.json()
         }
@@ -69,10 +71,18 @@ function SlipsContent() {
         if (cancelled) return
 
         setSettings(nextSettings)
-        if (empsRes.status === 403) {
+        const isBranchRole = empsRes.status === 403
+        if (isBranchRole) {
            setRole('BRANCH')
         } else {
            setRole('ADMIN')
+        }
+
+        // Determine lock status from any returned record
+        if (!isBranchRole && slips.length > 0) {
+          setIsLocked(!!(slips[0].record as any).lockedAt)
+        } else {
+          setIsLocked(false)
         }
 
         const brs = new Map<string, Branch>()
@@ -175,6 +185,23 @@ function SlipsContent() {
     setLoading(false)
   }
 
+  async function toggleLock() {
+    setLocking(true)
+    try {
+      const res = await fetch('/api/hr/slips/lock', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ month, year, lock: !isLocked }),
+      })
+      if (!res.ok) { toast.error('Failed to update approval status'); return }
+      setIsLocked(!isLocked)
+      toast.success(isLocked ? 'Salary slips unapproved — branch managers can no longer view them' : 'Salary slips approved — branch managers can now view them')
+    } catch {
+      toast.error('Failed to update approval status')
+    }
+    setLocking(false)
+  }
+
   const displayedBranches = selectedBranch === 'all'
     ? branches
     : branches.filter(b => b.id.toString() === selectedBranch)
@@ -210,43 +237,62 @@ function SlipsContent() {
 
   if (role === 'BRANCH') {
     const allSlips = Array.from(calcsByBranch.values()).flat()
-    
+
     if (allSlips.length === 0) {
       return (
-        <div className="flex-1 p-6">
-          <div className="bg-[var(--warning-subtle)] border border-[var(--warning-subtle)] text-[var(--warning)] rounded-lg p-6 text-center shadow-sm">
-            <h2 className="text-lg font-semibold mb-2">Account Not Linked</h2>
-            <p className="text-sm">Your account is not yet linked to an employee profile. Contact your admin to set this up.</p>
+        <>
+          <div className="sticky top-0 z-10 flex items-center justify-between gap-4 px-6 py-4 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur">
+            <h1 className="text-lg font-semibold text-[var(--text-primary)] leading-none">Salary Slips</h1>
+            <div className="flex items-center gap-2">
+              <Select value={String(month)} onValueChange={v => setMonth(+(v ?? month))}>
+                <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
+                <SelectContent>{MONTHS.map((m, i) => <SelectItem key={i} value={String(i + 1)}>{m}</SelectItem>)}</SelectContent>
+              </Select>
+              <Select value={String(year)} onValueChange={v => setYear(+(v ?? year))}>
+                <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
+                <SelectContent>{yearOptions.map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
           </div>
-        </div>
+          <div className="flex-1 p-6">
+            <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl p-10 text-center max-w-md mx-auto">
+              <Lock size={36} className="mx-auto text-[var(--text-muted)] opacity-40 mb-3" />
+              <h2 className="text-base font-semibold text-[var(--text-primary)] mb-1">Not Yet Approved</h2>
+              <p className="text-sm text-[var(--text-muted)]">Salary slips for {MONTHS[month - 1]} {year} have not been approved yet. Contact your HR admin.</p>
+            </div>
+          </div>
+        </>
       )
     }
 
-    // Show only their own slip
+    // Show branch employees' slips
     const slip = allSlips[0]
     return (
       <>
         <div className="sticky top-0 z-10 flex items-center justify-between gap-4 px-6 py-4 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur">
-          <h1 className="text-lg font-semibold text-[var(--text-primary)] leading-none">My Salary Slip</h1>
+          <h1 className="text-lg font-semibold text-[var(--text-primary)] leading-none">Salary Slips</h1>
+          <div className="flex items-center gap-2">
+            <Select value={String(month)} onValueChange={v => setMonth(+(v ?? month))}>
+              <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
+              <SelectContent>{MONTHS.map((m, i) => <SelectItem key={i} value={String(i + 1)}>{m}</SelectItem>)}</SelectContent>
+            </Select>
+            <Select value={String(year)} onValueChange={v => setYear(+(v ?? year))}>
+              <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
+              <SelectContent>{yearOptions.map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
         </div>
-        <div className="flex-1 p-6">
-          {slip ? (
-            <div className="bg-[var(--surface)] rounded-xl border border-[var(--border)] overflow-hidden p-6 flex flex-col items-center gap-4 max-w-xl mx-auto">
-               <FileText size={48} className="text-[var(--text-muted)] opacity-50" />
-               <div className="text-center">
-                 <h2 className="text-lg font-semibold text-[var(--text-primary)]">{MONTHS[month - 1]} {year}</h2>
-                 <p className="text-[var(--text-muted)]">{slip.employee.name}</p>
-               </div>
-               <p className="text-xl font-bold text-[var(--info)]">{formatTaka(slip.netPayable)}</p>
-               <div className="flex gap-3 mt-4">
-                 <SlipPreviewButton calc={slip} month={month} year={year} settings={settings as any} />
-               </div>
+        <div className="flex-1 p-6 space-y-4">
+          {allSlips.map(s => (
+            <div key={s.employee.id} className="bg-[var(--surface)] rounded-xl border border-[var(--border)] overflow-hidden p-6 flex flex-col sm:flex-row sm:items-center gap-4">
+              <div className="flex-1">
+                <p className="font-semibold text-[var(--text-primary)]">{s.employee.name}</p>
+                <p className="text-sm text-[var(--text-muted)]">{s.employee.designation}</p>
+              </div>
+              <p className="text-xl font-bold text-[var(--info)]">{formatTaka(s.netPayable)}</p>
+              <SlipPreviewButton calc={s} month={month} year={year} settings={settings as any} />
             </div>
-          ) : (
-            <div className="text-center p-10 bg-[var(--surface-raised)] border border-[var(--border)] rounded-lg text-[var(--text-muted)] max-w-xl mx-auto">
-               No salary slip generated for {MONTHS[month - 1]} {year} yet.
-            </div>
-          )}
+          ))}
         </div>
       </>
     )
@@ -270,7 +316,16 @@ function SlipsContent() {
             <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
             <SelectContent>{yearOptions.map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}</SelectContent>
           </Select>
-          <Button onClick={downloadAll} disabled={loading} className="gap-2">
+          <Button
+            onClick={toggleLock}
+            disabled={locking}
+            variant={isLocked ? 'outline' : 'default'}
+            className="gap-2"
+          >
+            {isLocked ? <LockOpen size={15} /> : <Lock size={15} />}
+            {locking ? 'Updating...' : isLocked ? 'Unapprove' : 'Approve for Branch'}
+          </Button>
+          <Button onClick={downloadAll} disabled={loading} variant="outline" className="gap-2">
             <Download size={15} />{loading ? 'Generating...' : 'Download All as ZIP'}
           </Button>
         </div>

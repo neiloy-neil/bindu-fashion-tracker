@@ -21,28 +21,17 @@ export async function GET(req: NextRequest) {
   }
 
   let effectiveEmployeeId = employeeId
+  let effectiveBranchId = branchId
 
   // RBAC logic
   if (role === 'BRANCH') {
-    let ownEmployeeId = req.headers.get('x-user-employee-id')
-
-    if (!ownEmployeeId) {
-      const user = await prisma.user.findUnique({ where: { id: parseInt(userIdStr) } })
-      if (!user) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-      }
-      if (!user.employeeId) {
-        return NextResponse.json({ error: 'No associated employee record found' }, { status: 404 })
-      }
-      ownEmployeeId = user.employeeId.toString()
+    const userBranchId = req.headers.get('x-user-branch-id')
+    if (!userBranchId) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
-
-    if (employeeId && employeeId !== ownEmployeeId) {
-      return NextResponse.json({ error: 'Forbidden: Cannot access other employee slips' }, { status: 403 })
-    }
-
-    // Branch users can only see their own slip
-    effectiveEmployeeId = ownEmployeeId
+    // Branch managers see all employees in their branch
+    effectiveBranchId = userBranchId
+    effectiveEmployeeId = employeeId ?? null // allow filtering by specific employee within branch
   }
 
   try {
@@ -50,7 +39,7 @@ export async function GET(req: NextRequest) {
       where: {
         month: parseInt(month),
         year: parseInt(year),
-        ...(branchId ? { employee: { branchId: parseInt(branchId) } } : {}),
+        ...(effectiveBranchId ? { employee: { branchId: parseInt(effectiveBranchId) } } : {}),
         ...(effectiveEmployeeId ? { employeeId: parseInt(effectiveEmployeeId) } : {})
       },
       include: {
@@ -67,7 +56,7 @@ export async function GET(req: NextRequest) {
       where: {
         year: parseInt(year),
         employee: {
-          ...(branchId ? { branchId: parseInt(branchId) } : {}),
+          ...(effectiveBranchId ? { branchId: parseInt(effectiveBranchId) } : {}),
           ...(effectiveEmployeeId ? { id: parseInt(effectiveEmployeeId) } : {})
         }
       },

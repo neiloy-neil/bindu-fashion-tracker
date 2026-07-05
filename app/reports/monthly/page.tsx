@@ -158,7 +158,7 @@ export default function MonthlyReportPage() {
         ) : (
           <div>
             <div className="flex flex-wrap gap-3 mb-6">
-              <Button className="gap-2 border-0 bg-indigo-600 text-white hover:bg-indigo-700" onClick={exportAsPdf}>
+              <Button className="gap-2" onClick={exportAsPdf}>
                 <Download size={16} /> Export PDF Report
               </Button>
             </div>

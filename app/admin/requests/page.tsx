@@ -93,10 +93,10 @@ export default function AdminRequestsPage() {
 
   const getPriorityBadge = (p: string) => {
     switch (p) {
-      case 'LOW': return <span className="px-2 py-1 bg-gray-500/20 text-gray-400 rounded text-xs font-bold">Low Priority</span>
-      case 'MEDIUM': return <span className="px-2 py-1 bg-blue-500/20 text-blue-400 rounded text-xs font-bold">Medium Priority</span>
-      case 'HIGH': return <span className="px-2 py-1 bg-orange-500/20 text-orange-400 rounded text-xs font-bold">High Priority</span>
-      case 'URGENT': return <span className="px-2 py-1 bg-red-500/20 text-red-400 rounded text-xs font-bold animate-pulse border border-red-500/50">URGENT</span>
+      case 'LOW': return <span className="px-2 py-1 bg-gray-500/10 text-[var(--text-muted)] rounded text-xs font-bold">Low Priority</span>
+      case 'MEDIUM': return <span className="px-2 py-1 bg-blue-500/10 text-blue-600 rounded text-xs font-bold">Medium Priority</span>
+      case 'HIGH': return <span className="px-2 py-1 bg-orange-500/10 text-orange-600 rounded text-xs font-bold">High Priority</span>
+      case 'URGENT': return <span className="px-2 py-1 bg-red-500/10 text-red-600 rounded text-xs font-bold animate-pulse border border-red-500/30">URGENT</span>
       default: return null
     }
   }
@@ -120,8 +120,8 @@ export default function AdminRequestsPage() {
               onClick={() => setFilter(f)}
               className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-colors ${
                 filter === f 
-                  ? 'bg-[var(--accent)] text-black' 
-                  : 'bg-[var(--bg-card)] text-[var(--text-secondary)] border border-[var(--border)] hover:text-white'
+                  ? 'bg-[var(--accent)] text-white'
+                  : 'bg-[var(--surface)] text-[var(--text-secondary)] border border-[var(--border)] hover:text-[var(--text-primary)]'
               }`}
             >
               {f.replace('_', ' ')}
@@ -144,7 +144,7 @@ export default function AdminRequestsPage() {
               <div key={req.id} className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-5 shadow flex flex-col md:flex-row justify-between items-start gap-4">
                 <div className="flex-1">
                   <div className="flex flex-wrap items-center gap-3 mb-3">
-                    <span className="font-bold text-white bg-[var(--border)] px-2 py-1 rounded text-xs">
+                    <span className="font-bold text-[var(--text-primary)] bg-[var(--surface-raised)] px-2 py-1 rounded text-xs">
                       {req.branch.name}
                     </span>
                     <span className="font-bold text-[var(--accent)]">{req.type}</span>
@@ -153,7 +153,7 @@ export default function AdminRequestsPage() {
                       {new Date(req.createdAt).toLocaleString()}
                     </span>
                   </div>
-                  <p className="text-white whitespace-pre-wrap text-sm">{req.description}</p>
+                  <p className="text-[var(--text-primary)] whitespace-pre-wrap text-sm">{req.description}</p>
                   
                   {req.adminComment && (
                     <div className="mt-3 p-3 bg-[var(--border)]/50 border border-[var(--border)] rounded-lg">
@@ -172,7 +172,7 @@ export default function AdminRequestsPage() {
                   {getStatusBadge(req.status)}
                   <button 
                     onClick={() => handleManageClick(req)}
-                    className="text-sm px-4 py-1.5 bg-[var(--bg-card)] hover:bg-[var(--border)] text-white border border-[var(--border)] rounded-lg transition-colors"
+                    className="text-sm px-4 py-1.5 bg-[var(--surface)] hover:bg-[var(--surface-raised)] text-[var(--text-primary)] border border-[var(--border)] rounded-lg transition-colors"
                   >
                     Manage Request
                   </button>
@@ -188,13 +188,13 @@ export default function AdminRequestsPage() {
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl w-full max-w-lg overflow-hidden shadow-2xl">
             <div className="p-4 border-b border-[var(--border)] flex justify-between items-center bg-[var(--bg-card)]">
-              <h3 className="font-bold text-white">Manage Support Request</h3>
-              <button onClick={() => setActiveReq(null)} className="text-[var(--text-secondary)] hover:text-white">✕</button>
+              <h3 className="font-bold text-[var(--text-primary)]">Manage Support Request</h3>
+              <button onClick={() => setActiveReq(null)} className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]">✕</button>
             </div>
             
             <div className="p-5 border-b border-[var(--border)]/50 bg-[var(--bg-card)]/50">
-              <div className="text-sm text-[var(--text-secondary)] mb-1">Original Request from <span className="text-white font-bold">{activeReq.branch.name}</span>:</div>
-              <p className="text-sm text-white bg-[var(--bg-card)] p-3 rounded border border-[var(--border)] whitespace-pre-wrap">
+              <div className="text-sm text-[var(--text-secondary)] mb-1">Original Request from <span className="text-[var(--text-primary)] font-bold">{activeReq.branch.name}</span>:</div>
+              <p className="text-sm text-[var(--text-primary)] bg-[var(--surface-raised)] p-3 rounded border border-[var(--border)] whitespace-pre-wrap">
                 {activeReq.description}
               </p>
               {activeReq.attachmentUrl && (
@@ -211,7 +211,7 @@ export default function AdminRequestsPage() {
                 <div className="flex-1">
                   <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">Status</label>
                   <select 
-                    className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-lg px-3 py-2 text-white font-bold focus:outline-none focus:border-[var(--accent)]"
+                    className="w-full bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2 text-[var(--text-primary)] font-bold focus:outline-none focus:border-[var(--accent)]"
                     value={modalStatus}
                     onChange={e => setModalStatus(e.target.value)}
                   >
@@ -224,7 +224,7 @@ export default function AdminRequestsPage() {
                 <div className="flex-1">
                   <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">Priority</label>
                   <select 
-                    className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-lg px-3 py-2 text-white font-bold focus:outline-none focus:border-[var(--accent)]"
+                    className="w-full bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2 text-[var(--text-primary)] font-bold focus:outline-none focus:border-[var(--accent)]"
                     value={modalPriority}
                     onChange={e => setModalPriority(e.target.value)}
                   >
@@ -239,7 +239,7 @@ export default function AdminRequestsPage() {
               <div>
                 <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">Admin Comment (Visible to Branch)</label>
                 <textarea
-                  className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-lg px-3 py-2 text-white focus:outline-none focus:border-[var(--accent)] h-24 resize-none"
+                  className="w-full bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2 text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] h-24 resize-none"
                   placeholder="Leave notes about resolution, schedule, or why it was rejected..."
                   value={modalComment}
                   onChange={e => setModalComment(e.target.value)}
@@ -261,7 +261,7 @@ export default function AdminRequestsPage() {
               </div>
               
               <div className="flex justify-end gap-3 mt-2">
-                <button type="button" onClick={() => setActiveReq(null)} className="px-4 py-2 rounded-lg text-sm font-medium text-[var(--text-secondary)] hover:text-white hover:bg-[var(--border)]">
+                <button type="button" onClick={() => setActiveReq(null)} className="px-4 py-2 rounded-lg text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-raised)]">
                   Cancel
                 </button>
                 <button type="submit" disabled={submitting} className="px-4 py-2 rounded-lg text-sm font-bold bg-[var(--accent)] text-black hover:bg-[var(--accent-dark)] disabled:opacity-50">

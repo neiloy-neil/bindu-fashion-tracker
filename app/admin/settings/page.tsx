@@ -221,7 +221,7 @@ export default function AdminSettings() {
         {modalOpen && (
           <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4">
             <div className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-xl max-w-md w-full p-6 shadow-2xl">
-              <h3 className="text-xl font-bold text-white mb-4">
+              <h3 className="text-xl font-bold text-[var(--text-primary)] mb-4">
                 {selectedItem ? 'Edit' : 'Add New'} Account
               </h3>
               <form onSubmit={handleSubmit} className="flex flex-col gap-4">

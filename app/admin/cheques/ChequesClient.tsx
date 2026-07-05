@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Fragment } from 'react'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import toast from 'react-hot-toast'
 import { CheckCircle, XCircle, Clock, Search, AlertCircle, Building2, User, Image as ImageIcon, CreditCard } from 'lucide-react'
@@ -163,9 +163,13 @@ export function ChequesClient() {
         <div className="bg-card border border-border rounded-lg shadow-sm overflow-hidden">
           <div className="p-4 border-b border-border flex flex-col sm:flex-row justify-between gap-4 bg-muted/20">
             <div className="flex bg-muted/50 p-1 rounded-lg self-start">
-              {(['PENDING', 'APPROVED', 'REJECTED'] as ChequeFilter[]).map(f => filterBtn(
-                f.charAt(0) + f.slice(1).toLowerCase(), chequeFilter === f, () => setChequeFilter(f),
-                f === 'PENDING' ? <Clock size={14} /> : f === 'APPROVED' ? <CheckCircle size={14} /> : <XCircle size={14} />
+              {(['PENDING', 'APPROVED', 'REJECTED'] as ChequeFilter[]).map(f => (
+                <Fragment key={f}>
+                  {filterBtn(
+                    f.charAt(0) + f.slice(1).toLowerCase(), chequeFilter === f, () => setChequeFilter(f),
+                    f === 'PENDING' ? <Clock size={14} /> : f === 'APPROVED' ? <CheckCircle size={14} /> : <XCircle size={14} />
+                  )}
+                </Fragment>
               ))}
             </div>
             <div className="relative w-full sm:w-72">
@@ -240,9 +244,13 @@ export function ChequesClient() {
         <div className="bg-card border border-border rounded-lg shadow-sm overflow-hidden">
           <div className="p-4 border-b border-border flex flex-col sm:flex-row justify-between gap-4 bg-muted/20">
             <div className="flex bg-muted/50 p-1 rounded-lg self-start">
-              {(['PENDING', 'APPROVED', 'REJECTED'] as PaymentFilter[]).map(f => filterBtn(
-                f.charAt(0) + f.slice(1).toLowerCase(), paymentFilter === f, () => setPaymentFilter(f),
-                f === 'PENDING' ? <Clock size={14} /> : f === 'APPROVED' ? <CheckCircle size={14} /> : <XCircle size={14} />
+              {(['PENDING', 'APPROVED', 'REJECTED'] as PaymentFilter[]).map(f => (
+                <Fragment key={f}>
+                  {filterBtn(
+                    f.charAt(0) + f.slice(1).toLowerCase(), paymentFilter === f, () => setPaymentFilter(f),
+                    f === 'PENDING' ? <Clock size={14} /> : f === 'APPROVED' ? <CheckCircle size={14} /> : <XCircle size={14} />
+                  )}
+                </Fragment>
               ))}
             </div>
             <div className="relative w-full sm:w-72">

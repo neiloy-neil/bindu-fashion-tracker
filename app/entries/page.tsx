@@ -460,7 +460,7 @@ function Entries() {
                         <td className="col-sticky-right-3 text-center bg-[var(--surface-raised)]">
                           <button 
                             onClick={() => setActiveViewEntry(entry)}
-                            className="p-2 hover:bg-[var(--border)] rounded-full text-[var(--text-secondary)] hover:text-white transition-colors"
+                            className="p-2 hover:bg-[var(--border)] rounded-full text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
                             title="View Full Entry"
                           >
                             <Eye size={18} />
@@ -527,11 +527,11 @@ function Entries() {
           <div className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-xl max-w-md w-full p-6 shadow-2xl relative">
             <button 
               onClick={() => setActiveChecklist(null)} 
-              className="absolute top-4 right-4 text-[var(--text-secondary)] hover:text-white"
+              className="absolute top-4 right-4 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             >
               <X size={20} />
             </button>
-            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+            <h3 className="text-xl font-bold text-[var(--text-primary)] mb-6 flex items-center gap-2">
               <CheckSquare className="text-[var(--success)]" /> Digital Audit Log
             </h3>
             

@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { signIn } from 'next-auth/react'
-import Image from 'next/image'
 
 export default function LoginPage() {
   const [username, setUsername] = useState('')
@@ -41,12 +40,12 @@ export default function LoginPage() {
       
       {/* Watermark Logo */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.03] pointer-events-none z-0">
-        <Image src="/bindu-logo.webp" alt="Swirl Watermark" width={800} height={800} className="object-contain" />
+        <img src="/bindu-logo.webp" alt="Swirl Watermark" style={{ width: '800px', height: 'auto' }} className="object-contain" />
       </div>
 
       <div className="w-full max-w-md p-10 rounded-2xl bg-[var(--bg-card)] shadow-2xl border border-[var(--border)] relative z-10">
         <div className="text-center mb-10 flex flex-col items-center">
-          <Image src="/bindu-logo.webp" alt="Bindu Premium Logo" width={48} height={48} className="mb-4 object-contain" />
+          <img src="/bindu-logo.webp" alt="Bindu Premium Logo" style={{ width: '48px', height: 'auto' }} className="mb-4 object-contain" />
           <h1 className="text-3xl font-display font-bold text-[var(--text-primary)]">
             Bindu Premium
           </h1>

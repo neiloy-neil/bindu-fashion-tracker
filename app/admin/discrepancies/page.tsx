@@ -40,7 +40,7 @@ export default function DiscrepanciesPage() {
       <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl overflow-hidden shadow-xl">
         <div className="p-6 border-b border-[var(--border)] flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-white">Flagged Entries</h2>
+            <h2 className="text-lg font-semibold text-[var(--text-primary)]">Flagged Entries</h2>
             <p className="text-sm text-[var(--text-muted)] mt-1">
               Entries where actual physical cash does not match system calculated balance, or a manual variance note was provided.
             </p>
@@ -81,11 +81,11 @@ export default function DiscrepanciesPage() {
                   return (
                     <tr key={entry.id} className="hover:bg-[var(--bg-card-hover)] transition-colors">
                       <td className="p-4 whitespace-nowrap">{formatDate(entry.date)}</td>
-                      <td className="p-4 font-medium text-white">{entry.branch.name}</td>
+                      <td className="p-4 font-medium text-[var(--text-primary)]">{entry.branch.name}</td>
                       <td className="p-4 text-right">{formatCurrency(expected)}</td>
                       <td className="p-4 text-right font-medium">{formatCurrency(actual)}</td>
                       <td className="p-4 text-right">
-                        <span className={`px-2 py-1 rounded text-xs font-bold ${variance < 0 ? 'bg-red-500/20 text-red-400' : variance > 0 ? 'bg-green-500/20 text-green-400' : 'text-gray-400'}`}>
+                        <span className={`px-2 py-1 rounded text-xs font-bold ${variance < 0 ? 'bg-red-500/20 text-red-600' : variance > 0 ? 'bg-green-500/20 text-green-700' : 'text-[var(--text-muted)]'}`}>
                           {variance > 0 ? '+' : ''}{formatCurrency(variance)}
                         </span>
                       </td>
@@ -93,7 +93,7 @@ export default function DiscrepanciesPage() {
                         {entry.cashDifferenceNote || <span className="opacity-50">No note provided</span>}
                       </td>
                       <td className="p-4 text-center">
-                        <Link href={`/entries?date=${entry.date.split('T')[0]}&branchId=${entry.branch.id}`} className="text-sm bg-[var(--border)] hover:bg-[var(--border-hover)] text-white px-3 py-1.5 rounded transition-colors">
+                        <Link href={`/entries?date=${entry.date.split('T')[0]}&branchId=${entry.branch.id}`} className="text-sm bg-[var(--surface-raised)] hover:bg-[var(--border)] text-[var(--text-primary)] px-3 py-1.5 rounded transition-colors">
                           View Entry
                         </Link>
                       </td>

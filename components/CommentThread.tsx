@@ -58,7 +58,7 @@ export default function CommentThread({ entryId, branchName, date, onClose }: { 
           <h3 className="font-bold text-[var(--text-primary)] flex items-center gap-2">💬 Entry Discussion</h3>
           <p className="text-xs text-[var(--text-secondary)]">{branchName} - {new Date(date).toLocaleDateString()}</p>
         </div>
-        <button onClick={onClose} className="p-1 hover:bg-[var(--border)] rounded-full text-[var(--text-secondary)] hover:text-white transition-colors">
+        <button onClick={onClose} className="p-1 hover:bg-[var(--border)] rounded-full text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
           <X size={20} />
         </button>
       </div>

@@ -4,7 +4,6 @@ import { usePathname } from 'next/navigation'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { useState, useEffect } from 'react'
 import { Menu, X } from 'lucide-react'
-import Image from 'next/image'
 import { CommandPalette } from '@/components/shared/CommandPalette'
 import { NotificationBell } from '@/components/layout/NotificationBell'
 
@@ -41,9 +40,9 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
   return (
     <div className="app-layout">
       {/* Mobile Top Bar */}
-      <div className="mobile-top-bar fixed top-0 left-0 right-0 z-40 h-[60px] flex items-center justify-between px-4 bg-[var(--surface)] border-b border-[var(--border)]">
+      <div className="mobile-top-bar fixed top-0 left-0 right-0 z-50 h-[60px] flex items-center justify-between px-4 bg-[var(--surface)] border-b border-[var(--border)]">
         <div className="flex items-center gap-2.5">
-          <Image src="/bindu-logo.webp" width={26} height={26} className="object-contain" alt="Bindu" />
+          <img src="/bindu-logo.webp" style={{ width: '26px', height: 'auto' }} className="object-contain" alt="Bindu" />
           <span className="text-[15px] font-semibold text-[var(--text-primary)]">
             Bindu Premium
           </span>

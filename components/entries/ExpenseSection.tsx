@@ -181,7 +181,7 @@ export function ExpenseSection({ control, register, setValue, expenseCategories,
       <button
         type="button"
         onClick={() => setPeriodicOpen(o => !o)}
-        className="flex items-center gap-2 text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 w-full text-left hover:text-white transition-colors"
+        className="flex items-center gap-2 text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 w-full text-left hover:text-[var(--text-primary)] transition-colors"
       >
         {periodicOpen ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
         Periodic Expenses

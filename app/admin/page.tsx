@@ -106,7 +106,7 @@ export default function AdminAnalyticsDashboard() {
       {/* Header & Controls */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-white flex items-center gap-2">
+          <h1 className="text-3xl font-bold text-[var(--text-primary)] flex items-center gap-2">
             📊 Company Analytics
           </h1>
           <p className="text-[var(--text-secondary)] mt-1">Consolidated view of all branch performances and expenses.</p>
@@ -153,7 +153,7 @@ export default function AdminAnalyticsDashboard() {
               <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="var(--success)" strokeWidth="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
             </div>
             <h3 className="text-[var(--text-secondary)] text-sm uppercase font-semibold">Total Revenue</h3>
-            <p className="text-3xl font-bold font-mono text-white mt-2 flex items-baseline gap-1">
+            <p className="text-3xl font-bold font-mono text-[var(--text-primary)] mt-2 flex items-baseline gap-1">
               <span className="text-xl text-[var(--success)]">৳</span>
               {formatCurrency(data.kpi.totalRevenue).replace('৳', '')}
             </p>
@@ -164,7 +164,7 @@ export default function AdminAnalyticsDashboard() {
               <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" strokeWidth="2"><path d="M23 12a11.05 11.05 0 0 0-22 0zm-5 7a3 3 0 0 1-6 0v-7"/></svg>
             </div>
             <h3 className="text-[var(--text-secondary)] text-sm uppercase font-semibold">Total Expenses</h3>
-            <p className="text-3xl font-bold font-mono text-white mt-2 flex items-baseline gap-1">
+            <p className="text-3xl font-bold font-mono text-[var(--text-primary)] mt-2 flex items-baseline gap-1">
               <span className="text-xl text-[var(--danger)]">৳</span>
               {formatCurrency(data.kpi.totalExpenses).replace('৳', '')}
             </p>
@@ -172,7 +172,7 @@ export default function AdminAnalyticsDashboard() {
 
           <div className="bg-gradient-to-br from-[var(--success)]/10 to-[#059669]/20 p-5 rounded-xl border border-[var(--success)]/30 shadow-lg">
             <h3 className="text-[var(--success)] text-sm uppercase font-semibold">Net Profit</h3>
-            <p className="text-3xl font-bold font-mono text-white mt-2 flex items-baseline gap-1">
+            <p className="text-3xl font-bold font-mono text-[var(--text-primary)] mt-2 flex items-baseline gap-1">
               <span className="text-xl text-[var(--success)]">৳</span>
               {formatCurrency(data.kpi.netProfit).replace('৳', '')}
             </p>
@@ -180,7 +180,7 @@ export default function AdminAnalyticsDashboard() {
 
           <div className="bg-gradient-to-br from-[var(--accent)]/10 to-[#3a7bd5]/20 p-5 rounded-xl border border-[var(--accent)]/30 shadow-lg">
             <h3 className="text-[var(--accent)] text-sm uppercase font-semibold">Latest Cash in Hand</h3>
-            <p className="text-3xl font-bold font-mono text-white mt-2 flex items-baseline gap-1">
+            <p className="text-3xl font-bold font-mono text-[var(--text-primary)] mt-2 flex items-baseline gap-1">
               <span className="text-xl text-[var(--accent)]">৳</span>
               {formatCurrency(data.kpi.cashInHand).replace('৳', '')}
             </p>

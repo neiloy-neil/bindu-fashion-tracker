@@ -112,10 +112,10 @@ export default function BranchRequestsPage() {
 
   const getPriorityBadge = (p: string) => {
     switch (p) {
-      case 'LOW': return <span className="px-2 py-1 bg-gray-500/20 text-gray-400 rounded text-xs font-bold">Low Priority</span>
-      case 'MEDIUM': return <span className="px-2 py-1 bg-blue-500/20 text-blue-400 rounded text-xs font-bold">Medium Priority</span>
-      case 'HIGH': return <span className="px-2 py-1 bg-orange-500/20 text-orange-400 rounded text-xs font-bold">High Priority</span>
-      case 'URGENT': return <span className="px-2 py-1 bg-red-500/20 text-red-400 rounded text-xs font-bold animate-pulse">URGENT</span>
+      case 'LOW': return <span className="px-2 py-1 bg-gray-500/10 text-[var(--text-muted)] rounded text-xs font-bold">Low Priority</span>
+      case 'MEDIUM': return <span className="px-2 py-1 bg-blue-500/10 text-blue-600 rounded text-xs font-bold">Medium Priority</span>
+      case 'HIGH': return <span className="px-2 py-1 bg-orange-500/10 text-orange-600 rounded text-xs font-bold">High Priority</span>
+      case 'URGENT': return <span className="px-2 py-1 bg-red-500/10 text-red-600 rounded text-xs font-bold animate-pulse border border-red-500/30">URGENT</span>
       default: return null
     }
   }
@@ -154,7 +154,7 @@ export default function BranchRequestsPage() {
                       {new Date(req.createdAt).toLocaleDateString()}
                     </span>
                   </div>
-                  <p className="text-white whitespace-pre-wrap">{req.description}</p>
+                  <p className="text-[var(--text-primary)] whitespace-pre-wrap">{req.description}</p>
                   {req.attachmentUrl && (
                     <a href={req.attachmentUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-[var(--accent)] hover:underline mt-2 inline-block">
                       📎 View Attachment
@@ -180,8 +180,8 @@ export default function BranchRequestsPage() {
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl w-full max-w-md overflow-hidden shadow-2xl">
             <div className="p-4 border-b border-[var(--border)] flex justify-between items-center bg-[var(--bg-card)]">
-              <h3 className="font-bold text-white">New Support Request</h3>
-              <button onClick={() => setShowModal(false)} className="text-[var(--text-secondary)] hover:text-white">✕</button>
+              <h3 className="font-bold text-[var(--text-primary)]">New Support Request</h3>
+              <button onClick={() => setShowModal(false)} className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]">✕</button>
             </div>
             <form onSubmit={handleSubmit} className="p-5 flex flex-col gap-4">
               <div>
@@ -225,7 +225,7 @@ export default function BranchRequestsPage() {
                 <input
                   type="file"
                   onChange={e => setAttachment(e.target.files?.[0] || null)}
-                  className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-lg px-3 py-2 text-white focus:outline-none focus:border-[var(--accent)]"
+                  className="w-full bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2 text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]"
                 />
               </div>
               <div className="flex justify-end gap-3 mt-2">

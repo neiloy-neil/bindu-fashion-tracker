@@ -20,6 +20,7 @@ export async function GET(req: NextRequest) {
   const userManagedBranches = req.headers.get('x-user-managed-branches')
 
   if (!userRole) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (userRole === 'HR_ADMIN') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const where: Record<string, unknown> = {}
 

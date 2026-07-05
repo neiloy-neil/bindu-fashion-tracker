@@ -1,4 +1,3 @@
-import Image from 'next/image'
 import { formatCurrency, formatDate } from '@/lib/utils'
 
 type ReportReceivedTransfer = {
@@ -106,7 +105,7 @@ export default function DailyReportTemplate({ entryData }: { entryData: ReportEn
     <div className="bg-[var(--bg-card)] p-8 rounded-xl border border-[var(--border)] shadow-xl text-foreground">
       {/* Header */}
       <div className="text-center mb-6 border-b border-[var(--border)] pb-6">
-        <Image src="/bindu-logo.webp" alt="Bindu Premium" width={192} height={64} className="h-16 w-auto mx-auto mb-4 object-contain" />
+        <img src="/bindu-logo.webp" alt="Bindu Premium" style={{ width: '192px', height: 'auto', display: 'block' }} className="mx-auto mb-4 object-contain" />
         <h1 className="text-3xl font-bold mb-2" style={{ fontFamily: 'var(--font-display)', color: 'var(--accent)' }}>Bindu Premium — Daily Report</h1>
         <div className="flex justify-center gap-8 text-[var(--text-secondary)] mb-6">
           <span className="text-base">Branch: <strong className="text-foreground text-xl">{entryData.branch?.name}</strong></span>

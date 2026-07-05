@@ -45,6 +45,62 @@ interface Props {
   userId: string
 }
 
+function PettyCashSection({ control, register, target, watch }: { control: any; register: any; target: number; watch: any }) {
+  const opening = Number(watch('pettyCashOpening')) || 0
+  const used = Number(watch('pettyCashUsed')) || 0
+  const replenished = Number(watch('pettyCashReplenished')) || 0
+  const closing = Math.max(0, opening - used + replenished)
+  const shortfall = Math.max(0, target - closing)
+
+  return (
+    <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] overflow-hidden">
+      <div className="px-5 py-3.5 border-b border-[var(--border)] bg-[var(--surface-raised)] flex items-center gap-2">
+        <span className="text-sm font-semibold text-[var(--text-primary)]">Petty Cash</span>
+        <span className="text-xs text-[var(--text-muted)]">Target: ৳{target.toLocaleString('en-BD')}</span>
+      </div>
+      <div className="p-5 space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wide">Opening Balance</label>
+            <input
+              type="number" min={0} readOnly
+              className="flex h-10 w-full rounded-md border border-[var(--border)] bg-[var(--surface-raised)] px-3 py-2 text-sm text-[var(--text-secondary)] font-mono cursor-not-allowed"
+              {...register('pettyCashOpening')}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wide">Used Today (৳)</label>
+            <input
+              type="number" min={0}
+              className="flex h-10 w-full rounded-md border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] font-mono focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+              placeholder="0"
+              {...register('pettyCashUsed')}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wide">Replenished (৳)</label>
+            <input
+              type="number" min={0}
+              className="flex h-10 w-full rounded-md border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] font-mono focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+              placeholder="0"
+              {...register('pettyCashReplenished')}
+            />
+          </div>
+        </div>
+        <div className={`flex items-center justify-between rounded-lg px-4 py-3 ${shortfall > 0 ? 'bg-[var(--warning-subtle)] border border-[var(--warning)]/30' : 'bg-[var(--success-subtle)] border border-[var(--success)]/30'}`}>
+          <div className="text-sm font-medium text-[var(--text-primary)]">
+            Closing Balance
+            {shortfall > 0 && <span className="ml-2 text-xs text-[var(--warning)] font-normal">৳{shortfall.toLocaleString('en-BD')} short — carries to tomorrow</span>}
+          </div>
+          <span className={`font-mono font-bold text-lg ${shortfall > 0 ? 'text-[var(--warning)]' : 'text-[var(--success)]'}`}>
+            ৳{closing.toLocaleString('en-BD')}
+          </span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function NewEntryForm({ initialData, userId }: Props) {
   const router = useRouter()
   const { branches, allBranches, categories, accounts, parties, expenseCategories, employees } = initialData
@@ -52,6 +108,7 @@ export function NewEntryForm({ initialData, userId }: Props) {
   const [loading, setLoading] = useState(false)
   const [showChecklistModal, setShowChecklistModal] = useState(false)
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null)
+  const [pettyCashTarget, setPettyCashTarget] = useState(0)
   const [pendingReportData, setPendingReportData] = useState<any>(null)
   const reportRef = useRef<HTMLDivElement>(null)
 
@@ -73,6 +130,9 @@ export function NewEntryForm({ initialData, userId }: Props) {
       globalNotes: '',
       actualPhysicalCash: '',
       cashDifferenceNote: '',
+      pettyCashOpening: 0,
+      pettyCashUsed: 0,
+      pettyCashReplenished: 0,
       eodChecklist: {
         safeLocked: false, acOff: false, shopClean: false, shuttersDown: false, cashVerified: false, signature: ''
       }
@@ -194,6 +254,12 @@ export function NewEntryForm({ initialData, userId }: Props) {
                 ])
               }
             }
+            // Petty cash: auto-fill opening from previous day's closing (or target if first day)
+            if (data.pettyCashTarget > 0) {
+              setPettyCashTarget(data.pettyCashTarget)
+              const opening = data.pettyCashOpening !== null ? data.pettyCashOpening : data.pettyCashTarget
+              setValue('pettyCashOpening', opening)
+            }
           }
         }).catch(() => toast.error('Could not load the latest opening balance'))
     }
@@ -259,6 +325,10 @@ export function NewEntryForm({ initialData, userId }: Props) {
         notes: data.globalNotes || '',
         actualPhysicalCash: Number(data.actualPhysicalCash),
         cashDifferenceNote: data.cashDifferenceNote || '',
+        pettyCashOpening: Number(data.pettyCashOpening) || 0,
+        pettyCashUsed: Number(data.pettyCashUsed) || 0,
+        pettyCashReplenished: Number(data.pettyCashReplenished) || 0,
+        pettyCashClosing: Math.max(0, (Number(data.pettyCashOpening) || 0) - (Number(data.pettyCashUsed) || 0) + (Number(data.pettyCashReplenished) || 0)),
         expectedNetBalance: totals.netBalance,
         eodChecklist: data.eodChecklist,
         items: itemsToSubmit,
@@ -468,6 +538,16 @@ export function NewEntryForm({ initialData, userId }: Props) {
             </div>
           )}
         </div>
+
+        {/* Petty Cash Section — only shown if branch has a petty cash target */}
+        {pettyCashTarget > 0 && (
+          <PettyCashSection
+            control={control}
+            register={form.register}
+            target={pettyCashTarget}
+            watch={form.watch}
+          />
+        )}
 
         {/* Net Balance & Physical Cash */}
         <div className="relative overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-6 shadow-xl">

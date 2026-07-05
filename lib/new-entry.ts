@@ -40,6 +40,10 @@ export const newEntryPayloadSchema = z.object({
   actualPhysicalCash: z.coerce.number().finite().nonnegative(),
   cashDifferenceNote: optionalText,
   expectedNetBalance: z.coerce.number().finite(),
+  pettyCashOpening: z.coerce.number().finite().nonnegative().default(0),
+  pettyCashUsed: z.coerce.number().finite().nonnegative().default(0),
+  pettyCashReplenished: z.coerce.number().finite().nonnegative().default(0),
+  pettyCashClosing: z.coerce.number().finite().nonnegative().default(0),
   eodChecklist: checklistSchema,
   items: z.array(z.object({
     categoryId: z.coerce.number().int().positive(),

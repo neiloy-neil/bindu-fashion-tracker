@@ -140,6 +140,9 @@ export const newEntryFormSchema = z.object({
   globalNotes: z.string().optional(),
   actualPhysicalCash: z.union([z.string(), z.number()]).refine(v => v !== '' && Number(v) >= 0, 'Physical cash is required'),
   cashDifferenceNote: z.string().optional(),
+  pettyCashOpening: z.union([z.string(), z.number()]).default(0),
+  pettyCashUsed: z.union([z.string(), z.number()]).default(0),
+  pettyCashReplenished: z.union([z.string(), z.number()]).default(0),
   eodChecklist: z.object({
     safeLocked: z.boolean(),
     acOff: z.boolean(),

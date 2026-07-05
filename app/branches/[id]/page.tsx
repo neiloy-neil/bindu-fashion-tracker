@@ -25,6 +25,7 @@ const emptyForm = {
   contactPerson: '',
   phoneNumber: '',
   isActive: true,
+  pettyCashTarget: 0,
 }
 
 function amount(n: number) {
@@ -62,6 +63,7 @@ export default function BranchDetailPage() {
       contactPerson: branch.contactPerson ?? '',
       phoneNumber: branch.phoneNumber ?? '',
       isActive: branch.isActive ?? true,
+      pettyCashTarget: branch.pettyCashTarget ?? 0,
     })
     setEditOpen(true)
   }
@@ -161,6 +163,9 @@ export default function BranchDetailPage() {
               )}
               {branch.shiftStartTime && (
                 <DetailRow icon={<CalendarDays size={14} />} label="Shift Start" value={branch.shiftStartTime} />
+              )}
+              {(branch.pettyCashTarget ?? 0) > 0 && (
+                <DetailRow icon={<Building2 size={14} />} label="Petty Cash Target" value={amount(branch.pettyCashTarget)} />
               )}
               {!branch.contactPerson && !branch.phoneNumber && !branch.address && (
                 <p className="text-sm text-[var(--text-muted)]">No contact details added yet.</p>
@@ -265,6 +270,17 @@ export default function BranchDetailPage() {
             <div className="col-span-2 space-y-1.5">
               <Label>Address</Label>
               <Input value={form.address} onChange={e => set('address', e.target.value)} placeholder="Full address" />
+            </div>
+            <div className="col-span-2 space-y-1.5">
+              <Label>Petty Cash Target (৳)</Label>
+              <Input
+                type="number"
+                min={0}
+                value={form.pettyCashTarget}
+                onChange={e => set('pettyCashTarget', parseFloat(e.target.value) || 0)}
+                placeholder="e.g. 5000"
+              />
+              <p className="text-xs text-[var(--text-muted)]">Fixed float amount each branch must maintain daily. Set 0 to disable petty cash tracking.</p>
             </div>
             <div className="col-span-2 flex items-center justify-between rounded-lg border border-[var(--border)] px-4 py-3">
               <div>

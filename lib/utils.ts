@@ -81,6 +81,10 @@ export function computeTotals(entry: any) {
     }
   }
 
+  // Petty cash replenishment moves money from main cash into the petty drawer — it's a cash outflow
+  const pettyCashReplenished = typeof entry?.pettyCashReplenished === 'number' ? entry.pettyCashReplenished : 0
+  totalExpense += pettyCashReplenished
+
   const totalAmount = openingBalance + totalSale
   const netBalance = totalAmount - totalExpense
 

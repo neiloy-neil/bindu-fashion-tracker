@@ -42,8 +42,12 @@ export async function GET(
     })
 
     const openingBalance = lastEntry?.actualPhysicalCash || 0
+    const pettyCashOpening = lastEntry?.pettyCashClosing ?? null
 
-    return NextResponse.json({ openingBalance })
+    // Also fetch branch petty cash target
+    const branch = await prisma.branch.findUnique({ where: { id: branchId }, select: { pettyCashTarget: true } })
+
+    return NextResponse.json({ openingBalance, pettyCashOpening, pettyCashTarget: branch?.pettyCashTarget ?? 0 })
   } catch (error: any) {
     logger.error('Error fetching last balance:', error)
     return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 })

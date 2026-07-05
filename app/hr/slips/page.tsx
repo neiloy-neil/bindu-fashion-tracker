@@ -102,8 +102,9 @@ function SlipsContent() {
               code: null, 
               address: null, 
               contactPerson: null, 
-              phoneNumber: null, 
-              shiftStartTime: '09:00' 
+              phoneNumber: null,
+              shiftStartTime: '09:00',
+              pettyCashTarget: 0,
             })
           }
           

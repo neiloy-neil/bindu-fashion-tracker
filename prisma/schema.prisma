@@ -18,9 +18,10 @@ model Branch {
   address        String?            @db.Text
   contactPerson  String?
   phoneNumber    String?
-  isActive       Boolean            @default(true)
-  shiftStartTime String             @default("09:00")
-  createdAt      DateTime           @default(now())
+  isActive        Boolean            @default(true)
+  shiftStartTime  String             @default("09:00")
+  pettyCashTarget Float              @default(0)
+  createdAt       DateTime           @default(now())
   entries        DailyEntry[]
   attendances    Attendance[]
   users          User[]             @relation("UserPrimaryBranch")
@@ -75,12 +76,16 @@ model DailyEntry {
   updatedAt          DateTime @updatedAt
   receiptUrl         String?
   notes              String?
-  actualPhysicalCash Float?
-  expectedNetBalance Float?   @default(0)
-  cashDifferenceNote String?
-  eodChecklist       Json?
-  openingTime        String?
-  closingTime        String?
+  actualPhysicalCash   Float?
+  expectedNetBalance   Float?   @default(0)
+  cashDifferenceNote   String?
+  eodChecklist         Json?
+  openingTime          String?
+  closingTime          String?
+  pettyCashOpening     Float    @default(0)
+  pettyCashUsed        Float    @default(0)
+  pettyCashReplenished Float    @default(0)
+  pettyCashClosing     Float    @default(0)
 
   editRequests      EditRequest[]
   comments          Comment[]

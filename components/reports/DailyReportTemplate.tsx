@@ -54,13 +54,18 @@ type ReportEntryData = {
   expectedNetBalance?: number | null
   cashDifferenceNote?: string | null
   notes?: string | null
-  branch?: { name: string } | null
+  branch?: { name: string; pettyCashTarget?: number | null } | null
   items?: ReportEntryItem[]
   receivedTransfers?: ReportReceivedTransfer[]
   expenseEntries?: ReportExpenseEntry[]
   transfers?: ReportTransfer[]
   payments?: ReportPayment[]
   advanceSalaries?: ReportAdvanceSalary[]
+  pettyCashOpening?: number | null
+  pettyCashUsed?: number | null
+  pettyCashReplenished?: number | null
+  pettyCashClosing?: number | null
+  pettyCashTarget?: number | null
 }
 
 function SectionTotal({ label, amount }: { label: string; amount: number }) {
@@ -96,6 +101,7 @@ export default function DailyReportTemplate({ entryData }: { entryData: ReportEn
     .reduce((s, a) => s + (a.amount ?? 0), 0)
 
   const grandTotalExpenses = totalExpenses + totalTransfers + totalPayments + totalAdvanceCash
+  const pettyCashTarget = entryData.pettyCashTarget ?? (entryData.branch as any)?.pettyCashTarget ?? 0
 
   const sectionHeader = (title: string) => (
     <h3 className="text-[var(--accent)] font-semibold uppercase tracking-wider font-bold text-sm mb-4 border-b border-[var(--border)] pb-2">{title}</h3>
@@ -361,6 +367,54 @@ export default function DailyReportTemplate({ entryData }: { entryData: ReportEn
                     <td className="px-4 py-3 text-[var(--text-secondary)]">{entryData.notes}</td>
                   </tr>
                 )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Petty Cash */}
+      {pettyCashTarget > 0 && (
+        <div className="mb-8">
+          {sectionHeader('Petty Cash')}
+          <div className="rounded-xl border border-[var(--border)] overflow-hidden">
+            <table className="w-full text-sm">
+              <tbody>
+                <tr className="border-b border-[var(--border)] bg-[var(--bg-card)]">
+                  <td className="px-4 py-3 text-[var(--text-secondary)] font-medium">Target Float</td>
+                  <td className="px-4 py-3 text-right font-bold tabular-nums font-mono text-[var(--accent)]">৳{formatCurrency(pettyCashTarget)}</td>
+                </tr>
+                <tr className="border-b border-[var(--border)] bg-[var(--bg-card)]">
+                  <td className="px-4 py-3 text-[var(--text-secondary)] font-medium">Opening Balance</td>
+                  <td className="px-4 py-3 text-right font-bold tabular-nums font-mono text-[var(--accent)]">৳{formatCurrency(entryData.pettyCashOpening ?? 0)}</td>
+                </tr>
+                <tr className="border-b border-[var(--border)] bg-[var(--bg-card)]">
+                  <td className="px-4 py-3 text-[var(--text-secondary)] font-medium">Used Today</td>
+                  <td className="px-4 py-3 text-right font-bold tabular-nums font-mono" style={{ color: 'var(--danger)' }}>৳{formatCurrency(entryData.pettyCashUsed ?? 0)}</td>
+                </tr>
+                <tr className="border-b border-[var(--border)] bg-[var(--bg-card)]">
+                  <td className="px-4 py-3 text-[var(--text-secondary)] font-medium">Replenished</td>
+                  <td className="px-4 py-3 text-right font-bold tabular-nums font-mono text-[var(--success)]">৳{formatCurrency(entryData.pettyCashReplenished ?? 0)}</td>
+                </tr>
+                {(() => {
+                  const closing = entryData.pettyCashClosing ?? 0
+                  const target = pettyCashTarget
+                  const shortfall = Math.max(0, target - closing)
+                  return (
+                    <>
+                      <tr className={`border-b border-[var(--border)] ${shortfall > 0 ? 'bg-[var(--warning)]/5' : 'bg-[var(--success)]/5'}`}>
+                        <td className="px-4 py-3 font-semibold text-foreground">Closing Balance</td>
+                        <td className={`px-4 py-3 text-right font-bold tabular-nums font-mono text-xl ${shortfall > 0 ? 'text-[var(--warning)]' : 'text-[var(--success)]'}`}>৳{formatCurrency(closing)}</td>
+                      </tr>
+                      {shortfall > 0 && (
+                        <tr className="bg-[var(--warning)]/10">
+                          <td className="px-4 py-3 font-medium text-[var(--warning)]">Shortfall (carried to tomorrow)</td>
+                          <td className="px-4 py-3 text-right font-bold tabular-nums font-mono text-[var(--warning)]">৳{formatCurrency(shortfall)}</td>
+                        </tr>
+                      )}
+                    </>
+                  )
+                })()}
               </tbody>
             </table>
           </div>

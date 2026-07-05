@@ -154,7 +154,8 @@ export async function POST(req: NextRequest) {
       const transfers = body.transfers.reduce((sum, item) => sum + item.amount, 0)
       const payments = body.payments.filter(payment => payment.method !== 'CHEQUE').reduce((sum, item) => sum + item.amount, 0)
       const advances = body.advanceSalaries.filter(advance => advance.type === 'CASH').reduce((sum, item) => sum + item.amount, 0)
-      const expectedNetBalance = income - expenses - transfers - payments - advances
+      const pettyCashReplenished = body.pettyCashReplenished ?? 0
+      const expectedNetBalance = income - expenses - transfers - payments - advances - pettyCashReplenished
       if (body.actualPhysicalCash !== expectedNetBalance && !body.cashDifferenceNote) {
         throw new Error('A cash discrepancy reason is required')
       }
@@ -166,6 +167,10 @@ export async function POST(req: NextRequest) {
           notes: body.notes || null, actualPhysicalCash: body.actualPhysicalCash,
           expectedNetBalance: expectedNetBalance,
           cashDifferenceNote: body.cashDifferenceNote || null, eodChecklist: body.eodChecklist,
+          pettyCashOpening: body.pettyCashOpening ?? 0,
+          pettyCashUsed: body.pettyCashUsed ?? 0,
+          pettyCashReplenished: body.pettyCashReplenished ?? 0,
+          pettyCashClosing: (body.pettyCashOpening ?? 0) - (body.pettyCashUsed ?? 0) + (body.pettyCashReplenished ?? 0),
           items: { create: body.items.map(item => ({
             categoryId: item.categoryId, amount: item.amount, note: item.note || null,
             partyName: item.partyName || null, receiptUrls: item.receiptKeys,

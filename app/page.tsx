@@ -567,7 +567,7 @@ function Dashboard() {
                     <StatCard
                       label="Petty Cash"
                       value={`৳${formatCurrency(data.pettyCash || 0)}`}
-                      context="Latest physical cash"
+                      context="Closing float across branches"
                       valueClass="text-[var(--info)]"
                       accent="var(--info)"
                     />

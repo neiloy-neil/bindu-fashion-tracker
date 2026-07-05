@@ -220,9 +220,9 @@ export async function GET(req: NextRequest) {
       if (le._max.date) {
         const entry = await prisma.dailyEntry.findFirst({
           where: { branchId: le.branchId, date: le._max.date },
-          select: { actualPhysicalCash: true }
+          select: { pettyCashClosing: true }
         })
-        if (entry?.actualPhysicalCash) pettyCash += entry.actualPhysicalCash
+        if (entry?.pettyCashClosing) pettyCash += entry.pettyCashClosing
       }
     }
 

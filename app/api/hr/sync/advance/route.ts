@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
   let requestYear: number | null = null
   let requestEmployeeId: number | null = null
 
-  if (!role || (role !== 'ADMIN' && role !== 'HR_ADMIN')) {
+  if (!role || (role !== 'ADMIN' && role !== 'SUPER_ADMIN' && role !== 'HR_ADMIN')) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 

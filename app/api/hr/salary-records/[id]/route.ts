@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const role = req.headers.get('x-user-role')
-  if (!role || (role !== 'ADMIN' && role !== 'HR_ADMIN')) {
+  if (!role || (role !== 'ADMIN' && role !== 'SUPER_ADMIN' && role !== 'HR_ADMIN')) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
@@ -44,7 +44,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const role = req.headers.get('x-user-role')
-  if (!role || role !== 'ADMIN') {
+  if (!role || (role !== 'ADMIN' && role !== 'SUPER_ADMIN')) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 

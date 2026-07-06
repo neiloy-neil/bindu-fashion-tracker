@@ -45,7 +45,7 @@ export async function PATCH(
     }
 
     // Verify ownership
-    if (role !== 'ADMIN') {
+    if (role !== 'ADMIN' && role !== 'SUPER_ADMIN') {
       if (transfer.account.type !== 'BRANCH' || transfer.account.branchId !== userBranchId) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       }

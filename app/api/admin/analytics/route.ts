@@ -8,7 +8,7 @@ export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions)
     const user = session?.user
-    if (!user || (user as any).role !== 'ADMIN') {
+    if (!user || !['ADMIN', 'SUPER_ADMIN'].includes((user as any).role)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

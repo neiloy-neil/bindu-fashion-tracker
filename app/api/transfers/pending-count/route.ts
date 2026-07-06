@@ -21,7 +21,7 @@ export async function GET() {
         return NextResponse.json({ count: 0 })
       }
       whereClause.account = { branchId }
-    } else if (role !== 'ADMIN') {
+    } else if (role !== 'ADMIN' && role !== 'SUPER_ADMIN') {
       return NextResponse.json({ count: 0 })
     }
 

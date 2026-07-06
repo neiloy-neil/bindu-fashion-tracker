@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
   const role = req.headers.get('x-user-role')
-  if (!role || role !== 'ADMIN') {
+  if (!role || (role !== 'ADMIN' && role !== 'SUPER_ADMIN')) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 

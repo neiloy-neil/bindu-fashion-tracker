@@ -61,8 +61,7 @@ export async function proxy(req: NextRequest) {
         pathname.startsWith('/parties') ||
         pathname.startsWith('/categories') ||
         pathname.startsWith('/api/admin') ||
-        pathname.startsWith('/api/parties') ||
-        pathname.startsWith('/api/categories')
+        pathname.startsWith('/api/parties')
       ) {
         if (pathname.startsWith('/api/')) {
           return new NextResponse(

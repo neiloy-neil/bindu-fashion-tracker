@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 import { logAudit } from '@/lib/audit'
 import { logger } from '@/lib/logger'
+import { notifyBranchUsers } from '@/lib/notify'
 
 const statusSchema = z.object({
   status: z.enum(['APPROVED', 'REJECTED'])
@@ -28,9 +29,9 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
       return NextResponse.json({ error: 'Invalid payload', details: parsed.error.flatten() }, { status: 400 })
     }
 
-    const currentLeave = await prisma.leaveRecord.findUnique({ 
+    const currentLeave = await prisma.leaveRecord.findUnique({
       where: { id },
-      include: { employee: { select: { branchId: true } } }
+      include: { employee: { select: { branchId: true, name: true } } }
     })
     if (!currentLeave) return NextResponse.json({ error: 'Leave not found' }, { status: 404 })
 
@@ -58,6 +59,17 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
         newValues: updated,
         reason: `Leave ${parsed.data.status}`
       })
+    }
+
+    // Notify branch users of the decision (fire-and-forget)
+    if (currentLeave.employee.branchId) {
+      void notifyBranchUsers(
+        currentLeave.employee.branchId,
+        'LEAVE_UPDATE',
+        `Leave ${parsed.data.status.toLowerCase()}: ${currentLeave.employee.name}`,
+        `${currentLeave.employee.name}'s leave request has been ${parsed.data.status.toLowerCase()}.`,
+        { leaveId: id }
+      ).catch(() => {})
     }
 
     return NextResponse.json(updated)

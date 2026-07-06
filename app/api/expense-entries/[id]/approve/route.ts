@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { logAudit } from '@/lib/audit'
+import { notifyBranchUsers } from '@/lib/notify'
 
 export async function POST(
   req: NextRequest,
@@ -17,6 +18,7 @@ export async function POST(
   try {
     const expense = await prisma.expenseEntry.findUnique({
       where: { id: parseInt(id) },
+      include: { dailyEntry: { select: { branchId: true } } },
     })
     if (!expense) return NextResponse.json({ error: 'Expense entry not found' }, { status: 404 })
     if (expense.approvalStatus !== 'PENDING') {
@@ -38,6 +40,16 @@ export async function POST(
         newValues: { approvalStatus: 'APPROVED' },
         reason: 'Expense approved by admin',
       })
+    }
+
+    if (expense.dailyEntry?.branchId) {
+      void notifyBranchUsers(
+        expense.dailyEntry.branchId,
+        'EXPENSE_UPDATE',
+        'Expense approved',
+        `An expense entry of ৳${expense.amount.toLocaleString('en-BD')} has been approved.`,
+        { expenseId: expense.id }
+      ).catch(() => {})
     }
 
     return NextResponse.json(updated)

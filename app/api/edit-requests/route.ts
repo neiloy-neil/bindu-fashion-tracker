@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { editRequestActionSchema, editRequestSchema } from '@/lib/schemas'
 import { logAudit } from '@/lib/audit'
+import { notifyByRole, notifyUsers } from '@/lib/notify'
 
 // GET: Admin fetches pending edit requests, OR Branch user fetches their own pending requests
 export async function GET(req: NextRequest) {
@@ -85,6 +86,15 @@ export async function POST(req: NextRequest) {
         status: 'PENDING'
       }
     })
+
+    // Notify admins of new edit request (fire-and-forget)
+    void notifyByRole(
+      ['ADMIN'],
+      'EDIT_REQUEST',
+      'Edit request submitted',
+      `A branch has requested an edit to entry #${entryId}${reason ? `: ${reason}` : ''}.`,
+      { editRequestId: newRequest.id, entryId }
+    ).catch(() => {})
 
     return NextResponse.json(newRequest, { status: 201 })
   } catch (error: any) {
@@ -199,13 +209,29 @@ export async function PATCH(req: NextRequest) {
           reason: `EditRequest Approved: ${editReq.reason || 'No reason provided'}`
         })
       }
-      
+
+      void notifyUsers({
+        userIds: [editReq.requestedById],
+        type: 'EDIT_REQUEST_UPDATE',
+        title: 'Edit request approved',
+        body: `Your edit request for entry #${editReq.entryId} has been approved.`,
+        metadata: { editRequestId: requestId, entryId: editReq.entryId },
+      }).catch(() => {})
+
     } else if (status === 'REJECTED') {
       const updated = await prisma.editRequest.update({
         where: { id: requestId },
         data: { status: 'REJECTED' }
       })
       if (!updated) throw new Error('Request not found')
+
+      void notifyUsers({
+        userIds: [updated.requestedById],
+        type: 'EDIT_REQUEST_UPDATE',
+        title: 'Edit request rejected',
+        body: `Your edit request for entry #${updated.entryId} has been rejected.`,
+        metadata: { editRequestId: requestId, entryId: updated.entryId },
+      }).catch(() => {})
     }
 
     return NextResponse.json({ success: true })

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
-import { sendEmail, dailySummaryEmail } from '@/lib/email'
 
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get('authorization')
@@ -11,7 +10,6 @@ export async function GET(req: NextRequest) {
 
   const today = new Date()
   today.setHours(0, 0, 0, 0)
-
   const tomorrow = new Date(today)
   tomorrow.setDate(tomorrow.getDate() + 1)
 
@@ -37,20 +35,12 @@ export async function GET(req: NextRequest) {
     for (const item of entry.items) {
       if (item.category.type === 'INCOME') branchSale += item.amount
     }
-
-    for (const e of entry.expenseEntries) {
-      branchExp += e.amount
-    }
-
-    for (const t of entry.transfers) {
-      branchExp += t.amount
-    }
-
+    for (const e of entry.expenseEntries) branchExp += e.amount
+    for (const t of entry.transfers) branchExp += t.amount
     for (const p of entry.payments) {
       if (p.method === 'CHEQUE' && p.cheque?.status !== 'APPROVED') continue
       branchExp += p.amount
     }
-
     for (const a of entry.advanceSalaries) {
       if (a.type === 'CASH') branchExp += a.amount || 0
     }
@@ -58,60 +48,46 @@ export async function GET(req: NextRequest) {
     totalSales += branchSale
     totalExpenses += branchExp
 
-    return {
-      branch: entry.branch.name,
-      sales: branchSale,
-      expenses: branchExp,
-      net: branchSale - branchExp
-    }
+    return { branch: entry.branch.name, sales: branchSale, expenses: branchExp, net: branchSale - branchExp }
   })
 
-  const summary = {
-    date: today.toISOString().split('T')[0],
-    totalSales,
-    totalExpenses,
-    netBalance: totalSales - totalExpenses,
-    branchSummaries,
-    message: 'Summary generated successfully'
-  }
+  const dateStr = today.toISOString().split('T')[0]
+  const netBalance = totalSales - totalExpenses
 
   logger.info('cron.daily_summary_generated', {
-    date: summary.date,
+    date: dateStr,
     totalSales,
     totalExpenses,
-    netBalance: summary.netBalance,
+    netBalance,
     branchCount: branchSummaries.length,
   })
 
+  // Send in-app daily summary notification to all admins
   try {
     const admins = await prisma.user.findMany({
-      where: { role: 'ADMIN', isActive: true, email: { not: null } },
-      select: { email: true }
+      where: { role: { in: ['ADMIN', 'SUPER_ADMIN'] }, isActive: true },
+      select: { id: true },
     })
-    
+
     if (admins.length > 0) {
-      const emailContent = dailySummaryEmail(
-        summary.date,
-        summary.totalSales,
-        summary.totalExpenses,
-        summary.netBalance,
-        summary.branchSummaries.map(s => ({ branchName: s.branch, sales: s.sales, expenses: s.expenses, net: s.net }))
-      )
-      
-      await Promise.all(
-        admins.map(admin => 
-          sendEmail({
-            to: admin.email!,
-            subject: emailContent.subject,
-            html: emailContent.html
-          })
-        )
-      )
-      logger.info('cron.daily_summary_email_sent', { count: admins.length })
+      const body = branchSummaries.length > 0
+        ? branchSummaries.map(b => `${b.branch}: ৳${b.sales.toLocaleString('en-BD')} sales, ৳${b.expenses.toLocaleString('en-BD')} exp`).join(' • ')
+        : 'No entries submitted today.'
+
+      await prisma.notification.createMany({
+        data: admins.map(a => ({
+          userId: a.id,
+          type: 'DAILY_SUMMARY',
+          title: `Daily summary — ${dateStr}`,
+          body: `Total sales ৳${totalSales.toLocaleString('en-BD')} | Expenses ৳${totalExpenses.toLocaleString('en-BD')} | Net ${netBalance >= 0 ? '+' : ''}৳${netBalance.toLocaleString('en-BD')}. ${body}`,
+          metadata: { date: dateStr, totalSales, totalExpenses, netBalance, branchCount: branchSummaries.length },
+        })),
+      })
+      logger.info('cron.daily_summary_notification_sent', { count: admins.length })
     }
   } catch (error) {
-    logger.error('cron.daily_summary_email_failed', error)
+    logger.error('cron.daily_summary_notification_failed', error)
   }
 
-  return NextResponse.json(summary)
+  return NextResponse.json({ date: dateStr, totalSales, totalExpenses, netBalance, branchSummaries })
 }

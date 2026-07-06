@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 import { logAudit } from '@/lib/audit'
+import { notifyBranchUsers } from '@/lib/notify'
 
 const bodySchema = z.object({
   reason: z.string().trim().min(1, 'Rejection reason is required').max(500),
@@ -27,6 +28,7 @@ export async function POST(
 
     const expense = await prisma.expenseEntry.findUnique({
       where: { id: parseInt(id) },
+      include: { dailyEntry: { select: { branchId: true } } },
     })
     if (!expense) return NextResponse.json({ error: 'Expense entry not found' }, { status: 404 })
     if (expense.approvalStatus !== 'PENDING') {
@@ -48,6 +50,16 @@ export async function POST(
         newValues: { approvalStatus: 'REJECTED', rejectionReason: parsed.data.reason },
         reason: `Expense rejected: ${parsed.data.reason}`,
       })
+    }
+
+    if ((expense as any).dailyEntry?.branchId) {
+      void notifyBranchUsers(
+        (expense as any).dailyEntry.branchId,
+        'EXPENSE_UPDATE',
+        'Expense rejected',
+        `An expense entry of ৳${expense.amount.toLocaleString('en-BD')} was rejected: ${parsed.data.reason}`,
+        { expenseId: expense.id }
+      ).catch(() => {})
     }
 
     return NextResponse.json(updated)

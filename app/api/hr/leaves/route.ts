@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
-import { sendEmail, leaveRequestEmail } from '@/lib/email'
 import { logger } from '@/lib/logger'
 
 const leaveSchema = z.object({
@@ -91,7 +90,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const status = (role === 'BRANCH' || role === 'ADMIN' || role === 'HR_ADMIN') ? 'APPROVED' : 'PENDING'
+    const status = (role === 'ADMIN' || role === 'HR_ADMIN') ? 'APPROVED' : 'PENDING'
 
     const leave = await prisma.leaveRecord.create({
       data: {
@@ -107,17 +106,21 @@ export async function POST(req: NextRequest) {
     void (async () => {
       try {
         const recipients = await prisma.user.findMany({
-          where: { role: { in: ['ADMIN', 'HR_ADMIN'] }, isActive: true, email: { not: null } },
-          select: { email: true }
+          where: { role: { in: ['ADMIN', 'HR_ADMIN'] }, isActive: true },
+          select: { id: true }
         })
-        const tpl = leaveRequestEmail(
-          leave.employee.name,
-          leave.type,
-          leave.startDate.toISOString().split('T')[0],
-          leave.endDate.toISOString().split('T')[0],
-          leave.reason ?? null
-        )
-        await Promise.all(recipients.map(r => sendEmail({ to: r.email!, ...tpl })))
+        const startStr = leave.startDate.toISOString().split('T')[0]
+        const endStr = leave.endDate.toISOString().split('T')[0]
+
+        await prisma.notification.createMany({
+          data: recipients.map(r => ({
+            userId: r.id,
+            type: 'LEAVE_REQUEST',
+            title: `Leave request: ${leave.employee.name}`,
+            body: `${leave.type} leave from ${startStr} to ${endStr}${leave.reason ? ` — ${leave.reason}` : ''}`,
+            metadata: { leaveId: leave.id, employeeName: leave.employee.name },
+          }))
+        })
       } catch {}
     })()
 

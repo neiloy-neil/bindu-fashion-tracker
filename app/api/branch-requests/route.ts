@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { branchRequestSchema } from '@/lib/schemas'
 import { logger } from '@/lib/logger'
-import { sendEmail, supportTicketEmail } from '@/lib/email'
+import { notifyByRole, notifyUsers } from '@/lib/notify'
 
 export async function GET(req: NextRequest) {
   const userRole = req.headers.get('x-user-role')
@@ -22,7 +22,8 @@ export async function GET(req: NextRequest) {
       where: whereClause,
       include: {
         branch: true,
-        requestedBy: true
+        requestedBy: { select: { id: true, username: true } },
+        assignedTo: { select: { id: true, username: true } },
       },
       orderBy: { createdAt: 'desc' }
     })
@@ -76,13 +77,24 @@ export async function POST(req: NextRequest) {
       priority: newRequest.priority,
     })
 
-    // Notify all admins by email (fire-and-forget)
+    // Notify admins in-app (fire-and-forget)
     void (async () => {
       try {
         const branch = await prisma.branch.findUnique({ where: { id: newRequest.branchId } })
-        const admins = await prisma.user.findMany({ where: { role: 'ADMIN', isActive: true, email: { not: null } }, select: { email: true } })
-        const tpl = supportTicketEmail(branch?.name ?? `Branch ${newRequest.branchId}`, newRequest.type, newRequest.description)
-        await Promise.all(admins.map(a => sendEmail({ to: a.email!, ...tpl })))
+        const branchName = branch?.name ?? `Branch ${newRequest.branchId}`
+        const admins = await prisma.user.findMany({
+          where: { role: 'ADMIN', isActive: true },
+          select: { id: true },
+        })
+        await prisma.notification.createMany({
+          data: admins.map(a => ({
+            userId: a.id,
+            type: 'BRANCH_REQUEST',
+            title: `Support request: ${branchName}`,
+            body: `[${newRequest.type}] ${newRequest.description.slice(0, 120)}`,
+            metadata: { requestId: newRequest.id, branchId: newRequest.branchId },
+          })),
+        })
       } catch {}
     })()
 
@@ -107,9 +119,9 @@ export async function PATCH(req: NextRequest) {
 
     const updated = await prisma.branchRequest.update({
       where: { id: requestId },
-      data: { 
-        status, 
-        adminComment, 
+      data: {
+        status,
+        adminComment,
         priority,
         assignedToId: assignedToId ? parseInt(String(assignedToId)) : undefined
       }
@@ -120,6 +132,18 @@ export async function PATCH(req: NextRequest) {
       status: updated.status,
       priority: updated.priority,
     })
+
+    if (status && updated.requestedById) {
+      void notifyUsers({
+        userIds: [updated.requestedById],
+        type: 'BRANCH_REQUEST_UPDATE',
+        title: `Support request ${status.toLowerCase()}`,
+        body: adminComment
+          ? `Your request has been updated to ${status.toLowerCase()}. Note: ${adminComment}`
+          : `Your support request has been updated to ${status.toLowerCase()}.`,
+        metadata: { requestId: updated.id },
+      }).catch(() => {})
+    }
 
     return NextResponse.json(updated)
   } catch (error: any) {

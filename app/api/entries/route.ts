@@ -5,7 +5,6 @@ import { dateOnlyToUtc, newEntryPayloadSchema } from '@/lib/new-entry'
 import { logAudit } from '@/lib/audit'
 import { logger } from '@/lib/logger'
 import { signEntryAttachments } from '@/lib/storage'
-import { sendEmail, partyPaymentPendingEmail } from '@/lib/email'
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
@@ -242,15 +241,20 @@ export async function POST(req: NextRequest) {
       void (async () => {
         try {
           const [admins, parties] = await Promise.all([
-            prisma.user.findMany({ where: { role: 'ADMIN', isActive: true, email: { not: null } }, select: { email: true } }),
+            prisma.user.findMany({ where: { role: 'ADMIN', isActive: true }, select: { id: true } }),
             prisma.party.findMany({ where: { id: { in: pendingPayments.map(p => p.partyId) } }, select: { id: true, name: true } }),
           ])
           const partyMap = new Map(parties.map(p => [p.id, p.name]))
-          await Promise.all(
-            pendingPayments.flatMap(p =>
-              admins.map(a => sendEmail({ to: a.email!, ...partyPaymentPendingEmail(entry.branch.name, partyMap.get(p.partyId) ?? `Party #${p.partyId}`, p.amount, p.method) }))
-            )
+          const notifications = pendingPayments.flatMap(p =>
+            admins.map(a => ({
+              userId: a.id,
+              type: 'PAYMENT_PENDING',
+              title: `Party payment pending approval`,
+              body: `৳${p.amount.toLocaleString('en-BD')} to ${partyMap.get(p.partyId) ?? `Party #${p.partyId}`} via ${p.method} from ${entry.branch.name}`,
+              metadata: { branchId: entry.branchId, partyId: p.partyId, amount: p.amount },
+            }))
           )
+          if (notifications.length > 0) await prisma.notification.createMany({ data: notifications })
         } catch {}
       })()
     }

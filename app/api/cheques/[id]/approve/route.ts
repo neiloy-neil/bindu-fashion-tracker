@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { logAudit } from '@/lib/audit'
 import { logger } from '@/lib/logger'
+import { notifyBranchUsers } from '@/lib/notify'
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const userRole = req.headers.get('x-user-role')
@@ -22,7 +23,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       // Fetch cheque and ensure it is PENDING
       const cheque = await tx.cheque.findUnique({
         where: { id },
-        include: { payment: true }
+        include: { payment: { include: { dailyEntry: { select: { branchId: true } } } } }
       })
 
       if (!cheque) throw new Error('Cheque not found')
@@ -46,7 +47,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         }
       })
 
-      return updatedCheque
+      return { updatedCheque, branchId: cheque.payment.dailyEntry?.branchId ?? null }
     })
 
     await logAudit({
@@ -54,11 +55,21 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       action: 'UPDATE',
       entityType: 'Cheque',
       entityId: id,
-      newValues: result,
+      newValues: result.updatedCheque,
       reason: 'Cheque Approved and Cleared'
     })
 
-    return NextResponse.json(result)
+    if (result.branchId) {
+      void notifyBranchUsers(
+        result.branchId,
+        'CHEQUE_UPDATE',
+        'Cheque approved',
+        'A cheque payment has been approved and cleared.',
+        { chequeId: id }
+      ).catch(() => {})
+    }
+
+    return NextResponse.json(result.updatedCheque)
   } catch (error) {
     logger.error('Failed to approve cheque:', error)
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Internal Server Error' }, { status: 500 })

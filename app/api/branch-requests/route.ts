@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
         const branch = await prisma.branch.findUnique({ where: { id: newRequest.branchId } })
         const branchName = branch?.name ?? `Branch ${newRequest.branchId}`
         const admins = await prisma.user.findMany({
-          where: { role: 'ADMIN', isActive: true },
+          where: { role: { in: ['ADMIN', 'SUPER_ADMIN'] }, isActive: true },
           select: { id: true },
         })
         await prisma.notification.createMany({
@@ -110,7 +110,7 @@ export async function POST(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   const userRole = req.headers.get('x-user-role')
   
-  if (userRole !== 'ADMIN') {
+  if (userRole !== 'ADMIN' && userRole !== 'SUPER_ADMIN') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
   }
 

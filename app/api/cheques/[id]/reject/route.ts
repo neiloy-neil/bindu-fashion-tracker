@@ -54,13 +54,33 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     })
 
     if (result.branchId) {
+      const branchId = result.branchId
       void notifyBranchUsers(
-        result.branchId,
+        branchId,
         'CHEQUE_UPDATE',
         'Cheque rejected',
         'A cheque payment has been rejected / bounced.',
         { chequeId: id }
       ).catch(() => {})
+      void (async () => {
+        try {
+          const areaManagers = await prisma.user.findMany({
+            where: { role: 'AREA_MANAGER', isActive: true, managedBranches: { some: { id: branchId } } },
+            select: { id: true },
+          })
+          if (areaManagers.length > 0) {
+            await prisma.notification.createMany({
+              data: areaManagers.map(u => ({
+                userId: u.id,
+                type: 'CHEQUE_UPDATE',
+                title: 'Cheque rejected',
+                body: 'A cheque payment was rejected / bounced in a managed branch.',
+                metadata: { chequeId: id, branchId },
+              })),
+            })
+          }
+        } catch {}
+      })()
     }
 
     return NextResponse.json(result.updatedCheque)

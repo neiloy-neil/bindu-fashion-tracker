@@ -276,6 +276,7 @@ export default function EmployeesPage() {
             Employee Directory
           </h3>
         </div>
+        <div className="overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow className="border-[var(--border)] hover:bg-transparent">
@@ -358,6 +359,7 @@ export default function EmployeesPage() {
             )}
           </TableBody>
         </Table>
+        </div>
       </div>
 
       <EmployeeModal

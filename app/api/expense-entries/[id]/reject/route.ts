@@ -53,13 +53,33 @@ export async function POST(
     }
 
     if ((expense as any).dailyEntry?.branchId) {
+      const branchId = (expense as any).dailyEntry.branchId
       void notifyBranchUsers(
-        (expense as any).dailyEntry.branchId,
+        branchId,
         'EXPENSE_UPDATE',
         'Expense rejected',
         `An expense entry of ৳${expense.amount.toLocaleString('en-BD')} was rejected: ${parsed.data.reason}`,
         { expenseId: expense.id }
       ).catch(() => {})
+      void (async () => {
+        try {
+          const areaManagers = await prisma.user.findMany({
+            where: { role: 'AREA_MANAGER', isActive: true, managedBranches: { some: { id: branchId } } },
+            select: { id: true },
+          })
+          if (areaManagers.length > 0) {
+            await prisma.notification.createMany({
+              data: areaManagers.map(u => ({
+                userId: u.id,
+                type: 'EXPENSE_UPDATE',
+                title: 'Expense rejected',
+                body: `An expense of ৳${expense.amount.toLocaleString('en-BD')} was rejected in a managed branch: ${parsed.data.reason}`,
+                metadata: { expenseId: expense.id, branchId },
+              })),
+            })
+          }
+        } catch {}
+      })()
     }
 
     return NextResponse.json(updated)

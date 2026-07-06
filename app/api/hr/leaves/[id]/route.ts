@@ -14,7 +14,7 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
   const userId = req.headers.get('x-user-id')
   const userBranchId = req.headers.get('x-user-branch-id')
 
-  if (!role || !['ADMIN', 'HR_ADMIN', 'BRANCH'].includes(role)) {
+  if (!role || !['ADMIN', 'SUPER_ADMIN', 'HR_ADMIN', 'BRANCH'].includes(role)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 

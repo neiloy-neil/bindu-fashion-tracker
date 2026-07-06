@@ -13,7 +13,7 @@ const leaveSchema = z.object({
 
 export async function GET(req: NextRequest) {
   const role = req.headers.get('x-user-role')
-  if (!role || (role !== 'ADMIN' && role !== 'HR_ADMIN' && role !== 'AUDITOR' && role !== 'BRANCH')) {
+  if (!role || (role !== 'ADMIN' && role !== 'SUPER_ADMIN' && role !== 'HR_ADMIN' && role !== 'AUDITOR' && role !== 'BRANCH')) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
@@ -70,7 +70,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const role = req.headers.get('x-user-role')
   const userBranchId = req.headers.get('x-user-branch-id')
-  if (!role || !['ADMIN', 'HR_ADMIN', 'BRANCH'].includes(role)) {
+  if (!role || !['ADMIN', 'SUPER_ADMIN', 'HR_ADMIN', 'BRANCH'].includes(role)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const status = (role === 'ADMIN' || role === 'HR_ADMIN') ? 'APPROVED' : 'PENDING'
+    const status = (role === 'ADMIN' || role === 'SUPER_ADMIN' || role === 'HR_ADMIN') ? 'APPROVED' : 'PENDING'
 
     const leave = await prisma.leaveRecord.create({
       data: {
@@ -106,7 +106,7 @@ export async function POST(req: NextRequest) {
     void (async () => {
       try {
         const recipients = await prisma.user.findMany({
-          where: { role: { in: ['ADMIN', 'HR_ADMIN'] }, isActive: true },
+          where: { role: { in: ['ADMIN', 'SUPER_ADMIN', 'HR_ADMIN'] }, isActive: true },
           select: { id: true }
         })
         const startStr = leave.startDate.toISOString().split('T')[0]

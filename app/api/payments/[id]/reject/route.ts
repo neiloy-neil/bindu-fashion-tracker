@@ -6,7 +6,7 @@ import { notifyBranchUsers } from '@/lib/notify'
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const userRole = req.headers.get('x-user-role')
   const userIdStr = req.headers.get('x-user-id')
-  if (userRole !== 'ADMIN' || !userIdStr) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (!['ADMIN', 'SUPER_ADMIN'].includes(userRole ?? '') || !userIdStr) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const userId = parseInt(userIdStr, 10)
   const { id } = await params

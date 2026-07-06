@@ -31,6 +31,11 @@ model Branch {
   employees      Employee[]
   transfersOut   EmployeeTransfer[] @relation("BranchTransfersOut")
   transfersIn    EmployeeTransfer[] @relation("BranchTransfersIn")
+
+  wholesaleBuyers   WholesaleBuyer[]
+  wholesaleChallans WholesaleChallan[]
+  wholesalePayments WholesalePayment[]
+  wholesaleReturns  WholesaleReturn[]
 }
 
 model User {
@@ -560,4 +565,139 @@ model Notification {
 
   @@index([userId, isRead])
   @@index([userId, createdAt])
+}
+
+// ─── Wholesale ────────────────────────────────────────────────────────────────
+
+model WholesaleBuyer {
+  id            Int      @id @default(autoincrement())
+  name          String
+  contactPerson String?
+  contactNumber String?
+  secondaryNumber String?
+  email         String?
+  address       String?  @db.Text
+  creditLimit   Float    @default(0) // 0 = no limit enforced
+  balance       Float    @default(0) // amount buyer currently owes Bindu
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+
+  // null = shared across branches; set = scoped to one branch
+  branchId Int?
+  branch   Branch? @relation(fields: [branchId], references: [id])
+
+  challans WholesaleChallan[]
+  payments WholesalePayment[]
+  bankInfo WholesaleBuyerBankInfo[]
+
+  @@index([branchId])
+}
+
+model WholesaleBuyerBankInfo {
+  id          Int      @id @default(autoincrement())
+  buyerId     Int
+  type        String   @default("BANK") // BANK | BKASH | NAGAD | ROCKET
+  label       String?
+  accountNo   String
+  accountName String?
+  bankName    String?
+  branchName  String?
+  routingNo   String?
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  buyer    WholesaleBuyer   @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  payments WholesalePayment[]
+
+  @@index([buyerId])
+}
+
+model WholesaleChallan {
+  id              Int      @id @default(autoincrement())
+  challanNumber   String   // e.g. "WS-2026-001"
+  buyerId         Int
+  branchId        Int
+  date            DateTime
+  totalAmount     Float
+  discount        Float    @default(0)
+  netAmount       Float    // totalAmount - discount
+  paidAtDelivery  Float    @default(0) // partial cash collected on delivery
+  remainingDue    Float    // netAmount - paidAtDelivery
+  deliveryPerson  String?
+  notes           String?  @db.Text
+  attachmentUrl   String?
+  status          String   @default("PENDING") // PENDING | PARTIALLY_PAID | PAID | CANCELLED
+  createdById     Int
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  buyer    WholesaleBuyer     @relation(fields: [buyerId], references: [id])
+  branch   Branch             @relation(fields: [branchId], references: [id])
+  items    WholesaleChallanItem[]
+  payments WholesalePayment[]
+  returns  WholesaleReturn[]
+
+  @@unique([challanNumber, branchId])
+  @@index([buyerId])
+  @@index([branchId])
+  @@index([status])
+  @@index([date])
+}
+
+model WholesaleChallanItem {
+  id          Int    @id @default(autoincrement())
+  challanId   Int
+  description String // product/category name (free text; amount_only tracking)
+  quantity    Float? // optional — may be omitted if quantity not tracked
+  unitPrice   Float? // optional
+  amount      Float  // final line amount (required)
+  note        String?
+
+  challan WholesaleChallan @relation(fields: [challanId], references: [id], onDelete: Cascade)
+
+  @@index([challanId])
+}
+
+model WholesalePayment {
+  id             Int      @id @default(autoincrement())
+  buyerId        Int
+  challanId      Int?     // null = general account payment not tied to a single challan
+  branchId       Int
+  method         String   // CASH | CHEQUE | BKASH | NAGAD | BANK_TRANSFER | UDHAR
+  amount         Float
+  transactionRef String?
+  note           String?
+  attachmentUrl  String?
+  collectedById  Int
+  collectedAt    DateTime @default(now())
+  createdAt      DateTime @default(now())
+
+  buyerBankInfoId Int?
+  buyerBankInfo   WholesaleBuyerBankInfo? @relation(fields: [buyerBankInfoId], references: [id])
+
+  buyer   WholesaleBuyer    @relation(fields: [buyerId], references: [id])
+  challan WholesaleChallan? @relation(fields: [challanId], references: [id])
+  branch  Branch            @relation(fields: [branchId], references: [id])
+
+  @@index([buyerId])
+  @@index([challanId])
+  @@index([branchId])
+}
+
+model WholesaleReturn {
+  id          Int      @id @default(autoincrement())
+  challanId   Int
+  branchId    Int
+  date        DateTime
+  amount      Float
+  reason      String?  @db.Text
+  attachmentUrl String?
+  processedById Int
+  createdAt   DateTime @default(now())
+
+  challan WholesaleChallan @relation(fields: [challanId], references: [id])
+  branch  Branch           @relation(fields: [branchId], references: [id])
+
+  @@index([challanId])
+  @@index([branchId])
 }

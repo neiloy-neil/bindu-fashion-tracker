@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 
 type NotifyUsersArgs = {
   userIds: number[]
@@ -11,7 +12,7 @@ type NotifyUsersArgs = {
 export async function notifyUsers({ userIds, type, title, body, metadata }: NotifyUsersArgs) {
   if (userIds.length === 0) return
   await prisma.notification.createMany({
-    data: userIds.map(userId => ({ userId, type, title, body, metadata: metadata ?? null })),
+    data: userIds.map(userId => ({ userId, type, title, body, metadata: (metadata ?? Prisma.DbNull) as Prisma.InputJsonValue })),
   })
 }
 

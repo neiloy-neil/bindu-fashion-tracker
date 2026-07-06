@@ -98,7 +98,9 @@ export async function proxy(req: NextRequest) {
         pathname.startsWith('/branches') ||
         pathname.startsWith('/import') ||
         pathname.startsWith('/parties') ||
-        pathname.startsWith('/categories')
+        pathname.startsWith('/categories') ||
+        pathname.startsWith('/wholesale') ||
+        pathname.startsWith('/api/wholesale')
       ) {
         if (pathname.startsWith('/api/')) {
           return new NextResponse(

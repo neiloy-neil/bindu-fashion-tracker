@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { PlusCircle, Pencil, ToggleLeft, ToggleRight } from 'lucide-react'
+import { useSession } from 'next-auth/react'
+import { PlusCircle, Pencil, ToggleLeft, ToggleRight, KeyRound } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
@@ -26,6 +27,9 @@ type Branch = { id: number; name: string }
 const ROLES = ['BRANCH', 'AREA_MANAGER', 'AUDITOR', 'HR_ADMIN', 'ADMIN', 'SUPER_ADMIN', 'ACCOUNTS'] as const
 
 export default function UsersPage() {
+  const { data: session } = useSession()
+  const currentRole = (session?.user as { role?: string })?.role
+  const canResetPassword = currentRole === 'ADMIN' || currentRole === 'SUPER_ADMIN'
   const [users, setUsers] = useState<User[]>([])
   const [branches, setBranches] = useState<Branch[]>([])
   const [employees, setEmployees] = useState<Employee[]>([])
@@ -135,6 +139,23 @@ export default function UsersPage() {
       toast.error(e.message)
     } finally {
       setEditSaving(false)
+    }
+  }
+
+  const handleResetPassword = async (u: User) => {
+    const newPassword = window.prompt(`Reset password for "${u.username}"\n\nEnter new password (min 6 chars):`)
+    if (!newPassword) return
+    if (newPassword.trim().length < 6) { toast.error('Password must be at least 6 characters'); return }
+    const res = await fetch(`/api/admin/users/${u.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: newPassword.trim() }),
+    })
+    const data = await res.json()
+    if (res.ok) {
+      toast.success(`Password reset for ${u.username}`)
+    } else {
+      toast.error(data.error || 'Failed to reset password')
     }
   }
 
@@ -272,9 +293,16 @@ export default function UsersPage() {
                       </button>
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button variant="outline" size="sm" onClick={() => openEdit(u)} className="text-xs px-3 h-8 flex items-center gap-1.5 ml-auto">
-                        <Pencil size={13} /> Edit
-                      </Button>
+                      <div className="flex items-center justify-end gap-2">
+                        {canResetPassword && (
+                          <Button variant="ghost" size="sm" onClick={() => handleResetPassword(u)} title="Reset password" className="text-xs px-2 h-8 text-[var(--text-muted)] hover:text-[var(--accent)]">
+                            <KeyRound size={13} />
+                          </Button>
+                        )}
+                        <Button variant="outline" size="sm" onClick={() => openEdit(u)} className="text-xs px-3 h-8 flex items-center gap-1.5">
+                          <Pencil size={13} /> Edit
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

@@ -427,6 +427,16 @@ function Dashboard() {
     fetcher
   )
 
+  const wholesaleUrl = (() => {
+    if (!['ADMIN', 'SUPER_ADMIN', 'ACCOUNTS', 'AUDITOR', 'AREA_MANAGER'].includes(userRole)) return null
+    let u = '/api/dashboard/wholesale?'
+    if (viewMode === 'custom') u += `startDate=${startDate}&endDate=${endDate}`
+    else if (viewMode === 'daily') u += `startDate=${startDate}&endDate=${startDate}`
+    else u += `month=${month}&year=${year}`
+    return u
+  })()
+  const { data: wholesaleData } = useSWR(wholesaleUrl, fetcher, { keepPreviousData: true, revalidateOnFocus: false })
+
   if (!session) {
     return (
       <div className="flex items-center justify-center h-64 gap-3">
@@ -588,6 +598,63 @@ function Dashboard() {
                   accent="var(--warning)"
                 />
               </div>
+
+              {/* Wholesale summary */}
+              {wholesaleData && (
+                <div className="rounded-xl bg-[var(--surface)] p-5" style={{boxShadow:'0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04)'}}>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-semibold text-[var(--text-primary)]">Wholesale</h3>
+                    <Link href="/wholesale/challans" className="text-xs font-medium text-[var(--accent)] hover:underline">
+                      View challans →
+                    </Link>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                    <div className="rounded-lg border border-[var(--border)] p-3 space-y-1">
+                      <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wide">Challans</p>
+                      <p className="text-xl font-bold tabular-nums text-[var(--text-primary)]">{wholesaleData.totalChallans}</p>
+                      <p className="text-[10px] text-[var(--text-muted)]">This period</p>
+                    </div>
+                    <div className="rounded-lg border border-[var(--border)] p-3 space-y-1" style={{borderTopColor:'var(--success)', borderTopWidth:3}}>
+                      <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wide">Invoiced</p>
+                      <p className="text-xl font-bold tabular-nums text-[var(--success)]">৳{formatCurrency(wholesaleData.totalNetAmount)}</p>
+                      <p className="text-[10px] text-[var(--text-muted)]">Net amount</p>
+                    </div>
+                    <div className="rounded-lg border border-[var(--border)] p-3 space-y-1" style={{borderTopColor:'var(--info)', borderTopWidth:3}}>
+                      <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wide">Collected</p>
+                      <p className="text-xl font-bold tabular-nums text-[var(--info)]">৳{formatCurrency(wholesaleData.totalCollected)}</p>
+                      <p className="text-[10px] text-[var(--text-muted)]">Payments received</p>
+                    </div>
+                    <div className="rounded-lg border border-[var(--border)] p-3 space-y-1" style={{borderTopColor: wholesaleData.totalOutstanding > 0 ? 'var(--warning)' : 'var(--success)', borderTopWidth:3}}>
+                      <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wide">Outstanding</p>
+                      <p className={`text-xl font-bold tabular-nums ${wholesaleData.totalOutstanding > 0 ? 'text-[var(--warning)]' : 'text-[var(--success)]'}`}>
+                        ৳{formatCurrency(wholesaleData.totalOutstanding)}
+                      </p>
+                      <p className="text-[10px] text-[var(--text-muted)]">All buyers total</p>
+                    </div>
+                    <div className="rounded-lg border border-[var(--border)] p-3 space-y-1">
+                      <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wide">Buyers</p>
+                      <p className="text-xl font-bold tabular-nums text-[var(--text-primary)]">{wholesaleData.activeBuyers}</p>
+                      <p className="text-[10px] text-[var(--text-muted)]">Active</p>
+                    </div>
+                    <div className="rounded-lg border border-[var(--border)] p-3 space-y-1" style={{borderTopColor: wholesaleData.pendingChallans > 0 ? 'var(--danger)' : 'var(--success)', borderTopWidth:3}}>
+                      <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wide">Unpaid</p>
+                      <p className={`text-xl font-bold tabular-nums ${wholesaleData.pendingChallans > 0 ? 'text-[var(--danger)]' : 'text-[var(--success)]'}`}>
+                        {wholesaleData.pendingChallans}
+                      </p>
+                      <p className="text-[10px] text-[var(--text-muted)]">Open challans</p>
+                    </div>
+                  </div>
+                  {Object.keys(wholesaleData.methodBreakdown || {}).length > 0 && (
+                    <div className="mt-3 pt-3 border-t border-[var(--border)] flex flex-wrap gap-2">
+                      {Object.entries(wholesaleData.methodBreakdown as Record<string,number>).map(([method, amount]) => (
+                        <span key={method} className="text-[10px] font-semibold px-2 py-1 rounded-full bg-[var(--surface-raised)] text-[var(--text-secondary)]">
+                          {method.replace('_',' ')}: ৳{formatCurrency(amount)}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Charts row */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">

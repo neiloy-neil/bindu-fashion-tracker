@@ -20,6 +20,28 @@ export async function GET(req: NextRequest) {
   }
 }
 
+// DELETE /api/notifications — delete all notifications (or specific ids)
+export async function DELETE(req: NextRequest) {
+  const userId = parseInt(req.headers.get('x-user-id') || '0')
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  try {
+    const body = await req.json().catch(() => ({}))
+    const ids: number[] | undefined = body.ids
+
+    await prisma.notification.deleteMany({
+      where: {
+        userId,
+        ...(ids && ids.length > 0 ? { id: { in: ids } } : {}),
+      },
+    })
+
+    return NextResponse.json({ success: true })
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+}
+
 // PATCH /api/notifications — mark all as read (or specific ids)
 export async function PATCH(req: NextRequest) {
   const userId = parseInt(req.headers.get('x-user-id') || '0')

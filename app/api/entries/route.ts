@@ -334,6 +334,31 @@ export async function POST(req: NextRequest) {
       })()
     }
 
+    // Notify AREA_MANAGERs whose managed branches include this entry's branch
+    void (async () => {
+      try {
+        const areaManagers = await prisma.user.findMany({
+          where: {
+            role: 'AREA_MANAGER',
+            isActive: true,
+            managedBranches: { some: { id: finalBranchId } },
+          },
+          select: { id: true },
+        })
+        if (areaManagers.length > 0) {
+          await prisma.notification.createMany({
+            data: areaManagers.map(u => ({
+              userId: u.id,
+              type: 'ENTRY_SUBMITTED',
+              title: `Entry submitted — ${entry.branch.name}`,
+              body: `A daily entry was submitted for ${entry.branch.name} on ${new Date(entry.date).toLocaleDateString('en-BD')}.`,
+              metadata: { entryId: entry.id, branchId: finalBranchId },
+            })),
+          })
+        }
+      } catch { /* non-critical */ }
+    })()
+
     return NextResponse.json(entry, { status: 201 })
   } catch (error) {
     logger.error('entry.create_failed', error, {

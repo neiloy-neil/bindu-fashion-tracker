@@ -234,6 +234,7 @@ export default function UsersPage() {
         {/* User Table */}
         <div className="md:col-span-2">
           <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] overflow-hidden">
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader className="bg-[var(--surface)] border-b border-[var(--border)]">
                 <TableRow className="border-none hover:bg-transparent">
@@ -279,6 +280,7 @@ export default function UsersPage() {
                 ))}
               </TableBody>
             </Table>
+            </div>
           </div>
         </div>
       </div>

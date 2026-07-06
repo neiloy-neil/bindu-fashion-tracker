@@ -105,6 +105,7 @@ export default function LeaveRequestsPage() {
               Requests Directory
             </h3>
           </div>
+          <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow className="border-[var(--border)] hover:bg-transparent">
@@ -181,6 +182,7 @@ export default function LeaveRequestsPage() {
               )}
             </TableBody>
           </Table>
+          </div>
         </div>
       </div>
 

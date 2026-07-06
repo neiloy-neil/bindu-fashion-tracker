@@ -29,6 +29,7 @@ const TYPE_CONFIG: Record<string, { icon: string; href?: string }> = {
   PAYMENT_PENDING:     { icon: '💰', href: '/admin/cheques' },
   PAYMENT_UPDATE:      { icon: '💰', href: '/entries' },
   DAILY_SUMMARY:       { icon: '📊', href: '/' },
+  ENTRY_SUBMITTED:     { icon: '📋', href: '/entries' },
 }
 
 export function NotificationBell() {
@@ -106,6 +107,12 @@ export function NotificationBell() {
     })
   }
 
+  const handleClearAll = async () => {
+    setNotifications([])
+    setUnreadCount(0)
+    await fetch('/api/notifications', { method: 'DELETE' }).catch(() => {})
+  }
+
   return (
     <div className="relative" ref={panelRef}>
       {/* Bell button */}
@@ -129,9 +136,16 @@ export function NotificationBell() {
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border)] sticky top-0 bg-[var(--surface)]">
             <h3 className="text-sm font-semibold text-[var(--text-primary)]">Notifications</h3>
-            <button type="button" onClick={() => setOpen(false)} className="text-[var(--text-muted)] hover:text-[var(--text-primary)]">
-              <X size={15} />
-            </button>
+            <div className="flex items-center gap-3">
+              {notifications.length > 0 && (
+                <button type="button" onClick={handleClearAll} className="text-[11px] text-[var(--text-muted)] hover:text-[var(--danger)] transition-colors">
+                  Clear all
+                </button>
+              )}
+              <button type="button" onClick={() => setOpen(false)} className="text-[var(--text-muted)] hover:text-[var(--text-primary)]">
+                <X size={15} />
+              </button>
+            </div>
           </div>
 
           {/* List */}

@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
       }
       whereClause.entry = { branchId: parseInt(userBranchId, 10) }
       whereClause.requestedById = parseInt(userId, 10)
-    } else if (userRole !== 'ADMIN') {
+    } else if (userRole !== 'ADMIN' && userRole !== 'SUPER_ADMIN') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
 
     // Notify admins of new edit request (fire-and-forget)
     void notifyByRole(
-      ['ADMIN'],
+      ['ADMIN', 'SUPER_ADMIN'],
       'EDIT_REQUEST',
       'Edit request submitted',
       `A branch has requested an edit to entry #${entryId}${reason ? `: ${reason}` : ''}.`,
@@ -106,7 +106,7 @@ export async function POST(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   const userRole = req.headers.get('x-user-role')
   
-  if (userRole !== 'ADMIN') {
+  if (userRole !== 'ADMIN' && userRole !== 'SUPER_ADMIN') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
   }
 

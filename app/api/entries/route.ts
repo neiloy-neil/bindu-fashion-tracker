@@ -241,7 +241,7 @@ export async function POST(req: NextRequest) {
       void (async () => {
         try {
           const [admins, parties] = await Promise.all([
-            prisma.user.findMany({ where: { role: 'ADMIN', isActive: true }, select: { id: true } }),
+            prisma.user.findMany({ where: { role: { in: ['ADMIN', 'SUPER_ADMIN'] }, isActive: true }, select: { id: true } }),
             prisma.party.findMany({ where: { id: { in: pendingPayments.map(p => p.partyId) } }, select: { id: true, name: true } }),
           ])
           const partyMap = new Map(parties.map(p => [p.id, p.name]))

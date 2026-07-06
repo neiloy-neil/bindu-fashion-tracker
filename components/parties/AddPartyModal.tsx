@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { X, Building2, Phone, MapPin, Loader2, Calendar } from 'lucide-react'
+import { dhakaDateString } from '@/lib/new-entry'
 
 interface AddPartyModalProps {
   isOpen: boolean
@@ -19,7 +20,7 @@ export function AddPartyModal({ isOpen, onClose, onSuccess }: AddPartyModalProps
     email: '',
     address: '',
     openingDueAmount: '',
-    openingDueDate: new Date().toISOString().split('T')[0],
+    openingDueDate: dhakaDateString(),
     hasPaymentMethod: false,
     methodType: 'BKASH',
     methodLabel: '',
@@ -70,7 +71,7 @@ export function AddPartyModal({ isOpen, onClose, onSuccess }: AddPartyModalProps
         email: '',
         address: '',
         openingDueAmount: '',
-        openingDueDate: new Date().toISOString().split('T')[0],
+        openingDueDate: dhakaDateString(),
         hasPaymentMethod: false,
         methodType: 'BKASH',
         methodLabel: '',

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import toast from 'react-hot-toast'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { dhakaDateString } from '@/lib/new-entry'
 
 async function uploadReceipt(file: File) {
   const formData = new FormData()
@@ -26,7 +27,7 @@ export function PurchaseModal({ isOpen, onClose, partyId, onSuccess }: { isOpen:
   const [loading, setLoading] = useState(false)
   const [file, setFile] = useState<File | null>(null)
   const [formData, setFormData] = useState({
-    date: new Date().toISOString().split('T')[0],
+    date: dhakaDateString(),
     amount: '',
     invoiceNumber: '',
     note: '',
@@ -71,7 +72,7 @@ export function PurchaseModal({ isOpen, onClose, partyId, onSuccess }: { isOpen:
       setTimeout(() => {
         onSuccess()
         onClose()
-        setFormData({ date: new Date().toISOString().split('T')[0], amount: '', invoiceNumber: '', note: '', isOpeningDue: false })
+        setFormData({ date: dhakaDateString(), amount: '', invoiceNumber: '', note: '', isOpeningDue: false })
         setFile(null)
       }, 300)
     } catch (err) {

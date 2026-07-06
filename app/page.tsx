@@ -3,6 +3,7 @@
 import { useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import useSWR from 'swr'
+import { dhakaDateString } from '@/lib/new-entry'
 import Link from 'next/link'
 import { formatCurrency, cn } from '@/lib/utils'
 import { SummaryStats, Branch } from '@/lib/types'
@@ -410,7 +411,7 @@ function Dashboard() {
   const [year, setYear] = useState(initialYear)
   const [branchId, setBranchId] = useState(initialBranchId)
 
-  const todayStr = now.toISOString().split('T')[0]
+  const todayStr = dhakaDateString(now)
   const [startDate, setStartDate] = useState(todayStr)
   const [endDate, setEndDate] = useState(todayStr)
   const [viewMode, setViewMode] = useState<'daily' | 'month' | 'custom'>('daily')

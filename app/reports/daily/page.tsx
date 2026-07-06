@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { Branch } from '@/lib/types'
+import { dhakaDateString } from '@/lib/new-entry'
 import { toPng, toJpeg } from 'html-to-image'
 import toast from 'react-hot-toast'
 import { Download, Share2 } from 'lucide-react'
@@ -20,7 +21,7 @@ import {
 export default function DailyReportPage() {
   const [branches, setBranches] = useState<Branch[]>([])
   const [selectedBranchId, setSelectedBranchId] = useState('')
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
+  const [selectedDate, setSelectedDate] = useState(dhakaDateString())
   const [entryData, setEntryData] = useState<any>(null)
   const [loading, setLoading] = useState(false)
   const [hasSearched, setHasSearched] = useState(false)

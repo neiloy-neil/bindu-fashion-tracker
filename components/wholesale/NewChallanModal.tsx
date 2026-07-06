@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { X, Plus, Trash2, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { formatCurrency } from '@/lib/utils'
+import { dhakaDateString } from '@/lib/new-entry'
 import toast from 'react-hot-toast'
 
 type Buyer = { id: number; name: string; contactNumber: string | null; branchId: number | null }
@@ -32,7 +33,7 @@ export default function NewChallanModal({ onClose, onCreated }: Props) {
   const [role, setRole] = useState<string | null>(null)
   const [userBranchId, setUserBranchId] = useState<string | null>(null)
 
-  const today = new Date().toISOString().split('T')[0]
+  const today = dhakaDateString()
   const [form, setForm] = useState({
     buyerId: '', branchId: '', date: today,
     discount: '0', paidAtDelivery: '0', deliveryPerson: '', notes: '', attachmentUrl: '',

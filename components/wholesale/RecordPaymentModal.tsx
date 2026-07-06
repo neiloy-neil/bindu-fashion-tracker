@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { X, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { formatCurrency } from '@/lib/utils'
+import { dhakaDateString } from '@/lib/new-entry'
 import toast from 'react-hot-toast'
 
 interface Props {
@@ -23,7 +24,7 @@ export default function RecordPaymentModal({ challan, onClose, onSaved }: Props)
     amount: String(challan.remainingDue > 0 ? challan.remainingDue : ''),
     transactionRef: '',
     note: '',
-    collectedAt: new Date().toISOString().split('T')[0],
+    collectedAt: dhakaDateString(),
   })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)

@@ -69,27 +69,28 @@ export async function POST(req: NextRequest) {
         if (isAbsent) {
           status = 'ABSENT'
         } else if (checkInTimeStr) {
-          const [hour, min] = checkInTimeStr.split(':').map(Number)
-          checkInTime = new Date(dateObj)
-          checkInTime.setUTCHours(hour, min, 0, 0)
+          // Interpret HH:MM input as BST (UTC+6) and store as UTC
+          checkInTime = new Date(`${date}T${checkInTimeStr}:00+06:00`)
 
+          const [hour, min] = checkInTimeStr.split(':').map(Number)
           const checkInTotalMinutes = hour * 60 + min
           if (checkInTotalMinutes > shiftStartTotalMinutes) {
             status = 'LATE'
           }
         } else {
+          // "Check in now" — current moment
           checkInTime = new Date()
-          const checkInTotalMinutes = checkInTime.getUTCHours() * 60 + checkInTime.getUTCMinutes()
+          // Compare in BST: shift time is configured in BST
+          const bstNow = new Date(checkInTime.getTime() + 6 * 60 * 60 * 1000)
+          const checkInTotalMinutes = bstNow.getUTCHours() * 60 + bstNow.getUTCMinutes()
           if (checkInTotalMinutes > shiftStartTotalMinutes) {
             status = 'LATE'
           }
         }
 
-        // Parse checkout time if provided
+        // Parse checkout time if provided — interpret as BST
         if (checkOutTimeStr) {
-          checkOutTime = new Date(dateObj)
-          const [coHour, coMin] = checkOutTimeStr.split(':').map(Number)
-          checkOutTime.setUTCHours(coHour, coMin, 0, 0)
+          checkOutTime = new Date(`${date}T${checkOutTimeStr}:00+06:00`)
         }
 
         await tx.attendance.upsert({

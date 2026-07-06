@@ -3,6 +3,7 @@
 
 import { useEffect, useState, useRef, Suspense } from 'react'
 import { formatCurrency, computeTotals } from '@/lib/utils'
+import { dhakaDateString } from '@/lib/new-entry'
 import { DailyEntry, Branch, Category } from '@/lib/types'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
@@ -127,7 +128,7 @@ function Entries() {
   }, [editCell])
 
   const startEdit = (entry: DailyEntry, category: Category, value: number, cellType: 'income' | 'expense' = 'income') => {
-    const todayStr = new Date().toISOString().split('T')[0]
+    const todayStr = dhakaDateString()
     const entryDateStr = new Date(entry.date).toISOString().split('T')[0]
 
     if (userRole === 'BRANCH' && todayStr !== entryDateStr) {

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo, useEffect } from 'react'
+import { dhakaDateString } from '@/lib/new-entry'
 import toast from 'react-hot-toast'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Landmark, Smartphone, Banknote, FileSignature, CheckCircle2 } from 'lucide-react'
@@ -32,8 +33,8 @@ export function PaymentModal({ isOpen, onClose, partyId, bankAccounts = [], onSu
   const [method, setMethod] = useState<PaymentMethod>('CASH')
   const [amount, setAmount] = useState('')
   const [note, setNote] = useState('')
-  const [issueDate, setIssueDate] = useState(new Date().toISOString().split('T')[0])
-  const [withdrawDate, setWithdrawDate] = useState(new Date().toISOString().split('T')[0])
+  const [issueDate, setIssueDate] = useState(dhakaDateString())
+  const [withdrawDate, setWithdrawDate] = useState(dhakaDateString())
   const [partyBankInfoId, setPartyBankInfoId] = useState<number | ''>('')
   const [transactionRef, setTransactionRef] = useState('')
   const [chequeNumber, setChequeNumber] = useState('') // transactionRef used for cheque number too

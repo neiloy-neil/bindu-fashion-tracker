@@ -2,6 +2,7 @@ import { formatCurrency, computeTotals } from '@/lib/utils'
 import { Category } from '@/lib/types'
 import Image from 'next/image'
 import { useState, useEffect } from 'react'
+import { dhakaDateString } from '@/lib/new-entry'
 import { Trash2, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { Button } from '@/components/ui/button'
@@ -106,7 +107,7 @@ export default function EntryViewModal({ entry, changesStr, onClose, onDeleted }
             <p className="text-sm text-[var(--text-secondary)]">{entry.branch?.name} Branch • {new Date(entry.date).toLocaleDateString('en-BD', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
           </div>
           <div className="flex items-center gap-4">
-            {(userRole === 'ADMIN' || (userRole === 'BRANCH' && new Date(entry.date).toISOString().split('T')[0] === new Date().toISOString().split('T')[0])) && (
+            {(userRole === 'ADMIN' || (userRole === 'BRANCH' && new Date(entry.date).toISOString().split('T')[0] === dhakaDateString())) && (
               <Button variant="ghost" onClick={handleDelete} className="gap-1 text-sm font-bold text-[var(--danger)] hover:bg-[var(--danger-subtle)] hover:text-[var(--danger)]">
                 <Trash2 size={16} /> Delete
               </Button>

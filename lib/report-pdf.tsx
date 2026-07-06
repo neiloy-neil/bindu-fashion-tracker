@@ -373,16 +373,28 @@ function MonthlyReportDocument({
   )
 }
 
+type WholesaleSummary = {
+  totalChallans: number
+  totalNetAmount: number
+  totalCollected: number
+  totalOutstanding: number
+  activeBuyers: number
+  pendingChallans: number
+  methodBreakdown?: Record<string, number>
+}
+
 function SummaryReportDocument({
   data,
   month,
   year,
   branchName,
+  wholesaleData,
 }: {
   data: SummaryStats
   month: number
   year: number
   branchName?: string
+  wholesaleData?: WholesaleSummary
 }) {
   const monthLabel = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][month - 1]
   return (
@@ -423,6 +435,36 @@ function SummaryReportDocument({
             ])}
           />
         </View>
+
+        {wholesaleData && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Wholesale Summary</Text>
+            <View style={styles.statRow}>
+              <View style={styles.statCard}>
+                <Text style={styles.statLabel}>Invoiced</Text>
+                <Text style={styles.statValue}>{amount(wholesaleData.totalNetAmount)}</Text>
+              </View>
+              <View style={styles.statCard}>
+                <Text style={styles.statLabel}>Collected</Text>
+                <Text style={styles.statValue}>{amount(wholesaleData.totalCollected)}</Text>
+              </View>
+              <View style={styles.statCard}>
+                <Text style={styles.statLabel}>Outstanding</Text>
+                <Text style={styles.statValue}>{amount(wholesaleData.totalOutstanding)}</Text>
+              </View>
+            </View>
+            <Table
+              headers={['Metric', 'Value']}
+              widths={[70, 30]}
+              rows={[
+                ['Total Challans', String(wholesaleData.totalChallans)],
+                ['Active Buyers', String(wholesaleData.activeBuyers)],
+                ['Unpaid / Partial Challans', String(wholesaleData.pendingChallans)],
+                ...Object.entries(wholesaleData.methodBreakdown || {}).map(([m, v]) => [`Payment – ${m.replace(/_/g, ' ')}`, amount(v as number)]),
+              ]}
+            />
+          </View>
+        )}
       </Page>
     </Document>
   )
@@ -455,10 +497,10 @@ export async function exportMonthlyReportPdf(branchData: MonthlyBranchRow[], mon
   )
 }
 
-export async function exportSummaryReportPdf(data: SummaryStats, month: number, year: number, branchName?: string) {
+export async function exportSummaryReportPdf(data: SummaryStats, month: number, year: number, branchName?: string, wholesaleData?: WholesaleSummary) {
   const monthLabel = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][month - 1]
   await saveDocument(
-    <SummaryReportDocument data={data} month={month} year={year} branchName={branchName} />,
+    <SummaryReportDocument data={data} month={month} year={year} branchName={branchName} wholesaleData={wholesaleData} />,
     `Bindu_Summary_${branchName ? `${branchName.replace(/\s+/g, '_')}_` : ''}${monthLabel}_${year}.pdf`
   )
 }

@@ -316,7 +316,17 @@ function BranchSlipStatus({ month, year }: { month: number; year: number }) {
   )
 }
 
-function ExportMenu({ data, month, year, branchName }: { data: SummaryStats; month: number; year: number; branchName?: string }) {
+type WholesaleDashboardData = {
+  totalChallans: number
+  totalNetAmount: number
+  totalCollected: number
+  totalOutstanding: number
+  activeBuyers: number
+  pendingChallans: number
+  methodBreakdown: Record<string, number>
+}
+
+function ExportMenu({ data, month, year, branchName, wholesaleData }: { data: SummaryStats; month: number; year: number; branchName?: string; wholesaleData?: WholesaleDashboardData }) {
   const [open, setOpen] = useState(false)
 
   const handleExcel = async () => {
@@ -324,16 +334,33 @@ function ExportMenu({ data, month, year, branchName }: { data: SummaryStats; mon
     const branchRows = data.branchStats.map(b => ({ branch: b.branchName, totalSales: b.totalSale, totalExpenses: b.totalExpense, netBalance: b.netBalance, physicalCash: b.physicalCash || 0 }))
     const dailyRows = data.dailyTrend.map(d => ({ date: d.date, sales: d.totalSale, expenses: d.totalExpense, netBalance: d.totalSale - d.totalExpense }))
     const expenseRows = data.expenseBreakdown.map(e => ({ category: e.category, amount: e.amount }))
-    await downloadWorkbook(`Dashboard_Summary_${branchName ? branchName.replace(/\s+/g, '_') + '_' : ''}${year}_${month}.xlsx`, [
+    const sheets: Parameters<typeof downloadWorkbook>[1] = [
       { name: 'Branches', columns: [{ header: 'Branch', key: 'branch', width: 22 }, { header: 'Total Sales', key: 'totalSales', width: 14 }, { header: 'Total Expenses', key: 'totalExpenses', width: 14 }, { header: 'Net Balance', key: 'netBalance', width: 14 }, { header: 'Physical Cash', key: 'physicalCash', width: 14 }], rows: branchRows },
       { name: 'Daily Trend', columns: [{ header: 'Date', key: 'date', width: 14 }, { header: 'Sales', key: 'sales', width: 14 }, { header: 'Expenses', key: 'expenses', width: 14 }, { header: 'Net Balance', key: 'netBalance', width: 14 }], rows: dailyRows },
       { name: 'Expense Breakdown', columns: [{ header: 'Category', key: 'category', width: 24 }, { header: 'Amount', key: 'amount', width: 14 }], rows: expenseRows },
-    ])
+    ]
+    if (wholesaleData) {
+      const wsRows: Array<Record<string, string | number>> = [
+        { metric: 'Total Challans', value: wholesaleData.totalChallans },
+        { metric: 'Total Invoiced (Tk)', value: wholesaleData.totalNetAmount },
+        { metric: 'Total Collected (Tk)', value: wholesaleData.totalCollected },
+        { metric: 'Outstanding Balance (Tk)', value: wholesaleData.totalOutstanding },
+        { metric: 'Active Buyers', value: wholesaleData.activeBuyers },
+        { metric: 'Unpaid / Partial Challans', value: wholesaleData.pendingChallans },
+      ]
+      if (wholesaleData.methodBreakdown) {
+        for (const [method, amt] of Object.entries(wholesaleData.methodBreakdown)) {
+          wsRows.push({ metric: `Payment – ${method.replace(/_/g, ' ')}`, value: amt as number })
+        }
+      }
+      sheets.push({ name: 'Wholesale', columns: [{ header: 'Metric', key: 'metric', width: 30 }, { header: 'Value', key: 'value', width: 18 }], rows: wsRows })
+    }
+    await downloadWorkbook(`Dashboard_Summary_${branchName ? branchName.replace(/\s+/g, '_') + '_' : ''}${year}_${month}.xlsx`, sheets)
   }
 
   const handlePdf = async () => {
     setOpen(false)
-    await exportSummaryReportPdf(data, month, year, branchName)
+    await exportSummaryReportPdf(data, month, year, branchName, wholesaleData)
   }
 
   return (
@@ -491,6 +518,7 @@ function Dashboard() {
                     ? branches.find(b => String(b.id) === branchId)?.name
                     : undefined
                 }
+                wholesaleData={wholesaleData}
               />
             )}
           </div>

@@ -82,6 +82,8 @@ June 30 – July 6, 2026
 🔵 Added password reset quick-action button in admin users table — ADMIN/SUPER_ADMIN only
 🔵 Added vercel.json with daily-summary cron at 9 PM
 🔵 Blocked HR_ADMIN from /wholesale routes in proxy.ts
+🔵 Added wholesale data to Excel export (new "Wholesale" sheet with stats + payment method breakdown)
+🔵 Added wholesale section to PDF summary report (stat cards + metrics table)
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ✅ bindu-fashion-tracker active throughout. bindu-salary had no new commits this period.
@@ -92,4 +94,4 @@ June 30 – July 6, 2026
 Wholesale module — post-launch polish
   ✅ Schema, API routes, UI pages, modals, print view, sidebar nav
   ✅ Dashboard integration — wholesale stats panel
-  ⬜ Wholesale data in Excel/PDF export reports
+  ✅ Wholesale data in Excel/PDF export reports

@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'buyerId, date, and at least one item are required.' }, { status: 400 })
     }
 
-    const finalBranchId = role === 'BRANCH' ? parseInt(userBranchId!) : parseInt(bodyBranchId)
+    const finalBranchId = (role === 'BRANCH' || role === 'ACCOUNTS') ? parseInt(userBranchId!) : parseInt(bodyBranchId)
     if (!finalBranchId) {
       return NextResponse.json({ error: 'Branch is required.' }, { status: 400 })
     }

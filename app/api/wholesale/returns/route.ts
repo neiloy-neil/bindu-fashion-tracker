@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'challanId, date, and amount are required.' }, { status: 400 })
     }
 
-    const finalBranchId = role === 'BRANCH' ? parseInt(userBranchId!) : parseInt(bodyBranchId)
+    const finalBranchId = (role === 'BRANCH' || role === 'ACCOUNTS') ? parseInt(userBranchId!) : parseInt(bodyBranchId)
     const returnAmount = parseFloat(amount)
 
     const ret = await prisma.$transaction(async (tx) => {

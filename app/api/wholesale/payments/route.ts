@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'buyerId, method, and amount are required.' }, { status: 400 })
     }
 
-    const finalBranchId = role === 'BRANCH' ? parseInt(userBranchId!) : parseInt(bodyBranchId)
+    const finalBranchId = (role === 'BRANCH' || role === 'ACCOUNTS') ? parseInt(userBranchId!) : parseInt(bodyBranchId)
     const paymentAmount = parseFloat(amount)
 
     const payment = await prisma.$transaction(async (tx) => {

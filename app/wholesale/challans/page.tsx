@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { formatCurrency } from '@/lib/utils'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
@@ -40,6 +41,8 @@ const STATUS_LABELS: Record<string, string> = {
 }
 
 export default function ChallansPage() {
+  const searchParams = useSearchParams()
+  const buyerIdParam = searchParams.get('buyerId')
   const [challans, setChallans] = useState<Challan[]>([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -56,6 +59,7 @@ export default function ChallansPage() {
     try {
       const params = new URLSearchParams({ page: String(p), limit: String(limit) })
       if (statusFilter) params.set('status', statusFilter)
+      if (buyerIdParam) params.set('buyerId', buyerIdParam)
       const res = await fetch(`/api/wholesale/challans?${params}`)
       if (!res.ok) throw new Error()
       const data = await res.json()
@@ -90,7 +94,10 @@ export default function ChallansPage() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-xl font-semibold text-[var(--text-primary)]">Challans</h1>
-          <p className="text-sm text-[var(--text-muted)]">{total} total</p>
+          <p className="text-sm text-[var(--text-muted)]">
+            {total} total
+            {buyerIdParam && <span className="ml-2 text-[var(--accent)]">· filtered by buyer · <Link href="/wholesale/challans" className="underline hover:opacity-80">clear filter</Link></span>}
+          </p>
         </div>
         {canCreate && (
           <Button onClick={() => setShowNew(true)} size="sm" className="gap-1.5">

@@ -75,11 +75,17 @@ export default function RecordReturnModal({ challan, onClose, onSaved }: Props) 
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
           {error && <p className="text-sm text-red-400 bg-red-500/10 rounded-lg px-3 py-2">{error}</p>}
 
-          <div className="rounded-lg bg-[var(--surface)] px-3 py-2 text-sm flex justify-between">
-            <span className="text-[var(--text-muted)]">Remaining due</span>
-            <span className={`font-semibold ${challan.remainingDue > 0 ? 'text-red-400' : 'text-[var(--success)]'}`}>
-              {formatCurrency(challan.remainingDue)}
-            </span>
+          <div className="rounded-lg bg-[var(--surface)] px-3 py-2 text-sm space-y-1">
+            <div className="flex justify-between">
+              <span className="text-[var(--text-muted)]">Net invoice</span>
+              <span className="font-semibold text-[var(--text-primary)]">{formatCurrency(challan.netAmount)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-[var(--text-muted)]">Remaining due</span>
+              <span className={`font-semibold ${challan.remainingDue > 0 ? 'text-red-400' : 'text-[var(--success)]'}`}>
+                {formatCurrency(challan.remainingDue)}
+              </span>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -90,7 +96,7 @@ export default function RecordReturnModal({ challan, onClose, onSaved }: Props) 
             <div>
               <label className={labelCls}>Return Amount (৳) <span className="text-red-400">*</span></label>
               <input
-                type="number" min="1" step="0.01"
+                type="number" min="1" max={challan.netAmount} step="0.01"
                 value={form.amount} onChange={set('amount')}
                 className={inputCls} placeholder="0.00" required
               />

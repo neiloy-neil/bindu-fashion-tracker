@@ -4,7 +4,7 @@ import { purchaseSchema } from '@/lib/schemas'
 
 export async function POST(req: NextRequest) {
   const userRole = req.headers.get('x-user-role')
-  if (userRole !== 'ADMIN') {
+  if (!['ADMIN', 'SUPER_ADMIN'].includes(userRole ?? '')) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
   }
 

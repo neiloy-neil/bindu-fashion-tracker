@@ -5,7 +5,7 @@ import { logger } from '@/lib/logger'
 export async function GET(req: NextRequest) {
   try {
     const role = req.headers.get('x-user-role')
-    if (role !== 'ADMIN' && role !== 'AUDITOR') {
+    if (role !== 'ADMIN' && role !== 'SUPER_ADMIN' && role !== 'AUDITOR') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 

@@ -11,7 +11,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     include: {
       bankInfo: true,
       branch: { select: { id: true, name: true } },
-      challans: { orderBy: { date: 'desc' }, take: 20, include: { items: true } },
+      challans: { orderBy: { date: 'desc' }, take: 20, include: { items: true, returns: { select: { id: true, amount: true, date: true, reason: true } } } },
       payments: { orderBy: { collectedAt: 'desc' }, take: 20 },
     },
   })

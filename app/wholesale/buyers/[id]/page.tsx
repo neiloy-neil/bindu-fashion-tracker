@@ -22,7 +22,7 @@ type BuyerDetail = {
   balance: number
   isActive: boolean
   branch: { id: number; name: string } | null
-  challans: { id: number; challanNumber: string; date: string; netAmount: number; remainingDue: number; status: string }[]
+  challans: { id: number; challanNumber: string; date: string; netAmount: number; remainingDue: number; status: string; returns: { id: number; amount: number; date: string; reason: string | null }[] }[]
   payments: { id: number; amount: number; method: string; collectedAt: string; challanId: number | null }[]
 }
 
@@ -176,6 +176,32 @@ export default function BuyerDetailPage() {
           </div>
         </div>
       )}
+
+      {/* Returns — flattened from challans */}
+      {(() => {
+        const allReturns = buyer.challans.flatMap(c => c.returns.map(r => ({ ...r, challan: c })))
+          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+        if (allReturns.length === 0) return null
+        return (
+          <div className={cardCls}>
+            <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider mb-3 font-medium">Returns</p>
+            <div className="space-y-2">
+              {allReturns.map(r => (
+                <div key={r.id} className="flex items-center justify-between text-sm py-1 border-b border-[var(--border)] last:border-0">
+                  <div>
+                    <Link href={`/wholesale/challans/${r.challan.id}`} className="font-mono text-xs text-[var(--accent)] hover:underline">{r.challan.challanNumber}</Link>
+                    {r.reason && <span className="text-xs text-[var(--text-muted)] ml-2">— {r.reason}</span>}
+                  </div>
+                  <div className="text-right">
+                    <p className="font-semibold tabular-nums text-orange-400">−৳{formatCurrency(r.amount)}</p>
+                    <p className="text-xs text-[var(--text-muted)]">{new Date(r.date).toLocaleDateString('en-BD')}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )
+      })()}
 
       {showEdit && buyer && (
         <EditBuyerModal

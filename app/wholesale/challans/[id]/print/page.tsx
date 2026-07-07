@@ -20,6 +20,7 @@ type ChallanDetail = {
   branch: { name: string; address: string | null }
   items: { id: number; description: string; quantity: number | null; unitPrice: number | null; amount: number; note: string | null }[]
   payments: { id: number; amount: number; method: string; note: string | null; collectedAt: string }[]
+  returns: { id: number; amount: number; reason: string | null; date: string }[]
 }
 
 export default function ChallanPrintPage() {
@@ -41,6 +42,7 @@ export default function ChallanPrintPage() {
   if (!challan) return <div style={{ padding: 40, fontFamily: 'sans-serif' }}>Loading...</div>
 
   const totalPaid = challan.payments.reduce((s, p) => s + p.amount, 0)
+  const totalReturns = challan.returns.reduce((s, r) => s + r.amount, 0)
 
   return (
     <div style={{ maxWidth: 680, margin: '0 auto', padding: '32px 24px', fontFamily: "'Helvetica Neue', Arial, sans-serif", fontSize: 13, color: '#1a1a1a' }}>
@@ -141,6 +143,12 @@ export default function ChallanPrintPage() {
               <tr>
                 <td style={{ padding: '3px 10px 3px 0', color: '#059669' }}>Total Paid</td>
                 <td style={{ padding: '3px 0', textAlign: 'right', color: '#059669' }}>{formatCurrency(totalPaid)}</td>
+              </tr>
+            )}
+            {totalReturns > 0 && (
+              <tr>
+                <td style={{ padding: '3px 10px 3px 0', color: '#d97706' }}>Returns</td>
+                <td style={{ padding: '3px 0', textAlign: 'right', color: '#d97706' }}>−{formatCurrency(totalReturns)}</td>
               </tr>
             )}
             {challan.remainingDue > 0 && (

@@ -4,10 +4,13 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { formatCurrency } from '@/lib/utils'
 import toast from 'react-hot-toast'
-import { ArrowLeft, Printer, Plus } from 'lucide-react'
+import { ArrowLeft, Printer, Plus, RotateCcw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { BrandSpinner } from '@/components/ui/BrandSpinner'
 import RecordPaymentModal from '@/components/wholesale/RecordPaymentModal'
+import RecordReturnModal from '@/components/wholesale/RecordReturnModal'
+
+const cardCls = "rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4"
 
 const STATUS_COLORS: Record<string, string> = {
   PENDING: 'bg-yellow-500/15 text-yellow-400',
@@ -46,6 +49,7 @@ export default function ChallanDetailPage() {
   const [challan, setChallan] = useState<ChallanDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [showPayment, setShowPayment] = useState(false)
+  const [showReturn, setShowReturn] = useState(false)
   const [role, setRole] = useState<string | null>(null)
 
   const load = async () => {
@@ -90,6 +94,11 @@ export default function ChallanDetailPage() {
           <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full ${STATUS_COLORS[challan.status]}`}>
             {challan.status.replace('_', ' ')}
           </span>
+          {canRecord && challan.status !== 'CANCELLED' && (
+            <Button variant="outline" size="sm" className="gap-1.5 text-orange-400 border-orange-400/30 hover:bg-orange-500/10" onClick={() => setShowReturn(true)}>
+              <RotateCcw size={14} /> Return
+            </Button>
+          )}
           {canRecord && challan.status !== 'PAID' && challan.status !== 'CANCELLED' && (
             <Button size="sm" className="gap-1.5" onClick={() => setShowPayment(true)}>
               <Plus size={14} /> Record Payment
@@ -122,7 +131,7 @@ export default function ChallanDetailPage() {
 
       {/* Buyer & Branch */}
       <div className="grid md:grid-cols-2 gap-4">
-        <div className="card p-4">
+        <div className={cardCls}>
           <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider mb-2">Buyer</p>
           <p className="font-medium text-[var(--text-primary)]">{challan.buyer.name}</p>
           {challan.buyer.contactPerson && <p className="text-sm text-[var(--text-secondary)]">{challan.buyer.contactPerson}</p>}
@@ -130,7 +139,7 @@ export default function ChallanDetailPage() {
           {challan.buyer.address && <p className="text-xs text-[var(--text-muted)] mt-1">{challan.buyer.address}</p>}
           <p className="text-xs text-[var(--text-muted)] mt-2">Outstanding balance: <span className="font-semibold text-[var(--text-secondary)]">{formatCurrency(challan.buyer.balance)}</span></p>
         </div>
-        <div className="card p-4">
+        <div className={cardCls}>
           <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider mb-2">Branch</p>
           <p className="font-medium text-[var(--text-primary)]">{challan.branch.name}</p>
           {challan.branch.address && <p className="text-sm text-[var(--text-muted)]">{challan.branch.address}</p>}
@@ -139,7 +148,7 @@ export default function ChallanDetailPage() {
       </div>
 
       {/* Items */}
-      <div className="card p-4">
+      <div className={cardCls}>
         <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider mb-3">Items</p>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -182,7 +191,7 @@ export default function ChallanDetailPage() {
 
       {/* Payments */}
       {challan.payments.length > 0 && (
-        <div className="card p-4">
+        <div className={cardCls}>
           <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider mb-3">Payments Collected</p>
           <div className="space-y-2">
             {challan.payments.map(p => (
@@ -203,23 +212,40 @@ export default function ChallanDetailPage() {
       )}
 
       {/* Returns */}
-      {challan.returns.length > 0 && (
-        <div className="card p-4">
-          <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider mb-3">Returns</p>
-          <div className="space-y-2">
-            {challan.returns.map(r => (
-              <div key={r.id} className="flex items-center justify-between text-sm">
-                <div>
-                  <span className="font-medium text-[var(--text-primary)]">Return</span>
-                  {r.reason && <span className="text-[var(--text-muted)] ml-2 text-xs">— {r.reason}</span>}
-                </div>
-                <div className="text-right">
-                  <p className="font-semibold text-orange-400">{formatCurrency(r.amount)}</p>
-                  <p className="text-xs text-[var(--text-muted)]">{new Date(r.date).toLocaleDateString('en-BD')}</p>
-                </div>
-              </div>
-            ))}
+      {(challan.returns.length > 0 || (canRecord && challan.status !== 'CANCELLED')) && (
+        <div className={cardCls}>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider">
+              Returns {challan.returns.length > 0 && <span className="ml-1 text-orange-400">({challan.returns.length})</span>}
+            </p>
+            {canRecord && challan.status !== 'CANCELLED' && (
+              <button onClick={() => setShowReturn(true)} className="text-xs text-orange-400 hover:text-orange-300 flex items-center gap-1 transition-colors">
+                <RotateCcw size={11} /> Record return
+              </button>
+            )}
           </div>
+          {challan.returns.length === 0 ? (
+            <p className="text-sm text-[var(--text-muted)] italic">No returns recorded.</p>
+          ) : (
+            <div className="space-y-2">
+              {challan.returns.map(r => (
+                <div key={r.id} className="flex items-center justify-between text-sm py-1 border-b border-[var(--border)] last:border-0">
+                  <div>
+                    <span className="font-medium text-[var(--text-primary)]">Return</span>
+                    {r.reason && <span className="text-[var(--text-muted)] ml-2 text-xs">— {r.reason}</span>}
+                  </div>
+                  <div className="text-right">
+                    <p className="font-semibold text-orange-400">−{formatCurrency(r.amount)}</p>
+                    <p className="text-xs text-[var(--text-muted)]">{new Date(r.date).toLocaleDateString('en-BD')}</p>
+                  </div>
+                </div>
+              ))}
+              <div className="flex justify-between text-xs pt-1 text-[var(--text-muted)]">
+                <span>Total returned</span>
+                <span className="font-semibold text-orange-400">{formatCurrency(totalReturns)}</span>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -228,6 +254,13 @@ export default function ChallanDetailPage() {
           challan={{ id: challan.id, challanNumber: challan.challanNumber, buyerId: challan.buyer.id, branchId: challan.branch.id, remainingDue: challan.remainingDue }}
           onClose={() => setShowPayment(false)}
           onSaved={() => { setShowPayment(false); void load() }}
+        />
+      )}
+      {showReturn && (
+        <RecordReturnModal
+          challan={{ id: challan.id, challanNumber: challan.challanNumber, buyerId: challan.buyer.id, branchId: challan.branch.id, netAmount: challan.netAmount, remainingDue: challan.remainingDue }}
+          onClose={() => setShowReturn(false)}
+          onSaved={() => { setShowReturn(false); void load() }}
         />
       )}
     </div>

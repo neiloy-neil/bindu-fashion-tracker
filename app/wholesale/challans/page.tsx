@@ -22,6 +22,7 @@ type Challan = {
   branch: { id: number; name: string }
   items: { id: number; description: string; amount: number }[]
   payments: { id: number; amount: number; method: string; collectedAt: string }[]
+  returns: { id: number; amount: number }[]
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -149,7 +150,10 @@ export default function ChallansPage() {
                     {c.buyer.contactNumber && <div className="text-xs text-[var(--text-muted)]">{c.buyer.contactNumber}</div>}
                   </td>
                   <td className="py-3 px-4 text-[var(--text-secondary)] hidden md:table-cell">{c.branch.name}</td>
-                  <td className="py-3 px-4 text-right font-medium text-[var(--text-primary)]">{formatCurrency(c.netAmount)}</td>
+                  <td className="py-3 px-4 text-right font-medium text-[var(--text-primary)]">
+                    {formatCurrency(c.netAmount - c.returns.reduce((s, r) => s + r.amount, 0))}
+                    {c.returns.length > 0 && <div className="text-[10px] text-[var(--text-muted)]">orig. {formatCurrency(c.netAmount)}</div>}
+                  </td>
                   <td className={`py-3 px-4 text-right font-medium ${c.remainingDue > 0 ? 'text-red-400' : 'text-green-400'}`}>
                     {c.remainingDue > 0 ? formatCurrency(c.remainingDue) : '—'}
                   </td>

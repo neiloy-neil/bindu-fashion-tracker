@@ -94,7 +94,7 @@ export default function ChallanDetailPage() {
           <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full ${STATUS_COLORS[challan.status]}`}>
             {challan.status.replace('_', ' ')}
           </span>
-          {canRecord && challan.status !== 'CANCELLED' && (
+          {canRecord && challan.status !== 'CANCELLED' && challan.status !== 'PAID' && (
             <Button variant="outline" size="sm" className="gap-1.5 text-orange-400 border-orange-400/30 hover:bg-orange-500/10" onClick={() => setShowReturn(true)}>
               <RotateCcw size={14} /> Return
             </Button>
@@ -121,7 +121,7 @@ export default function ChallanDetailPage() {
           { label: 'Total Collected', value: formatCurrency(totalPaid), sub: totalReturns > 0 ? `Returns: ${formatCurrency(totalReturns)}` : null },
           { label: 'Remaining Due', value: formatCurrency(challan.remainingDue), sub: null, highlight: challan.remainingDue > 0 },
         ].map(card => (
-          <div key={card.label} className="card p-3 text-center">
+          <div key={card.label} className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-3 text-center">
             <p className="text-xs text-[var(--text-muted)] mb-1">{card.label}</p>
             <p className={`text-lg font-semibold ${card.highlight ? 'text-red-400' : 'text-[var(--text-primary)]'}`}>{card.value}</p>
             {card.sub && <p className="text-xs text-[var(--text-muted)] mt-0.5">{card.sub}</p>}
@@ -212,13 +212,13 @@ export default function ChallanDetailPage() {
       )}
 
       {/* Returns */}
-      {(challan.returns.length > 0 || (canRecord && challan.status !== 'CANCELLED')) && (
+      {(challan.returns.length > 0 || (canRecord && challan.status !== 'CANCELLED' && challan.status !== 'PAID')) && (
         <div className={cardCls}>
           <div className="flex items-center justify-between mb-3">
             <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider">
               Returns {challan.returns.length > 0 && <span className="ml-1 text-orange-400">({challan.returns.length})</span>}
             </p>
-            {canRecord && challan.status !== 'CANCELLED' && (
+            {canRecord && challan.status !== 'CANCELLED' && challan.status !== 'PAID' && (
               <button onClick={() => setShowReturn(true)} className="text-xs text-orange-400 hover:text-orange-300 flex items-center gap-1 transition-colors">
                 <RotateCcw size={11} /> Record return
               </button>

@@ -17,8 +17,8 @@ export async function GET(req: NextRequest) {
 
   if (startDate && endDate) {
     dateFilter = {
-      gte: new Date(startDate + 'T00:00:00.000Z'),
-      lte: new Date(endDate + 'T23:59:59.999Z'),
+      gte: new Date(startDate + 'T00:00:00.000+06:00'),
+      lte: new Date(endDate + 'T23:59:59.999+06:00'),
     }
   } else if (month && year) {
     const m = parseInt(month)
@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
   const [challans, payments, buyers] = await Promise.all([
     prisma.wholesaleChallan.findMany({
       where: dateFilter ? { date: dateFilter } : undefined,
-      select: { netAmount: true, remainingDue: true, paidAtDelivery: true, status: true },
+      select: { netAmount: true, remainingDue: true, paidAtDelivery: true, status: true, returns: { select: { amount: true } } },
     }),
     prisma.wholesalePayment.findMany({
       where: dateFilter ? { collectedAt: dateFilter } : undefined,
@@ -45,7 +45,7 @@ export async function GET(req: NextRequest) {
   ])
 
   const totalChallans = challans.length
-  const totalNetAmount = challans.reduce((s, c) => s + c.netAmount, 0)
+  const totalNetAmount = challans.reduce((s, c) => s + c.netAmount - c.returns.reduce((r, ret) => r + ret.amount, 0), 0)
   const totalCollected = payments.reduce((s, p) => s + p.amount, 0)
   const totalOutstanding = buyers.reduce((s, b) => s + b.balance, 0)
   const activeBuyers = buyers.length

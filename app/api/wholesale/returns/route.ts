@@ -61,6 +61,7 @@ export async function POST(req: NextRequest) {
       })
       if (!challan) throw new Error('Challan not found')
       if (challan.status === 'CANCELLED') throw new Error('Cannot process return on a cancelled challan')
+      if (challan.status === 'PAID') throw new Error('Cannot process return on a fully paid challan')
 
       const newReturn = await tx.wholesaleReturn.create({
         data: {
@@ -74,18 +75,20 @@ export async function POST(req: NextRequest) {
         },
       })
 
-      // Reduce buyer balance (return reduces what they owe)
+      // Reduce buyer balance — clamp to 0 to avoid negative balance
+      const buyer = await tx.wholesaleBuyer.findUnique({ where: { id: challan.buyerId }, select: { balance: true } })
+      const newBalance = Math.max(0, (buyer?.balance ?? 0) - returnAmount)
       await tx.wholesaleBuyer.update({
         where: { id: challan.buyerId },
-        data: { balance: { decrement: returnAmount } },
+        data: { balance: newBalance },
       })
 
-      // Increase challan's remaining due (return puts the amount back as due or decrements net)
+      // Clamp remainingDue to 0 and update status
       const newRemaining = Math.max(0, challan.remainingDue - returnAmount)
       const newStatus = newRemaining <= 0 ? 'PAID' : challan.status
       await tx.wholesaleChallan.update({
         where: { id: parseInt(challanId) },
-        data: { remainingDue: { decrement: returnAmount }, status: newStatus },
+        data: { remainingDue: newRemaining, status: newStatus },
       })
 
       return newReturn

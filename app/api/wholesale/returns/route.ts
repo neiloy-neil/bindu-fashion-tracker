@@ -76,9 +76,10 @@ export async function POST(req: NextRequest) {
         },
       })
 
-      // Reduce buyer balance — clamp to 0 to avoid negative balance
+      // Reduce buyer balance — cap deduction at remainingDue to prevent over-return discrepancy
+      const effectiveDeduction = Math.min(returnAmount, challan.remainingDue)
       const buyer = await tx.wholesaleBuyer.findUnique({ where: { id: challan.buyerId }, select: { balance: true } })
-      const newBalance = Math.max(0, (buyer?.balance ?? 0) - returnAmount)
+      const newBalance = Math.max(0, (buyer?.balance ?? 0) - effectiveDeduction)
       await tx.wholesaleBuyer.update({
         where: { id: challan.buyerId },
         data: { balance: newBalance },

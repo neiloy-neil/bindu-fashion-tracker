@@ -124,7 +124,7 @@ export async function POST(req: NextRequest) {
               description: item.description,
               quantity: item.quantity ? parseFloat(item.quantity) : null,
               unitPrice: item.unitPrice ? parseFloat(item.unitPrice) : null,
-              amount: parseFloat(item.amount),
+              amount: parseFloat(item.amount ?? 0) || 0,
               note: item.note || null,
             })),
           },

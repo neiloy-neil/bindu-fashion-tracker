@@ -40,6 +40,7 @@ export async function GET(req: NextRequest) {
       where: dateFilter ? { collectedAt: dateFilter } : undefined,
       select: { amount: true, method: true },
     }),
+    // Outstanding balance is always all-time (current state), not date-filtered
     prisma.wholesaleBuyer.findMany({
       where: { isActive: true },
       select: { balance: true },

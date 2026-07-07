@@ -84,6 +84,15 @@ June 30 – July 6, 2026
 🔵 Blocked HR_ADMIN from /wholesale routes in proxy.ts
 🔵 Added wholesale data to Excel export (new "Wholesale" sheet with stats + payment method breakdown)
 🔵 Added wholesale section to PDF summary report (stat cards + metrics table)
+🔵 Full system audit — all 23 pages across 8 nav sections verified functional (Main, Cash Flow, HR, Payroll, Wholesale, Parties & Payments, Manage, System)
+🔵 Fixed NextAuth CLIENT_FETCH_ERROR — Next.js 16 requires explicit `export async function GET/POST` wrappers; re-exports via `export { handler as GET }` silently 404
+🔵 Fixed wholesale return API — 3 bugs: block returns on PAID challans, clamp buyer balance to 0 (was going negative), use direct assignment instead of { decrement } on remainingDue
+🔵 Fixed challan detail page — Return button and Returns section now hidden for PAID challans; replaced missing .card CSS class with inline Tailwind
+🔵 Fixed challan list NET column — now shows effective net after returns with original amount sub-label
+🔵 Fixed wholesale dashboard INVOICED — deducts return amounts from netAmount so it reflects effective invoiced value
+🔵 Fixed wholesale dashboard COLLECTED BST timezone bug — daily-view date filter used UTC boundaries (Z) instead of BST (+06:00), causing payments made just after BST midnight to fall outside the day's range
+🔵 Fixed corrupted DB data — pre-fix returns had pushed remainingDue and buyer balance negative; corrected via targeted SQL UPDATE clamping to 0
+🔵 Fixed vercel.json cron schedule — daily-summary was set to 21:00 UTC (= 03:00 BST next day); corrected to 17:59 UTC (= 23:59 BST)
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ✅ bindu-fashion-tracker active throughout. bindu-salary had no new commits this period.
@@ -91,7 +100,4 @@ June 30 – July 6, 2026
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🚧 CURRENTLY WORKING ON
 
-Wholesale module — post-launch polish
-  ✅ Schema, API routes, UI pages, modals, print view, sidebar nav
-  ✅ Dashboard integration — wholesale stats panel
-  ✅ Wholesale data in Excel/PDF export reports
+All known issues resolved. System fully audited and stable.

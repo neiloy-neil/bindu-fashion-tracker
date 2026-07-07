@@ -57,9 +57,10 @@ export async function POST(req: NextRequest) {
     const ret = await prisma.$transaction(async (tx) => {
       const challan = await tx.wholesaleChallan.findUnique({
         where: { id: parseInt(challanId) },
-        select: { remainingDue: true, buyerId: true, status: true },
+        select: { remainingDue: true, buyerId: true, status: true, branchId: true },
       })
       if (!challan) throw new Error('Challan not found')
+      if (challan.branchId !== finalBranchId) throw new Error('Challan does not belong to this branch')
       if (challan.status === 'CANCELLED') throw new Error('Cannot process return on a cancelled challan')
       if (challan.status === 'PAID') throw new Error('Cannot process return on a fully paid challan')
 
@@ -104,6 +105,13 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(ret, { status: 201 })
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 400 })
+    const isClientError = [
+      'challanId, date, and amount are required.',
+      'Challan not found',
+      'Challan does not belong to this branch',
+      'Cannot process return on a cancelled challan',
+      'Cannot process return on a fully paid challan',
+    ].includes(error.message)
+    return NextResponse.json({ error: error.message }, { status: isClientError ? 400 : 500 })
   }
 }

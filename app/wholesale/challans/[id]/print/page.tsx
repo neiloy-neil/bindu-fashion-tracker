@@ -30,9 +30,10 @@ export default function ChallanPrintPage() {
 
   useEffect(() => {
     Promise.all([
-      fetch(`/api/wholesale/challans/${id}`).then(r => r.json()),
+      fetch(`/api/wholesale/challans/${id}`).then(r => r.ok ? r.json() : null),
       fetch('/api/admin/settings').then(r => r.json()).catch(() => null),
     ]).then(([c, s]) => {
+      if (!c) return
       setChallan(c)
       if (s?.companyName) setCompanyName(s.companyName)
       setTimeout(() => window.print(), 600)

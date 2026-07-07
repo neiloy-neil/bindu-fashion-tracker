@@ -92,14 +92,17 @@ export async function POST(req: NextRequest) {
     const paidAmt = parseFloat(paidAtDelivery || 0)
     const remainingDue = netAmount - paidAmt
 
-    // Generate challan number
-    const count = await prisma.wholesaleChallan.count({ where: { branchId: finalBranchId } })
+    // Branch code fetched outside tx (read-only, stable)
     const branch = await prisma.branch.findUnique({ where: { id: finalBranchId }, select: { code: true, name: true } })
     const branchCode = branch?.code || branch?.name?.substring(0, 3).toUpperCase() || 'WS'
-    const year = new Date().getFullYear()
-    const challanNumber = `${branchCode}-${year}-${String(count + 1).padStart(4, '0')}`
+    // BST year for challan number
+    const bstYear = new Date(new Date().getTime() + 6 * 60 * 60 * 1000).getUTCFullYear()
 
     const challan = await prisma.$transaction(async (tx) => {
+      // Count inside transaction to prevent duplicate challan numbers under concurrent requests
+      const count = await tx.wholesaleChallan.count({ where: { branchId: finalBranchId } })
+      const challanNumber = `${branchCode}-${bstYear}-${String(count + 1).padStart(4, '0')}`
+
       const newChallan = await tx.wholesaleChallan.create({
         data: {
           challanNumber,

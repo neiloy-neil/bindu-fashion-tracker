@@ -23,9 +23,11 @@ export async function GET(req: NextRequest) {
   } else if (month && year) {
     const m = parseInt(month)
     const y = parseInt(year)
+    const mm = String(m).padStart(2, '0')
+    const lastDay = new Date(y, m, 0).getDate()
     dateFilter = {
-      gte: new Date(y, m - 1, 1),
-      lte: new Date(y, m, 0, 23, 59, 59, 999),
+      gte: new Date(`${y}-${mm}-01T00:00:00.000+06:00`),
+      lte: new Date(`${y}-${mm}-${String(lastDay).padStart(2, '0')}T23:59:59.999+06:00`),
     }
   }
 

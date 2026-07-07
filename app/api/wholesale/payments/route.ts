@@ -74,19 +74,22 @@ export async function POST(req: NextRequest) {
         },
       })
 
-      // Decrease buyer outstanding balance
+      // Decrease buyer outstanding balance — clamp to 0 to avoid negative balance
+      const buyer = await tx.wholesaleBuyer.findUnique({ where: { id: parseInt(buyerId) }, select: { balance: true } })
+      const newBalance = Math.max(0, (buyer?.balance ?? 0) - paymentAmount)
       await tx.wholesaleBuyer.update({
         where: { id: parseInt(buyerId) },
-        data: { balance: { decrement: paymentAmount } },
+        data: { balance: newBalance },
       })
 
-      // If tied to a challan, update its remainingDue and status
+      // If tied to a challan, verify ownership then update remainingDue and status
       if (challanId) {
         const challan = await tx.wholesaleChallan.findUnique({
           where: { id: parseInt(challanId) },
-          select: { remainingDue: true, netAmount: true },
+          select: { remainingDue: true, netAmount: true, branchId: true },
         })
         if (challan) {
+          if (challan.branchId !== finalBranchId) throw new Error('Challan does not belong to this branch')
           const newRemaining = Math.max(0, challan.remainingDue - paymentAmount)
           const newStatus = newRemaining <= 0 ? 'PAID' : 'PARTIALLY_PAID'
           await tx.wholesaleChallan.update({

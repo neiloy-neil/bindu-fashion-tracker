@@ -141,6 +141,43 @@ New features:
 🔵 Added Cheque Maturity Calendar sidebar nav link and /cheques page access for ACCOUNTS/AUDITOR roles
 🔵 Built overdue challan cron — /api/cron/overdue-challans notifies ADMIN/SUPER_ADMIN of challans unpaid beyond threshold (default 7 days); protected by CRON_SECRET
 
+📅 July 8, 2026 (Wednesday)  ·  🏠 Work from Home
+
+Branch type-based operation:
+🔵 Added branchType to NextAuth JWT — fetched from DB during authorize(), injected as x-user-branch-type header by proxy.ts
+🔵 WHOLESALE branch users now redirect to /wholesale/challans on login; blocked from all /entries and /api/entries routes
+🔵 RETAIL/FACTORY branch users blocked from /wholesale routes; proxy redirects to /entries
+🔵 Sidebar dynamically filters nav sections by branchType — Cash Flow hidden for WHOLESALE, Wholesale section visible only for WHOLESALE
+🔵 Categories API filters by applicableTo using Prisma isEmpty/has — RETAIL branches only see RETAIL-tagged or universal categories
+🔵 Tagged 13 categories as RETAIL-only (Cash Sale, Due Received, digital payment methods, etc.); remaining 51 left as universal
+
+Dashboards by branch type:
+🔵 Wholesale branch dashboard — shows challan count, total invoiced, total collected, pending due count, outstanding balance with quick links
+🔵 Factory branch dashboard — shows production cost breakdown, other income, net, and links to entry/attendance
+🔵 WHOLESALE branch users can now access /api/dashboard/wholesale (scoped to their own branch)
+
+Wholesale expense flow:
+🔵 Built /api/wholesale/expenses GET/POST — WHOLESALE branch can submit expenses without /entries access; auto-creates DailyEntry placeholder to satisfy FK
+🔵 Built /wholesale/expenses page — category selector (expense categories only), amount, date, note; lists recent expenses with PENDING/APPROVED/REJECTED badges
+
+Branch list improvements:
+🔵 Branch cards now show colored type badge (RETAIL=blue, WHOLESALE=green, FACTORY=amber)
+🔵 Fixed SUPER_ADMIN blocked from branch list — isAdmin check now includes SUPER_ADMIN
+🔵 Removed HEAD_OFFICE from branch type dropdowns (not in schema)
+
+Entry month locking:
+🔵 Built /api/locked-months GET/POST/DELETE — admin can lock a branch+month to prevent new entries; uses lib/locked-month.ts helper
+🔵 Built /admin/locked-months page — lock/unlock UI per branch per month with confirmation
+🔵 Lock check integrated into /api/entries POST — returns 423 if month is locked
+
+Bug fixes:
+🔵 Fixed DashboardCharts Recharts formatter type error — cast v to Number() instead of typed as number
+🔵 Fixed logAudit action for lock/unlock — used valid enum values CREATE/DELETE instead of custom strings
+🔵 Fixed Sidebar setIsOpen optional call — changed to setIsOpen?.() to handle undefined prop
+🔵 Wrapped /wholesale/challans in Suspense boundary — required by Next.js 16 for useSearchParams()
+🔵 Fixed SummaryStats field references in page.tsx — totalExpenses (not totalExpense), totalSales (not totalIncome)
+🔵 Production build passed clean; deployed to Vercel
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ✅ bindu-fashion-tracker active throughout. bindu-salary had no new commits this period.
 

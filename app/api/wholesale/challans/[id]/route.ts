@@ -27,20 +27,64 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const role = req.headers.get('x-user-role')
   const userId = req.headers.get('x-user-id')
 
-  if (!role || !['ADMIN', 'SUPER_ADMIN'].includes(role)) {
+  if (!role || !['ADMIN', 'SUPER_ADMIN', 'BRANCH', 'ACCOUNTS'].includes(role)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
   const { id } = await params
+  const challanId = parseInt(id)
+
   try {
-    const data = await req.json()
+    const body = await req.json()
+
+    // Mark as PAID: write off remaining balance as a zero-payment adjustment
+    if (body.action === 'markPaid') {
+      if (!['ADMIN', 'SUPER_ADMIN'].includes(role)) {
+        return NextResponse.json({ error: 'Only ADMIN can mark challans as paid' }, { status: 403 })
+      }
+      const updated = await prisma.$transaction(async (tx) => {
+        const challan = await tx.wholesaleChallan.findUnique({
+          where: { id: challanId },
+          select: { status: true, remainingDue: true, buyerId: true },
+        })
+        if (!challan) throw new Error('Not found')
+        if (challan.status === 'PAID' || challan.status === 'CANCELLED') {
+          throw new Error(`Challan is already ${challan.status.toLowerCase()}`)
+        }
+        // Zero out buyer balance for this challan's remaining due
+        if (challan.remainingDue > 0) {
+          await tx.wholesaleBuyer.update({
+            where: { id: challan.buyerId },
+            data: { balance: { decrement: challan.remainingDue } },
+          })
+        }
+        return tx.wholesaleChallan.update({
+          where: { id: challanId },
+          data: { status: 'PAID', remainingDue: 0, notes: body.notes ?? undefined },
+        })
+      })
+
+      void logAudit({
+        userId: parseInt(userId!),
+        action: 'UPDATE',
+        entityType: 'WholesaleChallan',
+        entityId: challanId,
+        newValues: { status: 'PAID', action: 'markPaid', note: body.notes },
+      }).catch(() => {})
+
+      return NextResponse.json(updated)
+    }
+
+    // General field update (notes, deliveryPerson, attachmentUrl)
+    if (!['ADMIN', 'SUPER_ADMIN'].includes(role)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
     const challan = await prisma.wholesaleChallan.update({
-      where: { id: parseInt(id) },
+      where: { id: challanId },
       data: {
-        status: data.status,
-        notes: data.notes,
-        deliveryPerson: data.deliveryPerson,
-        attachmentUrl: data.attachmentUrl,
+        ...(body.notes !== undefined ? { notes: body.notes } : {}),
+        ...(body.deliveryPerson !== undefined ? { deliveryPerson: body.deliveryPerson } : {}),
+        ...(body.attachmentUrl !== undefined ? { attachmentUrl: body.attachmentUrl } : {}),
       },
     })
 
@@ -49,7 +93,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       action: 'UPDATE',
       entityType: 'WholesaleChallan',
       entityId: challan.id,
-      newValues: data,
+      newValues: body,
     }).catch(() => {})
 
     return NextResponse.json(challan)

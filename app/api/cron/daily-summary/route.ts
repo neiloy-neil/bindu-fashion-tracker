@@ -89,5 +89,37 @@ export async function GET(req: NextRequest) {
     logger.error('cron.daily_summary_notification_failed', error)
   }
 
+  // Send per-branch summary to BRANCH users
+  try {
+    const branchUsers = await prisma.user.findMany({
+      where: { role: 'BRANCH', isActive: true, branchId: { not: null } },
+      select: { id: true, branchId: true },
+    })
+
+    const entryByBranch = new Map(entries.map(e => [e.branchId, e]))
+    const summaryByBranch = new Map(branchSummaries.map((s, i) => [entries[i].branchId, s]))
+
+    const branchNotifications = branchUsers
+      .filter(u => summaryByBranch.has(u.branchId!))
+      .map(u => {
+        const s = summaryByBranch.get(u.branchId!)!
+        const net = s.net
+        return {
+          userId: u.id,
+          type: 'DAILY_SUMMARY',
+          title: `Your branch summary — ${dateStr}`,
+          body: `Sales ৳${s.sales.toLocaleString('en-BD')} | Expenses ৳${s.expenses.toLocaleString('en-BD')} | Net ${net >= 0 ? '+' : ''}৳${net.toLocaleString('en-BD')}`,
+          metadata: { date: dateStr, branchName: s.branch, sales: s.sales, expenses: s.expenses, net },
+        }
+      })
+
+    if (branchNotifications.length > 0) {
+      await prisma.notification.createMany({ data: branchNotifications })
+      logger.info('cron.daily_summary_branch_notifications_sent', { count: branchNotifications.length })
+    }
+  } catch (error) {
+    logger.error('cron.daily_summary_branch_notification_failed', error)
+  }
+
   return NextResponse.json({ date: dateStr, totalSales, totalExpenses, netBalance, branchSummaries })
 }

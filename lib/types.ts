@@ -161,5 +161,9 @@ export interface SummaryStats {
     category: string
     amount: number
   }[]
+  incomeBreakdown?: {
+    category: string
+    amount: number
+  }[]
   userRole?: string
 }

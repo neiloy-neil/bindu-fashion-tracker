@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import useSWR from 'swr'
-import { ArrowLeft, Plus, Building2, Phone, MapPin, Building, FileText, CreditCard, Receipt, Landmark, Smartphone } from 'lucide-react'
+import { ArrowLeft, Plus, Building2, Phone, MapPin, Building, FileText, CreditCard, Receipt, Landmark, Smartphone, Download, X } from 'lucide-react'
 import Link from 'next/link'
 import { formatCurrency } from '@/lib/utils'
 import { format } from 'date-fns'
@@ -21,10 +21,18 @@ export default function PartyProfileClient({ party: initialParty }: { party: any
     fallbackData: initialParty 
   })
   
-  const { data: ledger, mutate: mutateLedger, isLoading: isLoadingLedger } = useSWR(
-    `/api/parties/${initialParty.id}/ledger`, 
-    fetcher
-  )
+  const [ledgerStartDate, setLedgerStartDate] = useState('')
+  const [ledgerEndDate, setLedgerEndDate] = useState('')
+
+  const ledgerUrl = (() => {
+    const p = new URLSearchParams()
+    if (ledgerStartDate && ledgerEndDate) { p.set('startDate', ledgerStartDate); p.set('endDate', ledgerEndDate) }
+    const qs = p.toString()
+    return `/api/parties/${initialParty.id}/ledger${qs ? `?${qs}` : ''}`
+  })()
+  const { data: ledgerData, mutate: mutateLedger, isLoading: isLoadingLedger } = useSWR(ledgerUrl, fetcher)
+  const ledger: any[] = Array.isArray(ledgerData) ? ledgerData : (ledgerData?.entries ?? [])
+  const preFilterBalance: number = ledgerData?.preFilterBalance ?? 0
 
   // Modals state
   const [isBankModalOpen, setIsBankModalOpen] = useState(false)
@@ -56,51 +64,51 @@ export default function PartyProfileClient({ party: initialParty }: { party: any
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         {/* Profile Card */}
-        <div className="col-span-1 lg:col-span-2 bg-card border border-border rounded-xl p-6 shadow-sm">
+        <div className="col-span-1 lg:col-span-2 bg-[var(--surface)] border border-[var(--border)] rounded-xl p-6">
           <div className="flex items-start justify-between">
             <div>
               <h1 className="text-2xl font-bold flex items-center gap-2">
-                <Building2 className="text-primary" />
+                <Building2 className="text-[var(--accent)]" />
                 {party.name}
               </h1>
-              <div className="mt-4 space-y-2 text-sm text-muted-foreground">
+              <div className="mt-4 space-y-2 text-sm text-[var(--text-muted)]">
                 {party.contactPerson && (
                   <div className="flex items-center gap-2">
-                    <span className="font-semibold w-24">Contact:</span> {party.contactPerson}
+                    <span className="font-semibold w-24 text-[var(--text-secondary)]">Contact:</span> {party.contactPerson}
                   </div>
                 )}
                 {party.contactNumber && (
                   <div className="flex items-center gap-2">
-                    <Phone size={14} className="text-muted-foreground/70" />
-                    <span className="font-semibold w-[76px]">Phone:</span> {party.contactNumber}
+                    <Phone size={14} className="text-[var(--text-muted)]" />
+                    <span className="font-semibold w-[76px] text-[var(--text-secondary)]">Phone:</span> {party.contactNumber}
                   </div>
                 )}
                 {party.secondaryNumber && (
                   <div className="flex items-center gap-2">
-                    <Phone size={14} className="text-muted-foreground/70" />
-                    <span className="font-semibold w-[76px]">Alt Phone:</span> {party.secondaryNumber}
+                    <Phone size={14} className="text-[var(--text-muted)]" />
+                    <span className="font-semibold w-[76px] text-[var(--text-secondary)]">Alt Phone:</span> {party.secondaryNumber}
                   </div>
                 )}
                 {party.email && (
                   <div className="flex items-center gap-2">
-                    <span className="text-muted-foreground/70">@</span>
-                    <span className="font-semibold w-[76px]">Email:</span> 
-                    <a href={`mailto:${party.email}`} className="text-primary hover:underline">{party.email}</a>
+                    <span className="text-[var(--text-muted)]">@</span>
+                    <span className="font-semibold w-[76px] text-[var(--text-secondary)]">Email:</span>
+                    <a href={`mailto:${party.email}`} className="text-[var(--accent)] hover:underline">{party.email}</a>
                   </div>
                 )}
                 {party.address && (
                   <div className="flex items-start gap-2 pt-1">
-                    <MapPin size={14} className="text-muted-foreground/70 mt-0.5" />
-                    <span className="font-semibold w-[76px] shrink-0">Address:</span> 
+                    <MapPin size={14} className="text-[var(--text-muted)] mt-0.5" />
+                    <span className="font-semibold w-[76px] shrink-0 text-[var(--text-secondary)]">Address:</span>
                     <span>{party.address}</span>
                   </div>
                 )}
               </div>
             </div>
-            
+
             <div className="text-right">
-              <p className="text-sm font-medium text-muted-foreground mb-1">Total Due</p>
-              <p className={`text-3xl font-bold font-mono ${party.balance > 0 ? 'text-destructive' : 'text-emerald-500'}`}>
+              <p className="text-sm font-medium text-[var(--text-muted)] mb-1">Total Due</p>
+              <p className={`text-3xl font-bold font-mono ${party.balance > 0 ? 'text-red-400' : 'text-emerald-500'}`}>
                 ৳{formatCurrency(party.balance)}
               </p>
             </div>
@@ -108,40 +116,40 @@ export default function PartyProfileClient({ party: initialParty }: { party: any
         </div>
 
         {/* Payment Methods Card */}
-        <div className="col-span-1 bg-card border border-border rounded-xl p-6 shadow-sm flex flex-col">
+        <div className="col-span-1 bg-[var(--surface)] border border-[var(--border)] rounded-xl p-6 flex flex-col">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold flex items-center gap-2">
-              <Landmark size={18} className="text-primary" />
+            <h2 className="font-semibold flex items-center gap-2 text-[var(--text-primary)]">
+              <Landmark size={18} className="text-[var(--accent)]" />
               Payment Methods
             </h2>
-            <button 
+            <button
               onClick={() => setIsBankModalOpen(true)}
-              className="text-xs flex items-center gap-1 text-primary hover:text-primary/80 transition-colors bg-primary/10 px-2 py-1 rounded-md font-medium"
+              className="text-xs flex items-center gap-1 text-[var(--accent)] hover:opacity-80 transition-opacity bg-[var(--accent-subtle)] px-2 py-1 rounded-md font-medium"
             >
               <Plus size={12} /> Add
             </button>
           </div>
-          
+
           <div className="flex-1 overflow-y-auto pr-2 space-y-4">
             {party.bankInfo && party.bankInfo.length > 0 ? (
               party.bankInfo.map((method: any) => (
-                <div key={method.id} className="bg-muted/30 p-3 rounded-lg border border-border/50 text-sm relative group">
+                <div key={method.id} className="bg-[var(--surface-raised)] p-3 rounded-lg border border-[var(--border)] text-sm relative group">
                   <div className="flex items-start justify-between">
                     <div>
-                      <p className="font-bold text-foreground flex items-center gap-2">
+                      <p className="font-bold text-[var(--text-primary)] flex items-center gap-2">
                         {method.type === 'BANK' ? <Landmark size={14} /> : <Smartphone size={14} />}
                         {method.label || method.bankName || method.type}
-                        {method.isDefault && <span className="bg-primary/20 text-primary text-[10px] px-1.5 py-0.5 rounded font-medium">DEFAULT</span>}
+                        {method.isDefault && <span className="bg-[var(--accent-subtle)] text-[var(--accent)] text-[10px] px-1.5 py-0.5 rounded font-medium">DEFAULT</span>}
                       </p>
                       {method.type === 'BANK' && method.branchName && (
-                        <p className="text-muted-foreground mt-0.5">{method.branchName} Branch</p>
+                        <p className="text-[var(--text-muted)] mt-0.5">{method.branchName} Branch</p>
                       )}
                       {method.accountName && (
-                        <p className="text-muted-foreground mt-0.5">{method.accountName}</p>
+                        <p className="text-[var(--text-muted)] mt-0.5">{method.accountName}</p>
                       )}
-                      <div className="mt-2 space-y-1 text-xs font-mono text-muted-foreground">
-                        <p><span className="text-foreground/70 font-sans">A/C:</span> {method.accountNo}</p>
-                        {method.routingNo && <p><span className="text-foreground/70 font-sans">Routing:</span> {method.routingNo}</p>}
+                      <div className="mt-2 space-y-1 text-xs font-mono text-[var(--text-muted)]">
+                        <p><span className="text-[var(--text-secondary)] font-sans">A/C:</span> {method.accountNo}</p>
+                        {method.routingNo && <p><span className="text-[var(--text-secondary)] font-sans">Routing:</span> {method.routingNo}</p>}
                       </div>
                     </div>
                     <button
@@ -154,7 +162,7 @@ export default function PartyProfileClient({ party: initialParty }: { party: any
                           console.error('Failed to delete', e)
                         }
                       }}
-                      className="text-destructive opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/10 p-1.5 rounded-md"
+                      className="text-red-400 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500/10 p-1.5 rounded-md"
                       title="Delete Payment Method"
                     >
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
@@ -163,37 +171,67 @@ export default function PartyProfileClient({ party: initialParty }: { party: any
                 </div>
               ))
             ) : (
-              <p className="text-sm text-muted-foreground text-center py-8">No payment methods added yet.</p>
+              <p className="text-sm text-[var(--text-muted)] text-center py-8">No payment methods added yet.</p>
             )}
           </div>
         </div>
       </div>
 
-
-
       {/* Ledger Section */}
-      <div className="bg-card border border-border rounded-xl shadow-lg overflow-hidden">
-        <div className="p-4 sm:p-6 border-b border-border bg-muted/20 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <h2 className="text-lg font-bold flex items-center gap-2">
-            <FileText className="text-primary" />
-            Party Ledger
-          </h2>
+      <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl overflow-hidden">
+        <div className="p-4 sm:p-6 border-b border-[var(--border)] bg-[var(--surface-raised)] flex flex-col gap-3">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <h2 className="text-lg font-bold flex items-center gap-2 text-[var(--text-primary)]">
+              <FileText className="text-[var(--accent)]" />
+              Party Ledger
+              {(ledgerStartDate || ledgerEndDate) && <span className="text-xs font-normal text-[var(--text-muted)] ml-1">(filtered)</span>}
+            </h2>
+            <div className="flex items-center gap-2 flex-wrap">
+              <input type="date" value={ledgerStartDate} onChange={e => setLedgerStartDate(e.target.value)} className="input text-xs h-8 px-2" />
+              <span className="text-[var(--text-muted)] text-xs">—</span>
+              <input type="date" value={ledgerEndDate} onChange={e => setLedgerEndDate(e.target.value)} className="input text-xs h-8 px-2" />
+              {(ledgerStartDate || ledgerEndDate) && (
+                <button onClick={() => { setLedgerStartDate(''); setLedgerEndDate('') }} className="p-1 rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--surface)] transition-colors" title="Clear filter">
+                  <X size={13} />
+                </button>
+              )}
+            </div>
+          </div>
           <div className="flex flex-wrap gap-2">
-            <button 
+            <button
               onClick={() => setIsPurchaseModalOpen(true)}
-              className="px-4 py-2 bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded-lg text-sm font-medium transition-all shadow-sm flex items-center gap-2"
+              className="px-4 py-2 bg-[var(--surface-raised)] border border-[var(--border)] text-[var(--text-primary)] hover:bg-[var(--border)] rounded-lg text-sm font-medium transition-all flex items-center gap-2"
             >
               <Receipt size={16} />
               Add Purchase / Due
             </button>
-            <button 
+            <button
               onClick={() => setIsPaymentModalOpen(true)}
-              className="px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg text-sm font-medium transition-all shadow-sm flex items-center gap-2"
+              className="px-4 py-2 bg-[var(--accent)] text-white hover:opacity-90 rounded-lg text-sm font-medium transition-all flex items-center gap-2"
             >
               <CreditCard size={16} />
               Make Payment
             </button>
+            <button
+              onClick={async () => {
+                if (!ledger || ledger.length === 0) return
+                const { exportPartyLedgerPdf } = await import('@/lib/report-pdf')
+                await exportPartyLedgerPdf(
+                  party.name,
+                  party.balance,
+                  ledger,
+                  ledgerStartDate || undefined,
+                  ledgerEndDate || undefined,
+                )
+              }}
+              disabled={!ledger || ledger.length === 0}
+              className="px-4 py-2 bg-[var(--surface-raised)] border border-[var(--border)] text-[var(--text-primary)] hover:bg-[var(--border)] rounded-lg text-sm font-medium transition-all flex items-center gap-2 disabled:opacity-40"
+            >
+              <Download size={16} />
+              Export PDF
+            </button>
           </div>
+        </div>
         </div>
 
         {/* Desktop Table */}
@@ -219,13 +257,25 @@ export default function PartyProfileClient({ party: initialParty }: { party: any
                   <TableCell colSpan={6} className="py-12 text-center text-[var(--text-muted)]">No ledger entries found.</TableCell>
                 </TableRow>
               ) : (
-                ledger.map((entry: any) => (
+                <>
+                {preFilterBalance !== 0 && (
+                  <TableRow className="border-b border-[var(--border)] bg-[var(--surface-raised)]/50">
+                    <TableCell colSpan={4} className="py-2 text-xs text-[var(--text-muted)] italic">Balance brought forward</TableCell>
+                    <TableCell />
+                    <TableCell className="text-right font-mono font-semibold text-[var(--text-secondary)]">৳{preFilterBalance.toLocaleString()}</TableCell>
+                  </TableRow>
+                )}
+                {ledger.map((entry: any) => (
                   <TableRow key={`${entry.type}-${entry.id}`} className="border-b border-[var(--border)] hover:bg-[var(--surface-raised)] transition-colors">
                     <TableCell className="whitespace-nowrap font-medium text-[var(--text-primary)]">{format(new Date(entry.date), 'dd MMM yyyy')}</TableCell>
                     <TableCell>
                       {entry.type === 'PURCHASE' ? (
                         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[var(--danger-subtle)]/30 text-[var(--danger)]">
                           {entry.isOpeningDue ? 'Opening Due' : 'Purchase'}
+                        </span>
+                      ) : entry.approvalStatus === 'PENDING' ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-yellow-500/10 text-yellow-400" title="Pending approval — not counted in balance">
+                          Payment (Pending)
                         </span>
                       ) : (
                         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[var(--success-subtle)]/30 text-[var(--success)]">
@@ -269,13 +319,20 @@ export default function PartyProfileClient({ party: initialParty }: { party: any
                       {entry.type === 'PURCHASE' ? <span className="text-[var(--danger)] font-semibold">৳{formatCurrency(entry.amount)}</span> : <span className="text-[var(--text-muted)] opacity-50">-</span>}
                     </TableCell>
                     <TableCell className="text-right font-mono">
-                      {entry.type === 'PAYMENT' ? <span className="text-emerald-500 font-semibold">৳{formatCurrency(entry.amount)}</span> : <span className="text-[var(--text-muted)] opacity-50">-</span>}
+                      {entry.type === 'PAYMENT'
+                        ? entry.approvalStatus === 'PENDING'
+                          ? <span className="text-yellow-500/60 font-semibold line-through" title="Not counted — pending approval">৳{formatCurrency(entry.amount)}</span>
+                          : <span className="text-emerald-500 font-semibold">৳{formatCurrency(entry.amount)}</span>
+                        : <span className="text-[var(--text-muted)] opacity-50">-</span>}
                     </TableCell>
                     <TableCell className="text-right font-mono font-bold text-[var(--text-primary)]">
-                      ৳{formatCurrency(entry.runningBalance)}
+                      {entry.type === 'PAYMENT' && entry.approvalStatus === 'PENDING'
+                        ? <span className="text-[var(--text-muted)] text-xs italic">—</span>
+                        : `৳${formatCurrency(entry.runningBalance)}`}
                     </TableCell>
                   </TableRow>
-                ))
+                ))}
+                </>
               )}
             </TableBody>
           </Table>
@@ -284,9 +341,9 @@ export default function PartyProfileClient({ party: initialParty }: { party: any
         {/* Mobile Cards */}
         <div className="sm:hidden flex flex-col divide-y divide-border">
           {isLoadingLedger ? (
-            <div className="p-8 text-center text-muted-foreground">Loading ledger...</div>
+            <div className="p-8 text-center text-[var(--text-muted)]">Loading ledger...</div>
           ) : !ledger || ledger.length === 0 ? (
-            <div className="p-8 text-center text-muted-foreground">No ledger entries found.</div>
+            <div className="p-8 text-center text-[var(--text-muted)]">No ledger entries found.</div>
           ) : (
             ledger.map((entry: any) => (
               <div key={`mobile-${entry.type}-${entry.id}`} className="p-4 space-y-3">
@@ -295,7 +352,7 @@ export default function PartyProfileClient({ party: initialParty }: { party: any
                     <div className="font-medium">{format(new Date(entry.date), 'dd MMM yyyy')}</div>
                     <div className="mt-1">
                       {entry.type === 'PURCHASE' ? (
-                        <span className="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-medium bg-destructive/10 text-destructive uppercase tracking-wider">
+                        <span className="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-medium bg-red-500/10 text-red-400 uppercase tracking-wider">
                           {entry.isOpeningDue ? 'Opening Due' : 'Purchase'}
                         </span>
                       ) : (
@@ -306,12 +363,12 @@ export default function PartyProfileClient({ party: initialParty }: { party: any
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Balance</p>
+                    <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-0.5">Balance</p>
                     <p className="font-mono font-bold">৳{formatCurrency(entry.runningBalance)}</p>
                   </div>
                 </div>
 
-                <div className="bg-muted/30 p-3 rounded-lg border border-border/50">
+                <div className="bg-[var(--surface-raised)] p-3 rounded-lg border border-[var(--border)]">
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-xs font-semibold text-muted-foreground">
                       {entry.type === 'PURCHASE' ? 'Debit (Owed)' : 'Credit (Paid)'}
@@ -376,9 +433,8 @@ export default function PartyProfileClient({ party: initialParty }: { party: any
         onClose={() => setIsPaymentModalOpen(false)} 
         partyId={party.id} 
         bankAccounts={party.bankInfo || []}
-        onSuccess={handleSuccess} 
+        onSuccess={handleSuccess}
       />
-      </div>
     </>
   )
 }

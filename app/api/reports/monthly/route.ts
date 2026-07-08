@@ -21,7 +21,11 @@ export async function GET(req: NextRequest) {
   const endDate = new Date(year, month, 0, 23, 59, 59, 999)
 
   try {
-    const [branches, entries] = await Promise.all([
+    const bstStart = `${year}-${String(month).padStart(2, '0')}-01T00:00:00.000+06:00`
+    const lastDay = new Date(year, month, 0).getDate()
+    const bstEnd = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}T23:59:59.999+06:00`
+
+    const [branches, entries, challans] = await Promise.all([
       prisma.branch.findMany({
         where: branchId ? { id: parseInt(branchId) } : {},
         select: { id: true, name: true },
@@ -49,6 +53,21 @@ export async function GET(req: NextRequest) {
           payments: { select: { amount: true, approvalStatus: true } },
           advanceSalaries: { select: { amount: true, type: true } },
         },
+      }),
+      prisma.wholesaleChallan.findMany({
+        where: {
+          date: { gte: new Date(bstStart), lte: new Date(bstEnd) },
+          ...(branchId ? { branchId: parseInt(branchId) } : {}),
+          status: { not: 'CANCELLED' },
+        },
+        select: {
+          id: true, challanNumber: true, date: true, netAmount: true, remainingDue: true, status: true,
+          branchId: true,
+          buyer: { select: { name: true } },
+          payments: { select: { amount: true } },
+          returns: { select: { amount: true } },
+        },
+        orderBy: { date: 'asc' },
       }),
     ])
 
@@ -82,6 +101,11 @@ export async function GET(req: NextRequest) {
 
       const grossIncome = totalIncome + totalReceivedTransfers
 
+      const branchChallans = challans.filter(c => c.branchId === b.id)
+      const wholesaleInvoiced = branchChallans.reduce((s, c) => s + c.netAmount - c.returns.reduce((r, ret) => r + ret.amount, 0), 0)
+      const wholesaleCollected = branchChallans.reduce((s, c) => s + c.payments.reduce((r, p) => r + p.amount, 0), 0)
+      const wholesaleOutstanding = branchChallans.reduce((s, c) => s + c.remainingDue, 0)
+
       return {
         branchId: b.id,
         branchName: b.name,
@@ -93,6 +117,20 @@ export async function GET(req: NextRequest) {
         totalPayments,
         totalAdvances,
         netCashFlow: grossIncome - totalExpense - totalTransfers - totalPayments - totalAdvances,
+        wholesale: branchChallans.length > 0 ? {
+          invoiced: wholesaleInvoiced,
+          collected: wholesaleCollected,
+          outstanding: wholesaleOutstanding,
+          challans: branchChallans.map(c => ({
+            challanNumber: c.challanNumber,
+            buyerName: c.buyer.name,
+            date: c.date.toISOString(),
+            netAmount: c.netAmount - c.returns.reduce((r, ret) => r + ret.amount, 0),
+            collected: c.payments.reduce((r, p) => r + p.amount, 0),
+            remainingDue: c.remainingDue,
+            status: c.status,
+          })),
+        } : null,
       }
     })
 

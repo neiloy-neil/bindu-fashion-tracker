@@ -36,7 +36,7 @@ export default function BranchDetailPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
   const { data: session } = useSession()
-  const isAdmin = session?.user?.role === 'ADMIN'
+  const isAdmin = session?.user?.role === 'ADMIN' || session?.user?.role === 'SUPER_ADMIN'
 
   const [branch, setBranch] = useState<any | null>(null)
   const [loading, setLoading] = useState(true)

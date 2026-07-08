@@ -31,6 +31,24 @@ export async function GET(req: NextRequest) {
     if (buyerId) whereClause.buyerId = parseInt(buyerId)
     if (status) whereClause.status = status
 
+    const search = searchParams.get('search')
+    if (search) {
+      whereClause.OR = [
+        { challanNumber: { contains: search, mode: 'insensitive' } },
+        { buyer: { name: { contains: search, mode: 'insensitive' } } },
+        { deliveryPerson: { contains: search, mode: 'insensitive' } },
+      ]
+    }
+
+    const startDate = searchParams.get('startDate')
+    const endDate = searchParams.get('endDate')
+    if (startDate && endDate) {
+      whereClause.date = {
+        gte: new Date(startDate + 'T00:00:00.000+06:00'),
+        lte: new Date(endDate + 'T23:59:59.999+06:00'),
+      }
+    }
+
     const [challans, total] = await Promise.all([
       prisma.wholesaleChallan.findMany({
         where: whereClause,
@@ -91,6 +109,17 @@ export async function POST(req: NextRequest) {
     const netAmount = totalAmount - discountAmt
     const paidAmt = parseFloat(paidAtDelivery || 0)
     const remainingDue = netAmount - paidAmt
+
+    // Credit limit check
+    const buyer = await prisma.wholesaleBuyer.findUnique({ where: { id: parseInt(buyerId) }, select: { balance: true, creditLimit: true, name: true } })
+    const force = body.force === true
+    if (buyer && buyer.creditLimit > 0 && buyer.balance + remainingDue > buyer.creditLimit) {
+      const limitMsg = `${buyer.name} has a credit limit of ৳${buyer.creditLimit.toLocaleString()}. Current balance ৳${buyer.balance.toLocaleString()}, this challan would bring it to ৳${(buyer.balance + remainingDue).toLocaleString()}.`
+      if (role === 'BRANCH' || !force) {
+        const status = role === 'BRANCH' ? 400 : 422
+        return NextResponse.json({ error: limitMsg, creditLimitExceeded: true }, { status })
+      }
+    }
 
     // Branch code fetched outside tx (read-only, stable)
     const branch = await prisma.branch.findUnique({ where: { id: finalBranchId }, select: { code: true, name: true } })
@@ -161,7 +190,7 @@ export async function POST(req: NextRequest) {
       action: 'CREATE',
       entityType: 'WholesaleChallan',
       entityId: challan.id,
-      newValues: { challanNumber, buyerId, netAmount, remainingDue },
+      newValues: { challanNumber: challan.challanNumber, buyerId, netAmount, remainingDue },
     }).catch(() => {})
 
     return NextResponse.json(challan, { status: 201 })

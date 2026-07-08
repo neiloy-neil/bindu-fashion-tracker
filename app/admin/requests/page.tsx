@@ -13,7 +13,10 @@ export default function AdminRequestsPage() {
   const initialLoadRef = useRef<boolean>(true)
 
   const { data: usersData } = useSWR('/api/admin/users', fetcher)
-  const admins = usersData?.users?.filter((u: any) => u.role === 'ADMIN' || u.role === 'SUPER_ADMIN') || []
+  const userList = Array.isArray(usersData) ? usersData : (usersData?.users ?? [])
+  const admins = userList.filter((u: any) =>
+    ['ADMIN', 'SUPER_ADMIN', 'BRANCH', 'AREA_MANAGER', 'ACCOUNTS', 'AUDITOR', 'HR_ADMIN'].includes(u.role) && u.isActive
+  )
 
   // Use SWR for auto-polling every 10 seconds to catch new requests in real-time
   const { data, error, mutate, isLoading } = useSWR('/api/branch-requests', fetcher, {
@@ -248,14 +251,14 @@ export default function AdminRequestsPage() {
 
               <div>
                 <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">Assign To</label>
-                <select 
-                  className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-lg px-3 py-2 text-white font-bold focus:outline-none focus:border-[var(--accent)]"
+                <select
+                  className="w-full bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2 text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]"
                   value={modalAssignedTo}
                   onChange={e => setModalAssignedTo(e.target.value)}
                 >
                   <option value="">-- Unassigned --</option>
                   {admins.map((a: any) => (
-                    <option key={a.id} value={a.id}>{a.username}</option>
+                    <option key={a.id} value={a.id}>{a.username} ({a.role})</option>
                   ))}
                 </select>
               </div>

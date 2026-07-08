@@ -11,31 +11,26 @@ import AdminEditRequests from '@/components/dashboard/AdminEditRequests'
 import AdminExpenseApprovals from '@/components/dashboard/AdminExpenseApprovals'
 import AdminPaymentApprovals from '@/components/dashboard/AdminPaymentApprovals'
 import RecentActivity from '@/components/dashboard/RecentActivity'
-import { downloadWorkbook } from '@/lib/excel-export'
-import { exportSummaryReportPdf } from '@/lib/report-pdf'
 import { MorningCheckInWidget } from '@/components/hr/MorningCheckInWidget'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
-import {
-  LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-} from 'recharts'
+import dynamic from 'next/dynamic'
+
+const DashboardCharts = dynamic(
+  () => import('@/components/dashboard/DashboardCharts').then(m => ({ default: m.MainDashboardCharts })),
+  { ssr: false, loading: () => <div className="h-64" /> }
+)
+const AreaManagerBranchChart = dynamic(
+  () => import('@/components/dashboard/DashboardCharts').then(m => ({ default: m.AreaManagerBranchChart })),
+  { ssr: false, loading: () => <div className="h-56" /> }
+)
 import {
   FileText, Users, DollarSign, AlertCircle, CheckCircle,
   Clock, ChevronRight, BarChart2, Download, FileSpreadsheet, ChevronDown,
 } from 'lucide-react'
 
-const COLORS = ['#F4881F', '#2A356E', '#2F9E6B', '#FA9A3E', '#4A537A', '#11162B', '#E8E2D5']
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
-
-const TOOLTIP_STYLE = {
-  background: 'var(--surface-raised)',
-  border: '1px solid var(--border-strong)',
-  borderRadius: 8,
-  fontSize: 12,
-  color: 'var(--text-primary)',
-}
 
 function formatDate(dateStr: string) {
   if (!dateStr) return ''
@@ -332,6 +327,7 @@ function ExportMenu({ data, month, year, branchName, wholesaleData }: { data: Su
 
   const handleExcel = async () => {
     setOpen(false)
+    const { downloadWorkbook } = await import('@/lib/excel-export')
     const branchRows = data.branchStats.map(b => ({ branch: b.branchName, totalSales: b.totalSale, totalExpenses: b.totalExpense, netBalance: b.netBalance, physicalCash: b.physicalCash || 0 }))
     const dailyRows = data.dailyTrend.map(d => ({ date: d.date, sales: d.totalSale, expenses: d.totalExpense, netBalance: d.totalSale - d.totalExpense }))
     const expenseRows = data.expenseBreakdown.map(e => ({ category: e.category, amount: e.amount }))
@@ -361,6 +357,7 @@ function ExportMenu({ data, month, year, branchName, wholesaleData }: { data: Su
 
   const handlePdf = async () => {
     setOpen(false)
+    const { exportSummaryReportPdf } = await import('@/lib/report-pdf')
     await exportSummaryReportPdf(data, month, year, branchName, wholesaleData)
   }
 
@@ -399,6 +396,335 @@ function ExportMenu({ data, month, year, branchName, wholesaleData }: { data: Su
   )
 }
 
+function FactoryBranchDashboard({ data, loading, month, year, viewMode, startDate, endDate, onFilterChange }: {
+  data: SummaryStats | undefined
+  loading: boolean
+  month: number
+  year: number
+  viewMode: 'daily' | 'month' | 'custom'
+  startDate: string
+  endDate: string
+  onFilterChange: (m: number, y: number, sd: string, ed: string, mode: 'daily' | 'month' | 'custom') => void
+}) {
+  const period = viewMode === 'daily'
+    ? `Today · ${startDate}`
+    : viewMode === 'custom'
+    ? `${startDate} to ${endDate}`
+    : `${MONTHS[month - 1]} ${year}`
+
+  const totalExpenses = data?.totalExpenses ?? 0
+  const totalIncome = data?.totalSales ?? 0
+  const net = totalIncome - totalExpenses
+
+  return (
+    <div className="flex flex-col h-full">
+      <div className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-3 px-4 md:px-6 py-4 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur">
+        <div>
+          <h1 className="text-lg font-semibold text-[var(--text-primary)] leading-none">Factory Dashboard</h1>
+          <p className="text-sm text-[var(--text-muted)] mt-1">{period}</p>
+        </div>
+        <DateFilter
+          month={month} year={year} startDate={startDate} endDate={endDate} viewMode={viewMode}
+          onChange={onFilterChange}
+          branches={[]} branchId="all" onBranchChange={() => {}} userRole="BRANCH"
+        />
+      </div>
+
+      <div className="p-6 space-y-6 max-w-4xl">
+        {loading ? (
+          <div className="flex items-center justify-center h-48 gap-3">
+            <div className="w-5 h-5 rounded-full border-2 border-[var(--border-strong)] border-t-[var(--accent)] animate-spin" />
+            <span className="text-sm text-[var(--text-muted)]">Loading…</span>
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+              {[
+                { label: 'Production Costs', value: totalExpenses, color: '#dc2626' },
+                { label: 'Other Income', value: totalIncome, color: '#059669' },
+                { label: 'Net', value: net, color: net >= 0 ? '#059669' : '#dc2626' },
+              ].map(({ label, value, color }) => (
+                <div key={label} className="rounded-xl bg-[var(--surface)] p-4 border border-[var(--border)]">
+                  <p className="text-xs text-[var(--text-muted)] mb-1">{label}</p>
+                  <p className="text-xl font-bold tabular-nums" style={{ color }}>{formatCurrency(value)}</p>
+                </div>
+              ))}
+            </div>
+
+            {data?.expenseBreakdown && data.expenseBreakdown.length > 0 && (
+              <div className="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5">
+                <p className="text-sm font-semibold text-[var(--text-primary)] mb-4">Cost Breakdown</p>
+                <div className="space-y-2">
+                  {data.expenseBreakdown.slice(0, 10).map((item: any) => (
+                    <div key={item.category} className="flex items-center justify-between text-sm">
+                      <span className="text-[var(--text-secondary)] truncate max-w-[60%]">{item.category}</span>
+                      <span className="font-medium text-[var(--text-primary)] tabular-nums">{formatCurrency(item.amount)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="flex gap-3 flex-wrap">
+              <Link href="/entries/new" className="px-4 py-2 rounded-lg text-sm font-medium bg-[var(--accent)] text-black hover:opacity-90 transition-opacity">
+                New Entry
+              </Link>
+              <Link href="/entries" className="px-4 py-2 rounded-lg text-sm font-medium bg-[var(--surface)] border border-[var(--border)] text-[var(--text-primary)] hover:bg-[var(--surface-raised)] transition-colors">
+                Entry History
+              </Link>
+              <Link href="/hr/attendance" className="px-4 py-2 rounded-lg text-sm font-medium bg-[var(--surface)] border border-[var(--border)] text-[var(--text-primary)] hover:bg-[var(--surface-raised)] transition-colors">
+                Attendance
+              </Link>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function WholesaleBranchDashboard({ wholesaleData, month, year, viewMode, startDate, endDate, onFilterChange }: {
+  wholesaleData: any
+  month: number
+  year: number
+  viewMode: 'daily' | 'month' | 'custom'
+  startDate: string
+  endDate: string
+  onFilterChange: (m: number, y: number, sd: string, ed: string, mode: 'daily' | 'month' | 'custom') => void
+}) {
+  const ws = wholesaleData || {}
+  const period = viewMode === 'daily'
+    ? `Today · ${startDate}`
+    : viewMode === 'custom'
+    ? `${startDate} to ${endDate}`
+    : `${MONTHS[month - 1]} ${year}`
+
+  return (
+    <div className="flex flex-col h-full">
+      <div className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-3 px-4 md:px-6 py-4 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur">
+        <div>
+          <h1 className="text-lg font-semibold text-[var(--text-primary)] leading-none">Wholesale Dashboard</h1>
+          <p className="text-sm text-[var(--text-muted)] mt-1">{period}</p>
+        </div>
+        <DateFilter
+          month={month} year={year} startDate={startDate} endDate={endDate} viewMode={viewMode}
+          onChange={onFilterChange}
+          branches={[]} branchId="all" onBranchChange={() => {}} userRole="BRANCH"
+        />
+      </div>
+
+      <div className="p-6 space-y-6 max-w-4xl">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {[
+            { label: 'Challans Issued', value: ws.totalChallans ?? 0, plain: true, color: 'var(--accent)' },
+            { label: 'Total Invoiced', value: ws.totalNetAmount ?? 0, color: 'var(--text-primary)' },
+            { label: 'Collected', value: ws.totalCollected ?? 0, color: '#059669' },
+            { label: 'Pending Due', value: ws.pendingChallans ?? 0, plain: true, color: ws.pendingChallans > 0 ? '#d97706' : 'var(--text-muted)' },
+          ].map(({ label, value, plain, color }) => (
+            <div key={label} className="rounded-xl bg-[var(--surface)] p-4 border border-[var(--border)]">
+              <p className="text-xs text-[var(--text-muted)] mb-1">{label}</p>
+              <p className="text-xl font-bold tabular-nums" style={{ color }}>
+                {plain ? value : formatCurrency(value as number)}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        <div className="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-2">
+          <p className="text-sm font-semibold text-[var(--text-primary)]">Outstanding Balance (All Time)</p>
+          <p className="text-3xl font-bold tabular-nums" style={{ color: (ws.totalOutstanding ?? 0) > 0 ? '#d97706' : '#059669' }}>
+            {formatCurrency(ws.totalOutstanding ?? 0)}
+          </p>
+          <p className="text-xs text-[var(--text-muted)]">Across {ws.activeBuyers ?? 0} active buyer{ws.activeBuyers !== 1 ? 's' : ''}</p>
+        </div>
+
+        <div className="flex gap-3 flex-wrap">
+          <Link href="/wholesale/challans" className="px-4 py-2 rounded-lg text-sm font-medium bg-[var(--accent)] text-black hover:opacity-90 transition-opacity">
+            New Challan
+          </Link>
+          <Link href="/wholesale/buyers" className="px-4 py-2 rounded-lg text-sm font-medium bg-[var(--surface)] border border-[var(--border)] text-[var(--text-primary)] hover:bg-[var(--surface-raised)] transition-colors">
+            Buyers
+          </Link>
+          <Link href="/wholesale/collections" className="px-4 py-2 rounded-lg text-sm font-medium bg-[var(--surface)] border border-[var(--border)] text-[var(--text-primary)] hover:bg-[var(--surface-raised)] transition-colors">
+            Collections
+          </Link>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function AccountsDashboard({ wholesaleData, month, year, viewMode, startDate, endDate }: {
+  wholesaleData: any
+  month: number
+  year: number
+  viewMode: 'daily' | 'month' | 'custom'
+  startDate: string
+  endDate: string
+}) {
+  const fetcher = (url: string) => fetch(url).then(r => r.json())
+  const { data: pendingCount } = useSWR('/api/transfers/pending-count', fetcher, { revalidateOnFocus: false })
+
+  const ws = wholesaleData || {}
+  const period = viewMode === 'daily'
+    ? `Today · ${startDate}`
+    : viewMode === 'custom'
+    ? `${startDate} to ${endDate}`
+    : `${MONTHS[month - 1]} ${year}`
+
+  return (
+    <div className="p-6 space-y-6 max-w-4xl mx-auto">
+      <div>
+        <h1 className="text-lg font-semibold text-[var(--text-primary)]">Accounts Overview</h1>
+        <p className="text-sm text-[var(--text-muted)] mt-0.5">{period}</p>
+      </div>
+
+      <div>
+        <h2 className="text-sm font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-3">Wholesale</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {[
+            { label: 'Invoiced', value: ws.invoiced ?? 0, color: 'var(--accent)' },
+            { label: 'Collected', value: ws.collected ?? 0, color: '#059669' },
+            { label: 'Outstanding', value: ws.outstanding ?? 0, color: '#d97706' },
+            { label: 'Active Buyers', value: ws.activeBuyers ?? '—', color: 'var(--text-secondary)', raw: true },
+          ].map(({ label, value, color, raw }) => (
+            <div key={label} className="rounded-xl bg-[var(--surface)] p-4 border border-[var(--border)]">
+              <p className="text-xs text-[var(--text-muted)] mb-1">{label}</p>
+              <p className="text-xl font-bold" style={{ color }}>{raw ? value : formatCurrency(value as number)}</p>
+            </div>
+          ))}
+        </div>
+        <div className="mt-3 flex gap-2">
+          <Link href="/wholesale/challans" className="text-xs text-[var(--accent)] hover:underline">View Challans →</Link>
+          <span className="text-[var(--border)]">·</span>
+          <Link href="/wholesale/collections" className="text-xs text-[var(--accent)] hover:underline">Collections →</Link>
+        </div>
+      </div>
+
+      <div>
+        <h2 className="text-sm font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-3">Transfers</h2>
+        <div className="grid grid-cols-1 gap-4 mb-3">
+          <div className="rounded-xl bg-[var(--surface)] p-4 border border-[var(--border)]">
+            <p className="text-xs text-[var(--text-muted)] mb-1">Pending Incoming</p>
+            <p className="text-2xl font-bold text-[var(--accent)]">{pendingCount?.count ?? '—'}</p>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <Link href="/transfers/incoming" className="text-xs text-[var(--accent)] hover:underline">Incoming Transfers →</Link>
+          <span className="text-[var(--border)]">·</span>
+          <Link href="/transfers/history" className="text-xs text-[var(--accent)] hover:underline">History →</Link>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function AreaManagerDashboard({ month, year, viewMode, startDate, endDate }: {
+  month: number
+  year: number
+  viewMode: 'daily' | 'month' | 'custom'
+  startDate: string
+  endDate: string
+}) {
+  const fetcher = (url: string) => fetch(url).then(r => r.json())
+
+  const areaUrl = (() => {
+    let u = '/api/dashboard/area-manager?'
+    if (viewMode === 'custom') u += `startDate=${startDate}&endDate=${endDate}`
+    else if (viewMode === 'daily') u += `startDate=${startDate}&endDate=${startDate}`
+    else u += `month=${month}&year=${year}`
+    return u
+  })()
+
+  const { data: branchStats, isLoading } = useSWR<any[]>(areaUrl, fetcher, { keepPreviousData: true, revalidateOnFocus: false })
+
+  const period = viewMode === 'daily'
+    ? `Today · ${startDate}`
+    : viewMode === 'custom'
+    ? `${startDate} to ${endDate}`
+    : `${MONTHS[month - 1]} ${year}`
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64 gap-3">
+        <div className="w-5 h-5 rounded-full border-2 border-[var(--border-strong)] border-t-[var(--accent)] animate-spin" />
+        <span className="text-sm text-[var(--text-muted)]">Loading…</span>
+      </div>
+    )
+  }
+
+  if (!branchStats || branchStats.length === 0) {
+    return (
+      <div className="p-6 flex items-center justify-center h-64">
+        <p className="text-sm text-[var(--text-muted)]">No branches assigned to your account.</p>
+      </div>
+    )
+  }
+
+  const totalIncome = branchStats.reduce((s: number, r: any) => s + r.totalIncome, 0)
+  const totalExpense = branchStats.reduce((s: number, r: any) => s + r.totalExpense, 0)
+  const chartData = branchStats.map((r: any) => ({
+    name: r.branch.name.length > 12 ? r.branch.name.slice(0, 11) + '…' : r.branch.name,
+    Income: Math.round(r.totalIncome),
+    Expenses: Math.round(r.totalExpense),
+    Net: Math.round(r.netCashFlow),
+  }))
+
+  return (
+    <div className="p-6 space-y-6 max-w-5xl mx-auto">
+      <div>
+        <h1 className="text-lg font-semibold text-[var(--text-primary)]">Area Overview</h1>
+        <p className="text-sm text-[var(--text-muted)] mt-0.5">{period} · {branchStats.length} branch{branchStats.length !== 1 ? 'es' : ''}</p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {[
+          { label: 'Total Income', value: totalIncome, color: '#059669' },
+          { label: 'Total Expenses', value: totalExpense, color: '#dc2626' },
+          { label: 'Net Cash Flow', value: totalIncome - totalExpense, color: (totalIncome - totalExpense) >= 0 ? '#059669' : '#dc2626' },
+          { label: 'Branches', value: branchStats.length, color: 'var(--accent)', plain: true },
+        ].map(({ label, value, color, plain }) => (
+          <div key={label} className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4">
+            <p className="text-[11px] text-[var(--text-muted)] mb-1">{label}</p>
+            <p className="text-lg font-bold tabular-nums" style={{ color }}>
+              {plain ? value : formatCurrency(value as number)}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
+        <p className="text-sm font-semibold text-[var(--text-primary)] mb-4">Branch Comparison</p>
+        <AreaManagerBranchChart chartData={chartData} />
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        {branchStats.map((row: any) => (
+          <div key={row.branch.id} className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-semibold text-[var(--text-primary)]">{row.branch.name}</h3>
+              <Link href={`/?branchId=${row.branch.id}`} className="text-xs text-[var(--accent)] hover:underline">Details →</Link>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { label: 'Income', value: row.totalIncome, color: '#059669' },
+                { label: 'Expenses', value: row.totalExpense, color: '#dc2626' },
+                { label: 'Net Cash Flow', value: row.netCashFlow, color: row.netCashFlow >= 0 ? '#059669' : '#dc2626' },
+                { label: 'Transfers Out', value: row.totalTransfersOut, color: 'var(--text-secondary)' },
+              ].map(({ label, value, color }) => (
+                <div key={label}>
+                  <p className="text-[11px] text-[var(--text-muted)] mb-0.5">{label}</p>
+                  <p className="text-sm font-semibold" style={{ color }}>{formatCurrency(value)}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function Dashboard() {
   const searchParams = useSearchParams()
   const now = new Date()
@@ -420,6 +746,7 @@ function Dashboard() {
 
   const { data: session } = useSWR('/api/auth/session', fetcher)
   const userRole = session?.user?.role || ''
+  const branchType = (session?.user as any)?.branchType ?? null
 
   const { data: branchesData } = useSWR<Branch[]>('/api/branches', fetcher)
   const branches = branchesData || []
@@ -456,7 +783,9 @@ function Dashboard() {
   )
 
   const wholesaleUrl = (() => {
-    if (!['ADMIN', 'SUPER_ADMIN', 'ACCOUNTS', 'AUDITOR', 'AREA_MANAGER'].includes(userRole)) return null
+    const canSeeWholesale = ['ADMIN', 'SUPER_ADMIN', 'ACCOUNTS', 'AUDITOR', 'AREA_MANAGER'].includes(userRole)
+      || (userRole === 'BRANCH' && branchType === 'WHOLESALE')
+    if (!canSeeWholesale) return null
     let u = '/api/dashboard/wholesale?'
     if (viewMode === 'custom') u += `startDate=${startDate}&endDate=${endDate}`
     else if (viewMode === 'daily') u += `startDate=${startDate}&endDate=${startDate}`
@@ -474,6 +803,22 @@ function Dashboard() {
     )
   }
 
+  if (userRole === 'ACCOUNTS') {
+    return <AccountsDashboard wholesaleData={wholesaleData} month={month} year={year} viewMode={viewMode} startDate={startDate} endDate={endDate} />
+  }
+
+  if (userRole === 'AREA_MANAGER') {
+    return <AreaManagerDashboard month={month} year={year} viewMode={viewMode} startDate={startDate} endDate={endDate} />
+  }
+
+  if (userRole === 'BRANCH' && branchType === 'WHOLESALE') {
+    return <WholesaleBranchDashboard wholesaleData={wholesaleData} month={month} year={year} viewMode={viewMode} startDate={startDate} endDate={endDate} onFilterChange={(m, y, sd, ed, mode) => { setMonth(m); setYear(y); setStartDate(sd); setEndDate(ed); setViewMode(mode) }} />
+  }
+
+  if (userRole === 'BRANCH' && branchType === 'FACTORY') {
+    return <FactoryBranchDashboard data={data} loading={loading} month={month} year={year} viewMode={viewMode} startDate={startDate} endDate={endDate} onFilterChange={(m, y, sd, ed, mode) => { setMonth(m); setYear(y); setStartDate(sd); setEndDate(ed); setViewMode(mode) }} />
+  }
+
   const subtitle =
     viewMode === 'daily'
       ? `Overview for ${formatDate(startDate)}`
@@ -484,7 +829,7 @@ function Dashboard() {
   return (
     <>
       {/* Sticky header */}
-      <div className="sticky top-0 z-10 flex items-center justify-between gap-4 px-6 py-4 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur">
+      <div className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-3 px-4 md:px-6 py-4 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur">
         <div>
           <h1 className="text-lg font-semibold text-[var(--text-primary)] leading-none">
             Dashboard
@@ -492,7 +837,7 @@ function Dashboard() {
           <p className="text-sm text-[var(--text-muted)] mt-1">{subtitle}</p>
         </div>
         {userRole !== 'HR_ADMIN' && (
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <DateFilter
               month={month}
               year={year}
@@ -658,7 +1003,7 @@ function Dashboard() {
                       <p className={`text-xl font-bold tabular-nums ${wholesaleData.totalOutstanding > 0 ? 'text-[var(--warning)]' : 'text-[var(--success)]'}`}>
                         ৳{formatCurrency(wholesaleData.totalOutstanding)}
                       </p>
-                      <p className="text-[10px] text-[var(--text-muted)]">All buyers total</p>
+                      <p className="text-[10px] text-[var(--text-muted)]">All buyers · all-time</p>
                     </div>
                     <div className="rounded-lg border border-[var(--border)] p-3 space-y-1">
                       <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wide">Buyers</p>
@@ -685,113 +1030,19 @@ function Dashboard() {
                 </div>
               )}
 
-              {/* Charts row */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                <div className="lg:col-span-2 rounded-xl bg-[var(--surface)] p-5" style={{boxShadow:'0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04)'}}>
-                  <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-4">
-                    Daily Sales vs Expenses
-                  </h3>
-                  <ResponsiveContainer width="100%" height={240}>
-                    <LineChart data={data.dailyTrend} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                      <XAxis
-                        dataKey="date"
-                        tickFormatter={(v) => new Date(v).getDate().toString()}
-                        tick={{ fill: 'var(--text-secondary)', fontSize: 11 }}
-                        axisLine={{ stroke: 'var(--border)' }}
-                      />
-                      <YAxis
-                        tickFormatter={(v) => `৳${(v / 1000).toFixed(0)}k`}
-                        tick={{ fill: 'var(--text-secondary)', fontSize: 11 }}
-                        axisLine={{ stroke: 'var(--border)' }}
-                      />
-                      <Tooltip
-                        contentStyle={TOOLTIP_STYLE}
-                        formatter={(v: any) => [`৳${formatCurrency(v)}`, undefined]}
-                        labelFormatter={(l) => new Date(l).toLocaleDateString('en-BD', { day: 'numeric', month: 'short' })}
-                      />
-                      <Legend className="text-xs" />
-                      <Line type="monotone" dataKey="totalSale" stroke="var(--success)" strokeWidth={2} dot={false} name="Sales" />
-                      <Line type="monotone" dataKey="totalExpense" stroke="var(--text-secondary)" strokeWidth={2} dot={false} name="Expenses" />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-
-                <div className="rounded-xl bg-[var(--surface)] p-5" style={{boxShadow:'0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04)'}}>
-                  <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-2">
-                    Expense Breakdown
-                  </h3>
-                  {data.expenseBreakdown.filter(eb => eb.amount > (data.totalExpenses * 0.3) && eb.amount > 0).length > 0 && (
-                    <div className="mb-3 px-3 py-2 rounded-lg bg-[var(--danger-subtle)] text-xs font-semibold text-[var(--text-secondary)]">
-                      ⚠️ Anomaly:{' '}
-                      {data.expenseBreakdown
-                        .filter(eb => eb.amount > (data.totalExpenses * 0.3) && eb.amount > 0)
-                        .map(eb => eb.category)
-                        .join(', ')}{' '}
-                      exceed 30% of total expenses.
-                    </div>
-                  )}
-                  <ResponsiveContainer width="100%" height={240}>
-                    <PieChart>
-                      <Pie
-                        data={data.expenseBreakdown}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={90}
-                        dataKey="amount"
-                        nameKey="category"
-                      >
-                        {data.expenseBreakdown.map((_, i) => (
-                          <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        contentStyle={TOOLTIP_STYLE}
-                        formatter={(v: any) => [`৳${formatCurrency(v || 0)}`, undefined]}
-                      />
-                      <Legend
-                        layout="vertical"
-                        align="right"
-                        verticalAlign="middle"
-                        className="text-[11px] text-[var(--text-secondary)]"
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
+              {/* Charts — lazy loaded to keep recharts out of the initial bundle */}
+              <DashboardCharts
+                dailyTrend={data.dailyTrend}
+                incomeBreakdown={data.incomeBreakdown}
+                expenseBreakdown={data.expenseBreakdown}
+                branchStats={data.branchStats}
+                totalExpenses={data.totalExpenses}
+                userRole={userRole}
+              />
 
               {/* Branch section — hidden for BRANCH role */}
               {userRole !== 'BRANCH' && (
                 <>
-                  {/* Branch performance bar chart */}
-                  <div className="rounded-xl bg-[var(--surface)] p-5" style={{boxShadow:'0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04)'}}>
-                    <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-4">
-                      Branch-wise Performance
-                    </h3>
-                    <ResponsiveContainer width="100%" height={220}>
-                      <BarChart data={data.branchStats} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                        <XAxis
-                          dataKey="branchName"
-                          tick={{ fill: 'var(--text-secondary)', fontSize: 11 }}
-                          axisLine={{ stroke: 'var(--border)' }}
-                        />
-                        <YAxis
-                          tickFormatter={(v) => `৳${(v / 1000).toFixed(0)}k`}
-                          tick={{ fill: 'var(--text-secondary)', fontSize: 11 }}
-                          axisLine={{ stroke: 'var(--border)' }}
-                        />
-                        <Tooltip
-                          contentStyle={TOOLTIP_STYLE}
-                          formatter={(v: any) => [`৳${formatCurrency(v)}`, undefined]}
-                        />
-                        <Legend className="text-xs" />
-                        <Bar dataKey="totalSale" fill="var(--success)" name="Sales" radius={[4, 4, 0, 0]} />
-                        <Bar dataKey="totalExpense" fill="var(--text-secondary)" name="Expenses" radius={[4, 4, 0, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
 
                   {/* Payroll summary (admin) */}
                   {userRole === 'ADMIN' && payrollData && (

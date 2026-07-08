@@ -16,12 +16,20 @@ export async function GET(req: NextRequest) {
   const buyerId = searchParams.get('buyerId')
   const challanId = searchParams.get('challanId')
   const branchId = searchParams.get('branchId')
+  const startDate = searchParams.get('startDate')
+  const endDate = searchParams.get('endDate')
 
   let where: any = {}
   if (role === 'BRANCH' && userBranchId) where.branchId = parseInt(userBranchId)
   else if (branchId) where.branchId = parseInt(branchId)
   if (buyerId) where.buyerId = parseInt(buyerId)
   if (challanId) where.challanId = parseInt(challanId)
+  if (startDate && endDate) {
+    where.collectedAt = {
+      gte: new Date(startDate + 'T00:00:00.000+06:00'),
+      lte: new Date(endDate + 'T23:59:59.999+06:00'),
+    }
+  }
 
   try {
     const payments = await prisma.wholesalePayment.findMany({
@@ -82,7 +90,7 @@ export async function POST(req: NextRequest) {
         data: { balance: newBalance },
       })
 
-      // If tied to a challan, verify ownership then update remainingDue and status
+      // If tied to a specific challan — update it directly
       if (challanId) {
         const challan = await tx.wholesaleChallan.findUnique({
           where: { id: parseInt(challanId) },
@@ -96,6 +104,32 @@ export async function POST(req: NextRequest) {
             where: { id: parseInt(challanId) },
             data: { remainingDue: newRemaining, status: newStatus },
           })
+        }
+      } else {
+        // No challan specified — allocate oldest-first across all pending challans for this buyer
+        const pendingChallans = await tx.wholesaleChallan.findMany({
+          where: {
+            buyerId: parseInt(buyerId),
+            status: { in: ['PENDING', 'PARTIALLY_PAID'] },
+            remainingDue: { gt: 0 },
+          },
+          orderBy: { date: 'asc' },
+          select: { id: true, remainingDue: true },
+        })
+
+        let remaining = paymentAmount
+        for (const c of pendingChallans) {
+          if (remaining <= 0) break
+          const applied = Math.min(remaining, c.remainingDue)
+          const newRemaining = c.remainingDue - applied
+          await tx.wholesaleChallan.update({
+            where: { id: c.id },
+            data: {
+              remainingDue: newRemaining,
+              status: newRemaining <= 0 ? 'PAID' : 'PARTIALLY_PAID',
+            },
+          })
+          remaining -= applied
         }
       }
 

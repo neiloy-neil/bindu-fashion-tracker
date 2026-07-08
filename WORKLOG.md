@@ -73,14 +73,16 @@ June 30 – July 6, 2026
 🔵 Planned WholesaleBuyer, WholesaleChallan, WholesaleChallanItem, WholesalePayment, WholesaleReturn schema
 
 📅 July 7, 2026 (Monday)  ·  🏠 Work from Home
-🔵 Built full wholesale module — WholesaleBuyer, WholesaleChallan, WholesalePayment, WholesaleReturn schema + API routes + UI pages
-🔵 Wholesale pages: Challans list, Challan detail with print view, Buyers list, Buyer detail, Collections
-🔵 Wholesale modals: NewChallanModal, NewBuyerModal, EditBuyerModal, RecordPaymentModal
-🔵 Fixed all three wholesale modals — inputs had no visible borders due to missing `input` CSS utility class
+
+Morning / Afternoon:
+🔵 Built full wholesale module — WholesaleBuyer, WholesaleChallan, WholesalePayment, WholesaleReturn schema + Prisma migration + all API routes
+🔵 Wholesale UI pages: Challans list, Challan detail with print view, Buyers list, Buyer detail, Collections (payments overview)
+🔵 Wholesale modals: NewChallanModal, NewBuyerModal, EditBuyerModal, RecordPaymentModal, ReturnModal
+🔵 Fixed all wholesale modals — inputs had no visible borders due to missing `input` CSS utility class
 🔵 Added wholesale section to admin dashboard — 6 stat cards (Challans, Invoiced, Collected, Outstanding, Buyers, Unpaid) with payment method breakdown chips, date-filter aware
 🔵 Added /api/dashboard/wholesale endpoint for dashboard wholesale summary
 🔵 Added password reset quick-action button in admin users table — ADMIN/SUPER_ADMIN only
-🔵 Added vercel.json with daily-summary cron at 9 PM
+🔵 Added vercel.json with daily-summary cron
 🔵 Blocked HR_ADMIN from /wholesale routes in proxy.ts
 🔵 Added wholesale data to Excel export (new "Wholesale" sheet with stats + payment method breakdown)
 🔵 Added wholesale section to PDF summary report (stat cards + metrics table)
@@ -93,6 +95,51 @@ June 30 – July 6, 2026
 🔵 Fixed wholesale dashboard COLLECTED BST timezone bug — daily-view date filter used UTC boundaries (Z) instead of BST (+06:00), causing payments made just after BST midnight to fall outside the day's range
 🔵 Fixed corrupted DB data — pre-fix returns had pushed remainingDue and buyer balance negative; corrected via targeted SQL UPDATE clamping to 0
 🔵 Fixed vercel.json cron schedule — daily-summary was set to 21:00 UTC (= 03:00 BST next day); corrected to 17:59 UTC (= 23:59 BST)
+
+Evening (after 6:00 PM):
+
+Code review & wholesale hardening:
+🔵 Full code review audit on all new wholesale routes and UI — identified 15 bugs (7 critical, 7 plausible, 1 security)
+🔵 Fixed 7 critical wholesale bugs: branch ownership check on returns (BRANCH user could modify any branch's challan), same check on payments, buyer balance clamp on duplicate payment submit, BST +06:00 offset on dashboard month/year date range (was UTC), print page TypeError on 404 challan fetch, challan count moved inside $transaction to prevent race-condition duplicate numbers, returns POST catch now returns 500 vs 400 correctly
+🔵 Fixed 7 plausible wholesale bugs: ALLOWED_ROLES guard on challans/[id] GET and buyers/[id] GET (bare !role check let any role read), creditLimit NaN guard on buyer PUT, item.amount || 0 on challan creation, re-fetch challan inside DELETE transaction for consistent remainingDue, cap buyer balance deduction at remainingDue on return, clarified totalOutstanding is intentionally all-time
+🔵 Fixed ACCOUNTS role security gap in wholesale write routes — branchId was read from request body (user-supplied); now read from trusted x-user-branch-id header (same treatment as BRANCH)
+🔵 Added wholesale payment delete — /api/wholesale/payments/[id] DELETE: restores buyer balance, restores challan remainingDue, reverts challan status back to PARTIALLY_PAID/PENDING; ADMIN/SUPER_ADMIN only
+
+Dashboard improvements:
+🔵 Added ACCOUNTS role dashboard — wholesale stats (Invoiced, Collected, Outstanding, Active Buyers) + pending incoming transfer count with quick links
+🔵 Added AREA_MANAGER dashboard — built /api/dashboard/area-manager endpoint (BST-aware, date/month/year/custom range), per-branch summary stats, grouped Income vs Expenses BarChart
+🔵 Added Income Breakdown donut chart to main dashboard — mirrors expense breakdown; updated /api/summary to compute and return incomeBreakdown from entry items + received transfers
+🔵 Fixed mobile dashboard Export button overflow — flex-wrap on controls row, responsive padding so button doesn't clip at 375px
+
+Party profile:
+🔵 Rebuilt party detail page — full redesign with contact card, bank info card, balance display, and date-filterable party ledger
+🔵 Added /api/parties/[id]/ledger date range filter — startDate/endDate params with BST boundaries; computes preFilterBalance (running balance before the window) so running totals in the filtered view start correctly
+🔵 Added party ledger PDF export — exportPartyLedgerPdf() in lib/report-pdf.tsx
+
+Monthly report:
+🔵 Added Excel export to monthly report page — full breakdown per branch (Gross Income, Total Income, Received Transfers, Expenses, Transfers Out, Payments, Advances, Net Cash Flow) with TOTAL row
+🔵 Added wholesale challan table to monthly report — inline challan list with buyer, status, amount, payments, returns per challan for the selected month/branch
+
+Transfers:
+🔵 Added "Acknowledge All" bulk action to incoming transfers — loops through all pending transfers sequentially, shows succeeded/failed toast counts
+🔵 Built Transfer History page (/transfers/history) — shows ACKNOWLEDGED and REJECTED transfers; BRANCH role scoped to own branch; added sidebar nav link
+
+Reports:
+🔵 Built Petty Cash Report page (/reports/petty-cash) with /api/reports/petty-cash endpoint — monthly petty cash flow per branch; Excel export
+
+Expense approvals:
+🔵 Added "Approve All" bulk action to AdminExpenseApprovals dashboard widget — approves all pending expenses in sequence, shows progress toast
+
+Mobile & layout fixes:
+🔵 Fixed mobile entries spreadsheet — sheet-table-wrapper/col-sticky-*/income-header/expense-header CSS was referenced but never defined; added full definitions to globals.css
+🔵 Fixed .main-content overflow-x: hidden → clip so child overflow-x: auto containers (entries table) can scroll independently
+🔵 Added mobile sidebar tap-to-close backdrop — dark overlay at z-40 closes sidebar on tap outside, implemented in LayoutWrapper
+
+New features:
+🔵 Built Advance Salary tracking page (/hr/advances) — summary view (per-employee totals, clickable drill-through to list) and list view (date, branch, type badge, amount, note); month/year filter + employee search
+🔵 Built /api/hr/advances GET endpoint — ADMIN/SUPER_ADMIN/HR_ADMIN/AUDITOR/AREA_MANAGER; AREA_MANAGER scoped to managed branches
+🔵 Added Cheque Maturity Calendar sidebar nav link and /cheques page access for ACCOUNTS/AUDITOR roles
+🔵 Built overdue challan cron — /api/cron/overdue-challans notifies ADMIN/SUPER_ADMIN of challans unpaid beyond threshold (default 7 days); protected by CRON_SECRET
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ✅ bindu-fashion-tracker active throughout. bindu-salary had no new commits this period.

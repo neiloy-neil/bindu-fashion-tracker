@@ -73,6 +73,7 @@ export async function GET(req: NextRequest) {
   let totalSales = 0
   let totalExpenses = 0
   const expenseBreakdown: Record<string, number> = {}
+  const incomeBreakdown: Record<string, number> = {}
 
   // For branch stats
   const branchStatsMap = new Map<number, any>()
@@ -97,6 +98,7 @@ export async function GET(req: NextRequest) {
       } else if (item.category.type === 'INCOME') {
         entrySale += item.amount
         if (!isDigital(item.category.name)) physicalIn += item.amount
+        incomeBreakdown[item.category.name] = (incomeBreakdown[item.category.name] || 0) + item.amount
       } else if (item.category.type === 'EXPENSE') {
         entryExp += item.amount
         if (!isDigital(item.category.name)) physicalOut += item.amount
@@ -119,6 +121,7 @@ export async function GET(req: NextRequest) {
       for (const t of entry.receivedTransfers) {
         entrySale += t.amount
         physicalIn += t.amount
+        incomeBreakdown['Received Transfers'] = (incomeBreakdown['Received Transfers'] || 0) + t.amount
       }
     }
     
@@ -206,6 +209,11 @@ export async function GET(req: NextRequest) {
     .map(([category, amount]) => ({ category, amount }))
     .sort((a, b) => b.amount - a.amount)
 
+  const incomeBreakdownArr = Object.entries(incomeBreakdown)
+    .filter(([, v]) => v > 0)
+    .map(([category, amount]) => ({ category, amount }))
+    .sort((a, b) => b.amount - a.amount)
+
   let pettyCash = 0;
   let totalPayable = 0;
 
@@ -240,6 +248,7 @@ export async function GET(req: NextRequest) {
     branchStats,
     dailyTrend,
     expenseBreakdown: expenseBreakdownArr,
+    incomeBreakdown: incomeBreakdownArr,
     month,
     year,
     userRole,

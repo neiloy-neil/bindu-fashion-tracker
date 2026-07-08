@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { formatCurrency } from '@/lib/utils'
 import toast from 'react-hot-toast'
-import { ArrowLeft, Printer, Plus, RotateCcw } from 'lucide-react'
+import { ArrowLeft, Printer, Plus, RotateCcw, CheckCircle, Pencil, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { BrandSpinner } from '@/components/ui/BrandSpinner'
 import RecordPaymentModal from '@/components/wholesale/RecordPaymentModal'
@@ -51,6 +51,28 @@ export default function ChallanDetailPage() {
   const [showPayment, setShowPayment] = useState(false)
   const [showReturn, setShowReturn] = useState(false)
   const [role, setRole] = useState<string | null>(null)
+  const [showMarkPaid, setShowMarkPaid] = useState(false)
+  const [markPaidNote, setMarkPaidNote] = useState('')
+  const [markPaidSaving, setMarkPaidSaving] = useState(false)
+  const [voidingPaymentId, setVoidingPaymentId] = useState<number | null>(null)
+
+  const handleVoidPayment = async (paymentId: number) => {
+    if (!confirm('Void this payment? This will restore the challan balance.')) return
+    setVoidingPaymentId(paymentId)
+    try {
+      const res = await fetch(`/api/wholesale/payments/${paymentId}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error((await res.json()).error)
+      toast.success('Payment voided')
+      void load()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed')
+    } finally {
+      setVoidingPaymentId(null)
+    }
+  }
+  const [editingNotes, setEditingNotes] = useState(false)
+  const [notesValue, setNotesValue] = useState('')
+  const [notesSaving, setNotesSaving] = useState(false)
 
   const load = async () => {
     try {
@@ -73,6 +95,46 @@ export default function ChallanDetailPage() {
   if (!challan) return <div className="p-6 text-center text-[var(--text-muted)]">Challan not found.</div>
 
   const canRecord = role && ['ADMIN', 'SUPER_ADMIN', 'BRANCH', 'ACCOUNTS'].includes(role)
+  const isAdmin = role && ['ADMIN', 'SUPER_ADMIN'].includes(role)
+
+  const handleMarkPaid = async () => {
+    setMarkPaidSaving(true)
+    try {
+      const res = await fetch(`/api/wholesale/challans/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'markPaid', notes: markPaidNote || undefined }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      toast.success('Challan marked as paid')
+      setShowMarkPaid(false)
+      void load()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed')
+    } finally {
+      setMarkPaidSaving(false)
+    }
+  }
+
+  const handleSaveNotes = async () => {
+    setNotesSaving(true)
+    try {
+      const res = await fetch(`/api/wholesale/challans/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notes: notesValue }),
+      })
+      if (!res.ok) throw new Error((await res.json()).error)
+      toast.success('Notes updated')
+      setEditingNotes(false)
+      void load()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed')
+    } finally {
+      setNotesSaving(false)
+    }
+  }
   const totalPaid = challan.payments.reduce((s, p) => s + p.amount, 0)
   const totalReturns = challan.returns.reduce((s, r) => s + r.amount, 0)
 
@@ -102,6 +164,11 @@ export default function ChallanDetailPage() {
           {canRecord && challan.status !== 'PAID' && challan.status !== 'CANCELLED' && (
             <Button size="sm" className="gap-1.5" onClick={() => setShowPayment(true)}>
               <Plus size={14} /> Record Payment
+            </Button>
+          )}
+          {isAdmin && challan.status !== 'PAID' && challan.status !== 'CANCELLED' && (
+            <Button variant="outline" size="sm" className="gap-1.5 text-green-400 border-green-400/30 hover:bg-green-500/10" onClick={() => { setMarkPaidNote(''); setShowMarkPaid(true) }}>
+              <CheckCircle size={14} /> Mark as Paid
             </Button>
           )}
           <Button
@@ -143,7 +210,32 @@ export default function ChallanDetailPage() {
           <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider mb-2">Branch</p>
           <p className="font-medium text-[var(--text-primary)]">{challan.branch.name}</p>
           {challan.branch.address && <p className="text-sm text-[var(--text-muted)]">{challan.branch.address}</p>}
-          {challan.notes && <p className="text-xs text-[var(--text-muted)] mt-2 italic">{challan.notes}</p>}
+          <div className="mt-2">
+            {editingNotes ? (
+              <div className="space-y-2">
+                <textarea
+                  value={notesValue}
+                  onChange={e => setNotesValue(e.target.value)}
+                  rows={3}
+                  className="w-full text-xs rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-[var(--text-primary)] resize-none focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
+                  placeholder="Add notes..."
+                />
+                <div className="flex gap-2">
+                  <button onClick={handleSaveNotes} disabled={notesSaving} className="text-xs px-2 py-1 bg-[var(--accent)] text-white rounded-md disabled:opacity-50">{notesSaving ? 'Saving…' : 'Save'}</button>
+                  <button onClick={() => setEditingNotes(false)} className="text-xs px-2 py-1 text-[var(--text-muted)] hover:text-[var(--text-primary)]">Cancel</button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-start gap-1">
+                <p className="text-xs text-[var(--text-muted)] italic flex-1">{challan.notes || 'No notes.'}</p>
+                {isAdmin && (
+                  <button onClick={() => { setNotesValue(challan.notes || ''); setEditingNotes(true) }} className="text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors shrink-0">
+                    <Pencil size={12} />
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -201,9 +293,21 @@ export default function ChallanDetailPage() {
                   {p.note && <span className="text-[var(--text-muted)] ml-2 text-xs">— {p.note}</span>}
                   {p.transactionRef && <span className="text-[var(--text-muted)] ml-2 text-xs">({p.transactionRef})</span>}
                 </div>
-                <div className="text-right">
-                  <p className="font-semibold text-green-400">{formatCurrency(p.amount)}</p>
-                  <p className="text-xs text-[var(--text-muted)]">{new Date(p.collectedAt).toLocaleDateString('en-BD')}</p>
+                <div className="flex items-center gap-3">
+                  <div className="text-right">
+                    <p className="font-semibold text-green-400">{formatCurrency(p.amount)}</p>
+                    <p className="text-xs text-[var(--text-muted)]">{new Date(p.collectedAt).toLocaleDateString('en-BD')}</p>
+                  </div>
+                  {isAdmin && (
+                    <button
+                      onClick={() => handleVoidPayment(p.id)}
+                      disabled={voidingPaymentId === p.id}
+                      title="Void payment"
+                      className="text-[var(--text-muted)] hover:text-red-400 transition-colors disabled:opacity-40"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
@@ -255,6 +359,31 @@ export default function ChallanDetailPage() {
           onClose={() => setShowPayment(false)}
           onSaved={() => { setShowPayment(false); void load() }}
         />
+      )}
+      {showMarkPaid && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-[var(--bg-card)] w-full max-w-sm rounded-xl border border-[var(--border)] shadow-xl p-6 space-y-4">
+            <h3 className="font-semibold text-[var(--text-primary)]">Mark as Paid</h3>
+            <p className="text-sm text-[var(--text-muted)]">
+              This will write off the remaining due of <span className="font-semibold text-[var(--text-primary)]">{formatCurrency(challan.remainingDue)}</span> and mark the challan as fully paid. This cannot be undone.
+            </p>
+            <div>
+              <label className="text-xs text-[var(--text-muted)] block mb-1">Note (optional)</label>
+              <input
+                value={markPaidNote}
+                onChange={e => setMarkPaidNote(e.target.value)}
+                placeholder="e.g. Written off, settled offline…"
+                className="w-full h-9 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+              />
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" size="sm" onClick={() => setShowMarkPaid(false)} disabled={markPaidSaving}>Cancel</Button>
+              <Button size="sm" className="bg-green-600 hover:bg-green-500 gap-1.5" onClick={handleMarkPaid} disabled={markPaidSaving}>
+                <CheckCircle size={14} /> {markPaidSaving ? 'Saving…' : 'Confirm'}
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
       {showReturn && (
         <RecordReturnModal

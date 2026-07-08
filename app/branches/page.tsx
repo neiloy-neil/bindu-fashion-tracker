@@ -22,7 +22,12 @@ const TYPE_LABELS: Record<string, string> = {
   RETAIL: 'Retail',
   WHOLESALE: 'Wholesale',
   FACTORY: 'Factory',
-  HEAD_OFFICE: 'Head Office',
+}
+
+const TYPE_COLORS: Record<string, string> = {
+  RETAIL: 'bg-[var(--accent-subtle)] text-[var(--accent)]',
+  WHOLESALE: 'bg-[var(--success-subtle)] text-[var(--success)]',
+  FACTORY: 'bg-[var(--warning-subtle)] text-[var(--warning)]',
 }
 
 const emptyForm = {
@@ -37,7 +42,7 @@ const emptyForm = {
 
 export default function BranchesPage() {
   const { data: session } = useSession()
-  const isAdmin = session?.user?.role === 'ADMIN'
+  const isAdmin = session?.user?.role === 'ADMIN' || session?.user?.role === 'SUPER_ADMIN'
   const router = useRouter()
 
   const [branches, setBranches] = useState<any[]>([])
@@ -158,9 +163,14 @@ export default function BranchesPage() {
                   {branch.name.charAt(0).toUpperCase()}
                 </div>
 
-                <div className="font-bold text-[15px] text-[var(--text-primary)]">{branch.name}</div>
-                <div className="text-[11px] text-[var(--text-muted)] font-mono tracking-widest mt-0.5 mb-2">
-                  {branch.code} · {TYPE_LABELS[branch.type] ?? branch.type}
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="font-bold text-[15px] text-[var(--text-primary)]">{branch.name}</span>
+                </div>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-[11px] text-[var(--text-muted)] font-mono tracking-widest">{branch.code}</span>
+                  <span className={`inline-flex px-1.5 py-0.5 rounded text-[10px] font-semibold ${TYPE_COLORS[branch.type] ?? 'bg-[var(--surface-raised)] text-[var(--text-muted)]'}`}>
+                    {TYPE_LABELS[branch.type] ?? branch.type}
+                  </span>
                 </div>
 
                 {branch.contactPerson && (
@@ -234,7 +244,6 @@ export default function BranchesPage() {
                 <option value="RETAIL">Retail</option>
                 <option value="WHOLESALE">Wholesale</option>
                 <option value="FACTORY">Factory</option>
-                <option value="HEAD_OFFICE">Head Office</option>
               </select>
             </div>
 

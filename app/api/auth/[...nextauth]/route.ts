@@ -24,10 +24,13 @@ export const authOptions: NextAuthOptions = {
         const isEmail = credentials.username.includes('@');
 
         const user = await prisma.user.findFirst({
-          where: isEmail 
+          where: isEmail
             ? { email: credentials.username }
             : { username: credentials.username },
-          include: { managedBranches: { select: { id: true } } }
+          include: {
+            managedBranches: { select: { id: true } },
+            branch: { select: { type: true } },
+          }
         });
 
         if (!user) {
@@ -49,6 +52,7 @@ export const authOptions: NextAuthOptions = {
           username: user.username,
           role: user.role,
           branchId: user.branchId,
+          branchType: (user as any).branch?.type ?? null,
           managedBranchIds: user.managedBranches?.map(b => b.id) || [],
           employeeId: user.employeeId,
         };
@@ -62,6 +66,7 @@ export const authOptions: NextAuthOptions = {
         token.username = (user as any).username;
         token.role = (user as any).role;
         token.branchId = (user as any).branchId;
+        token.branchType = (user as any).branchType;
         token.managedBranchIds = (user as any).managedBranchIds;
         token.employeeId = (user as any).employeeId;
       }
@@ -75,6 +80,7 @@ export const authOptions: NextAuthOptions = {
           username: token.username,
           role: token.role,
           branchId: token.branchId,
+          branchType: token.branchType,
           managedBranchIds: token.managedBranchIds,
           employeeId: token.employeeId,
         };

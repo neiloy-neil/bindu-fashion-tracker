@@ -28,10 +28,10 @@ export default function DiscrepanciesPage() {
       .catch(() => setLoading(false))
   }, [])
 
-  if (loading) return <div className="p-8">Loading discrepancies...</div>
+  if (loading) return <div className="p-4 md:p-8">Loading discrepancies...</div>
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
+    <div className="p-4 md:p-8 max-w-7xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
         <AlertCircle className="text-amber-500 w-8 h-8" />
         <h1 className="text-2xl font-bold">Discrepancy Inbox</h1>

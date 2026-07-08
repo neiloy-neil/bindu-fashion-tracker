@@ -3,7 +3,9 @@ import { prisma } from '@/lib/prisma'
 
 export async function GET(req: NextRequest) {
   const role = req.headers.get('x-user-role')
-  if (!['ADMIN', 'SUPER_ADMIN', 'ACCOUNTS', 'AUDITOR', 'AREA_MANAGER'].includes(role || '')) {
+  const branchType = req.headers.get('x-user-branch-type')
+  const isBranchWholesale = role === 'BRANCH' && branchType === 'WHOLESALE'
+  if (!['ADMIN', 'SUPER_ADMIN', 'ACCOUNTS', 'AUDITOR', 'AREA_MANAGER'].includes(role || '') && !isBranchWholesale) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
@@ -31,13 +33,16 @@ export async function GET(req: NextRequest) {
     }
   }
 
+  const branchId = isBranchWholesale ? parseInt(req.headers.get('x-user-branch-id') || '0') : null
+  const challanBranchFilter = branchId ? { branchId } : {}
+
   const [challans, payments, buyers] = await Promise.all([
     prisma.wholesaleChallan.findMany({
-      where: dateFilter ? { date: dateFilter } : undefined,
+      where: { ...challanBranchFilter, ...(dateFilter ? { date: dateFilter } : {}) },
       select: { netAmount: true, remainingDue: true, paidAtDelivery: true, status: true, returns: { select: { amount: true } } },
     }),
     prisma.wholesalePayment.findMany({
-      where: dateFilter ? { collectedAt: dateFilter } : undefined,
+      where: { ...(branchId ? { challan: { branchId } } : {}), ...(dateFilter ? { collectedAt: dateFilter } : {}) },
       select: { amount: true, method: true },
     }),
     // Outstanding balance is always all-time (current state), not date-filtered

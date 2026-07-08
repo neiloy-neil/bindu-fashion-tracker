@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
+import { isMonthLocked } from '@/lib/locked-month'
 
 const createExpenseEntrySchema = z.object({
   dailyEntryId: z.number().int().positive(),
@@ -73,6 +74,10 @@ export async function POST(req: NextRequest) {
 
     if (userRole === 'BRANCH' && String(entry.branchId) !== String(userBranchId)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    if (userRole !== 'SUPER_ADMIN' && await isMonthLocked(entry.branchId, entry.date)) {
+      return NextResponse.json({ error: 'MONTH_LOCKED', message: 'This month has been locked and cannot be edited' }, { status: 403 })
     }
 
     const expenseEntry = await prisma.expenseEntry.create({

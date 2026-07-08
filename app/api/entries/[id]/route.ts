@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { dailyEntrySchema } from '@/lib/schemas'
 import { logAudit } from '@/lib/audit'
+import { isMonthLocked } from '@/lib/locked-month'
 
 export async function PUT(
   req: NextRequest,
@@ -45,6 +46,12 @@ export async function PUT(
       where: { id: entryIdNum },
       include: { items: true }
     })
+
+    if (existingEntrySnapshot && userRole !== 'SUPER_ADMIN') {
+      if (await isMonthLocked(existingEntrySnapshot.branchId, existingEntrySnapshot.date)) {
+        return NextResponse.json({ error: 'MONTH_LOCKED', message: 'This month has been locked and cannot be edited' }, { status: 403 })
+      }
+    }
 
     // First update the entry itself
     const entry = await prisma.dailyEntry.update({

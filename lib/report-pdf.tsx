@@ -16,6 +16,16 @@ type DailyReportData = {
   closingTime?: string | null
 }
 
+type WholesaleChallanRow = {
+  challanNumber: string
+  buyerName: string
+  date: string
+  netAmount: number
+  collected: number
+  remainingDue: number
+  status: string
+}
+
 type MonthlyBranchRow = {
   branchName: string
   totalIncome: number
@@ -25,6 +35,12 @@ type MonthlyBranchRow = {
   totalPayments: number
   totalAdvances: number
   netCashFlow: number
+  wholesale?: {
+    invoiced: number
+    collected: number
+    outstanding: number
+    challans: WholesaleChallanRow[]
+  } | null
 }
 
 const styles = StyleSheet.create({
@@ -349,6 +365,11 @@ function MonthlyReportDocument({
     ])
   }
 
+  const allChallans = branchData.flatMap(b => (b.wholesale?.challans || []).map(c => ({ ...c, branchName: b.branchName })))
+  const totalWholesaleInvoiced = branchData.reduce((s, b) => s + (b.wholesale?.invoiced ?? 0), 0)
+  const totalWholesaleCollected = branchData.reduce((s, b) => s + (b.wholesale?.collected ?? 0), 0)
+  const totalWholesaleOutstanding = branchData.reduce((s, b) => s + (b.wholesale?.outstanding ?? 0), 0)
+
   return (
     <Document>
       <Page size="A4" orientation="landscape" style={styles.page}>
@@ -369,6 +390,41 @@ function MonthlyReportDocument({
           />
         </View>
       </Page>
+      {allChallans.length > 0 && (
+        <Page size="A4" orientation="landscape" style={styles.page}>
+          <Text style={styles.title}>Wholesale Challans — {monthName} {year}</Text>
+          <View style={[styles.statRow, { marginBottom: 12 }]}>
+            <View style={styles.statCard}>
+              <Text style={styles.statLabel}>Invoiced</Text>
+              <Text style={styles.statValue}>{amount(totalWholesaleInvoiced)}</Text>
+            </View>
+            <View style={styles.statCard}>
+              <Text style={styles.statLabel}>Collected</Text>
+              <Text style={styles.statValue}>{amount(totalWholesaleCollected)}</Text>
+            </View>
+            <View style={styles.statCard}>
+              <Text style={styles.statLabel}>Outstanding</Text>
+              <Text style={[styles.statValue, { color: '#EF4444' }]}>{amount(totalWholesaleOutstanding)}</Text>
+            </View>
+          </View>
+          <View style={styles.section}>
+            <Table
+              headers={['Date', 'Challan #', 'Buyer', 'Branch', 'Net Amount', 'Collected', 'Due', 'Status']}
+              widths={[10, 14, 20, 14, 11, 11, 11, 9]}
+              rows={allChallans.map(c => [
+                new Date(c.date).toLocaleDateString('en-BD', { day: '2-digit', month: 'short', year: 'numeric' }),
+                c.challanNumber,
+                c.buyerName,
+                c.branchName,
+                amount(c.netAmount),
+                amount(c.collected),
+                c.remainingDue > 0 ? amount(c.remainingDue) : '-',
+                c.status.replace('_', ' '),
+              ])}
+            />
+          </View>
+        </Page>
+      )}
     </Document>
   )
 }
@@ -470,6 +526,122 @@ function SummaryReportDocument({
   )
 }
 
+type LedgerEntry = {
+  type: 'PURCHASE' | 'PAYMENT'
+  date: string
+  amount: number
+  runningBalance: number
+  invoiceNumber?: string | null
+  note?: string | null
+  method?: string | null
+  approvalStatus?: string | null
+  isOpeningDue?: boolean
+  branch?: { name: string } | null
+  transactionRef?: string | null
+}
+
+function PartyLedgerDocument({ partyName, balance, entries, startDate, endDate }: {
+  partyName: string
+  balance: number
+  entries: LedgerEntry[]
+  startDate?: string
+  endDate?: string
+}) {
+  const dateLabel = startDate && endDate
+    ? `${new Date(startDate).toLocaleDateString('en-BD', { day: '2-digit', month: 'short', year: 'numeric' })} – ${new Date(endDate).toLocaleDateString('en-BD', { day: '2-digit', month: 'short', year: 'numeric' })}`
+    : 'All time'
+  return (
+    <Document>
+      <Page size="A4" orientation="landscape" style={styles.page}>
+        <View style={styles.logoWrap}>
+          {/* eslint-disable-next-line jsx-a11y/alt-text */}
+          <Image src={BINDU_LOGO} style={styles.logo} />
+        </View>
+        <Text style={styles.title}>Party Ledger — {partyName}</Text>
+        <Text style={styles.subtitle}>
+          Period: {dateLabel} · Generated: {new Date().toLocaleDateString('en-BD', { day: '2-digit', month: 'short', year: 'numeric' })}
+        </Text>
+        <View style={[styles.statRow, { marginBottom: 12 }]}>
+          <View style={styles.statCard}>
+            <Text style={styles.statLabel}>Current Balance Due</Text>
+            <Text style={[styles.statValue, { color: balance > 0 ? '#EF4444' : '#10B981' }]}>Tk {formatCurrency(balance)}</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statLabel}>Period Transactions</Text>
+            <Text style={styles.statValue}>{entries.length}</Text>
+          </View>
+        </View>
+        <View style={styles.section}>
+          <Table
+            headers={['Date', 'Type', 'Details', 'Debit (Owed)', 'Credit (Paid)', 'Balance']}
+            widths={[12, 10, 36, 14, 14, 14]}
+            rows={entries.map(e => [
+              new Date(e.date).toLocaleDateString('en-BD', { day: '2-digit', month: 'short', year: 'numeric' }),
+              e.type === 'PURCHASE' ? (e.isOpeningDue ? 'Opening Due' : 'Purchase') : 'Payment',
+              e.type === 'PURCHASE'
+                ? [e.invoiceNumber ? `Inv: ${e.invoiceNumber}` : '', e.note || ''].filter(Boolean).join(' · ') || '-'
+                : [e.method || '', e.transactionRef ? `Ref: ${e.transactionRef}` : '', e.branch?.name || '', e.note || ''].filter(Boolean).join(' · ') || '-',
+              e.type === 'PURCHASE' ? amount(e.amount) : '-',
+              e.type === 'PAYMENT' ? amount(e.amount) : '-',
+              amount(e.runningBalance),
+            ])}
+          />
+        </View>
+      </Page>
+    </Document>
+  )
+}
+
+type WholesaleBuyerLedgerEntry = {
+  kind: 'challan' | 'payment' | 'return'
+  date: string
+  ref: string
+  details: string
+  debit: number
+  credit: number
+  balance: number
+}
+
+function WholesaleBuyerLedgerDocument({ buyerName, balance, entries }: { buyerName: string; balance: number; entries: WholesaleBuyerLedgerEntry[] }) {
+  return (
+    <Document>
+      <Page size="A4" orientation="landscape" style={styles.page}>
+        <View style={styles.logoWrap}>
+          {/* eslint-disable-next-line jsx-a11y/alt-text */}
+          <Image src={BINDU_LOGO} style={styles.logo} />
+        </View>
+        <Text style={styles.title}>Wholesale Buyer Ledger — {buyerName}</Text>
+        <Text style={styles.subtitle}>Generated: {new Date().toLocaleDateString('en-BD', { day: '2-digit', month: 'short', year: 'numeric' })}</Text>
+        <View style={[styles.statRow, { marginBottom: 12 }]}>
+          <View style={styles.statCard}>
+            <Text style={styles.statLabel}>Outstanding Balance</Text>
+            <Text style={[styles.statValue, { color: balance > 0 ? '#EF4444' : '#10B981' }]}>Tk {formatCurrency(balance)}</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statLabel}>Total Transactions</Text>
+            <Text style={styles.statValue}>{entries.length}</Text>
+          </View>
+        </View>
+        <View style={styles.section}>
+          <Table
+            headers={['Date', 'Type', 'Reference', 'Details', 'Debit', 'Credit', 'Balance']}
+            widths={[10, 10, 16, 28, 12, 12, 12]}
+            rows={entries.map(e => [
+              new Date(e.date).toLocaleDateString('en-BD', { day: '2-digit', month: 'short', year: 'numeric' }),
+              e.kind === 'challan' ? 'Challan' : e.kind === 'payment' ? 'Payment' : 'Return',
+              e.ref,
+              e.details,
+              e.debit > 0 ? amount(e.debit) : '-',
+              e.credit > 0 ? amount(e.credit) : '-',
+              amount(e.balance),
+            ])}
+          />
+        </View>
+      </Page>
+    </Document>
+  )
+}
+
 type PdfDocumentElement = Parameters<typeof pdf>[0]
 
 async function saveDocument(document: PdfDocumentElement, filename: string) {
@@ -494,6 +666,173 @@ export async function exportMonthlyReportPdf(branchData: MonthlyBranchRow[], mon
   await saveDocument(
     <MonthlyReportDocument branchData={branchData} month={month} year={year} selectedBranchId={selectedBranchId} />,
     filename.toLowerCase()
+  )
+}
+
+type ChallanData = {
+  challanNumber: string
+  date: string
+  status: string
+  totalAmount: number
+  discount: number
+  netAmount: number
+  paidAtDelivery: number
+  remainingDue: number
+  deliveryPerson: string | null
+  notes: string | null
+  buyer: { name: string; contactPerson: string | null; contactNumber: string | null; address: string | null }
+  branch: { name: string; address: string | null }
+  items: { description: string; quantity: number | null; unitPrice: number | null; amount: number; note: string | null }[]
+  payments: { amount: number; method: string; note: string | null; collectedAt: string }[]
+  returns: { amount: number; reason: string | null; date: string }[]
+  companyName?: string
+}
+
+function ChallanDocument({ challan }: { challan: ChallanData }) {
+  const totalPaid = challan.payments.reduce((s, p) => s + p.amount, 0)
+  const totalReturns = challan.returns.reduce((s, r) => s + r.amount, 0)
+  const companyName = challan.companyName || 'Bindu Premium'
+
+  return (
+    <Document>
+      <Page size="A4" style={styles.page}>
+        <View style={styles.logoWrap}>
+          {/* eslint-disable-next-line jsx-a11y/alt-text */}
+          <Image src={BINDU_LOGO} style={styles.logo} />
+        </View>
+
+        {/* Header */}
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', borderBottomWidth: 2, borderBottomColor: '#1a1a1a', paddingBottom: 12, marginBottom: 16 }}>
+          <View>
+            <Text style={{ fontSize: 16, fontFamily: 'Helvetica-Bold' }}>{companyName}</Text>
+            <Text style={{ fontSize: 10, color: '#666', marginTop: 3 }}>{challan.branch.name}{challan.branch.address ? ` · ${challan.branch.address}` : ''}</Text>
+          </View>
+          <View style={{ alignItems: 'flex-end' }}>
+            <Text style={{ fontSize: 14, fontFamily: 'Helvetica-Bold', color: '#2563eb' }}>CHALLAN</Text>
+            <Text style={{ fontSize: 11, fontFamily: 'Helvetica-Bold', marginTop: 2 }}>#{challan.challanNumber}</Text>
+            <Text style={{ fontSize: 9, color: '#666', marginTop: 2 }}>{new Date(challan.date).toLocaleDateString('en-BD', { day: '2-digit', month: 'long', year: 'numeric' })}</Text>
+          </View>
+        </View>
+
+        {/* Bill To */}
+        <View style={{ flexDirection: 'row', gap: 20, marginBottom: 16 }}>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: 9, fontFamily: 'Helvetica-Bold', color: '#666', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>Bill To</Text>
+            <Text style={{ fontSize: 11, fontFamily: 'Helvetica-Bold' }}>{challan.buyer.name}</Text>
+            {challan.buyer.contactPerson && <Text style={{ fontSize: 9, color: '#555', marginTop: 2 }}>{challan.buyer.contactPerson}</Text>}
+            {challan.buyer.contactNumber && <Text style={{ fontSize: 9, color: '#555', marginTop: 1 }}>{challan.buyer.contactNumber}</Text>}
+            {challan.buyer.address && <Text style={{ fontSize: 9, color: '#777', marginTop: 2 }}>{challan.buyer.address}</Text>}
+          </View>
+          {challan.deliveryPerson && (
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 9, fontFamily: 'Helvetica-Bold', color: '#666', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>Delivery By</Text>
+              <Text style={{ fontSize: 11, fontFamily: 'Helvetica-Bold' }}>{challan.deliveryPerson}</Text>
+            </View>
+          )}
+        </View>
+
+        {/* Items */}
+        <View style={styles.section}>
+          <Table
+            headers={['Description', 'Qty', 'Unit Price', 'Amount']}
+            widths={[52, 12, 18, 18]}
+            rows={challan.items.map(item => [
+              item.description + (item.note ? ` (${item.note})` : ''),
+              item.quantity != null ? String(item.quantity) : '—',
+              item.unitPrice != null ? amount(item.unitPrice) : '—',
+              amount(item.amount),
+            ])}
+          />
+        </View>
+
+        {/* Totals */}
+        <View style={{ alignItems: 'flex-end', marginTop: 8 }}>
+          <View style={{ minWidth: 200 }}>
+            {challan.discount > 0 && (
+              <>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 2 }}>
+                  <Text style={{ color: '#666', fontSize: 9 }}>Subtotal</Text>
+                  <Text style={{ fontSize: 9 }}>{amount(challan.totalAmount)}</Text>
+                </View>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 2 }}>
+                  <Text style={{ color: '#666', fontSize: 9 }}>Discount</Text>
+                  <Text style={{ fontSize: 9, color: '#dc2626' }}>−{amount(challan.discount)}</Text>
+                </View>
+              </>
+            )}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: '#ddd', paddingTop: 4, paddingBottom: 2 }}>
+              <Text style={{ fontFamily: 'Helvetica-Bold', fontSize: 11 }}>Net Total</Text>
+              <Text style={{ fontFamily: 'Helvetica-Bold', fontSize: 11 }}>{amount(challan.netAmount)}</Text>
+            </View>
+            {challan.paidAtDelivery > 0 && (
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 2 }}>
+                <Text style={{ color: '#059669', fontSize: 9 }}>Paid at Delivery</Text>
+                <Text style={{ color: '#059669', fontSize: 9 }}>{amount(challan.paidAtDelivery)}</Text>
+              </View>
+            )}
+            {totalPaid > challan.paidAtDelivery && (
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 2 }}>
+                <Text style={{ color: '#059669', fontSize: 9 }}>Total Paid</Text>
+                <Text style={{ color: '#059669', fontSize: 9 }}>{amount(totalPaid)}</Text>
+              </View>
+            )}
+            {totalReturns > 0 && (
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 2 }}>
+                <Text style={{ color: '#d97706', fontSize: 9 }}>Returns</Text>
+                <Text style={{ color: '#d97706', fontSize: 9 }}>−{amount(totalReturns)}</Text>
+              </View>
+            )}
+            {challan.remainingDue > 0 && (
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: '#ddd', paddingTop: 4 }}>
+                <Text style={{ fontFamily: 'Helvetica-Bold', color: '#dc2626', fontSize: 11 }}>Balance Due</Text>
+                <Text style={{ fontFamily: 'Helvetica-Bold', color: '#dc2626', fontSize: 11 }}>{amount(challan.remainingDue)}</Text>
+              </View>
+            )}
+          </View>
+        </View>
+
+        {challan.notes && (
+          <View style={{ borderTopWidth: 1, borderTopColor: '#eee', paddingTop: 10, marginTop: 10 }}>
+            <Text style={{ fontSize: 9, fontFamily: 'Helvetica-Bold', color: '#666', textTransform: 'uppercase', marginBottom: 3 }}>Notes</Text>
+            <Text style={{ fontSize: 9, color: '#555' }}>{challan.notes}</Text>
+          </View>
+        )}
+
+        {/* Signatures */}
+        <View style={{ flexDirection: 'row', gap: 40, marginTop: 40, paddingTop: 16, borderTopWidth: 1, borderTopColor: '#eee' }}>
+          <View style={{ flex: 1 }}>
+            <View style={{ borderBottomWidth: 1, borderBottomColor: '#1a1a1a', height: 28, marginBottom: 4 }} />
+            <Text style={{ fontSize: 9, color: '#666' }}>Authorised Signature</Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <View style={{ borderBottomWidth: 1, borderBottomColor: '#1a1a1a', height: 28, marginBottom: 4 }} />
+            <Text style={{ fontSize: 9, color: '#666' }}>Receiver Signature</Text>
+          </View>
+        </View>
+      </Page>
+    </Document>
+  )
+}
+
+export async function exportChallanPdf(challan: ChallanData) {
+  await saveDocument(
+    <ChallanDocument challan={challan} />,
+    `challan-${challan.challanNumber}.pdf`
+  )
+}
+
+export async function exportPartyLedgerPdf(partyName: string, balance: number, entries: LedgerEntry[], startDate?: string, endDate?: string) {
+  const suffix = startDate && endDate ? `${startDate}_to_${endDate}` : new Date().toISOString().slice(0, 10)
+  await saveDocument(
+    <PartyLedgerDocument partyName={partyName} balance={balance} entries={entries} startDate={startDate} endDate={endDate} />,
+    `party-ledger-${partyName.replace(/\s+/g, '_')}-${suffix}.pdf`
+  )
+}
+
+export async function exportWholesaleBuyerLedgerPdf(buyerName: string, balance: number, entries: WholesaleBuyerLedgerEntry[]) {
+  await saveDocument(
+    <WholesaleBuyerLedgerDocument buyerName={buyerName} balance={balance} entries={entries} />,
+    `wholesale-ledger-${buyerName.replace(/\s+/g, '_')}-${new Date().toISOString().slice(0, 10)}.pdf`
   )
 }
 

@@ -1,11 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback, useRef, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { formatCurrency } from '@/lib/utils'
+import { dhakaDateString } from '@/lib/new-entry'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
-import { Plus, Search, Eye } from 'lucide-react'
+import { Plus, Search, Eye, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { BrandSpinner } from '@/components/ui/BrandSpinner'
 import NewChallanModal from '@/components/wholesale/NewChallanModal'
@@ -40,26 +41,34 @@ const STATUS_LABELS: Record<string, string> = {
   CANCELLED: 'Cancelled',
 }
 
-export default function ChallansPage() {
+function ChallansInner() {
   const searchParams = useSearchParams()
   const buyerIdParam = searchParams.get('buyerId')
   const [challans, setChallans] = useState<Challan[]>([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [statusFilter, setStatusFilter] = useState('')
   const [page, setPage] = useState(1)
   const [showNew, setShowNew] = useState(false)
   const [role, setRole] = useState<string | null>(null)
+  const today = dhakaDateString()
+  const firstOfMonth = today.slice(0, 7) + '-01'
+  const [startDate, setStartDate] = useState(firstOfMonth)
+  const [endDate, setEndDate] = useState(today)
 
   const limit = 20
 
-  const load = async (p = page) => {
+  const load = useCallback(async (p = 1) => {
     setLoading(true)
     try {
       const params = new URLSearchParams({ page: String(p), limit: String(limit) })
       if (statusFilter) params.set('status', statusFilter)
       if (buyerIdParam) params.set('buyerId', buyerIdParam)
+      if (startDate && endDate) { params.set('startDate', startDate); params.set('endDate', endDate) }
+      if (debouncedSearch) params.set('search', debouncedSearch)
       const res = await fetch(`/api/wholesale/challans?${params}`)
       if (!res.ok) throw new Error()
       const data = await res.json()
@@ -70,21 +79,20 @@ export default function ChallansPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [statusFilter, startDate, endDate, buyerIdParam, debouncedSearch])
 
   useEffect(() => {
     fetch('/api/auth/session').then(r => r.json()).then(s => setRole(s?.user?.role || null))
   }, [])
 
-  useEffect(() => { void load(1); setPage(1) }, [statusFilter])
-  useEffect(() => { void load(page) }, [page])
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => { setDebouncedSearch(search); setPage(1) }, 300)
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
+  }, [search])
 
-  const filtered = challans.filter(c =>
-    !search ||
-    c.challanNumber.toLowerCase().includes(search.toLowerCase()) ||
-    c.buyer.name.toLowerCase().includes(search.toLowerCase()) ||
-    (c.deliveryPerson || '').toLowerCase().includes(search.toLowerCase())
-  )
+  useEffect(() => { setPage(1); void load(1) }, [load])
+  useEffect(() => { void load(page) }, [page])
 
   const canCreate = role && ['ADMIN', 'SUPER_ADMIN', 'BRANCH'].includes(role)
   const totalPages = Math.ceil(total / limit)
@@ -124,11 +132,19 @@ export default function ChallansPage() {
           <option value="PAID">Paid</option>
           <option value="CANCELLED">Cancelled</option>
         </select>
+        <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="input text-sm h-9 px-2" placeholder="From" />
+        <span className="text-[var(--text-muted)] self-center text-sm">—</span>
+        <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="input text-sm h-9 px-2" placeholder="To" />
+        {(startDate || endDate) && (
+          <button onClick={() => { setStartDate(''); setEndDate('') }} className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-raised)] transition-colors" title="Clear date filter">
+            <X size={14} />
+          </button>
+        )}
       </div>
 
       {loading ? (
         <div className="flex justify-center py-16"><BrandSpinner /></div>
-      ) : filtered.length === 0 ? (
+      ) : challans.length === 0 ? (
         <div className="text-center py-16 text-[var(--text-muted)]">No challans found.</div>
       ) : (
         <div className="overflow-x-auto">
@@ -146,7 +162,7 @@ export default function ChallansPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map(c => (
+              {challans.map(c => (
                 <tr key={c.id} className="border-b border-[var(--border)] hover:bg-[var(--surface-raised)] transition-colors">
                   <td className="py-3 px-4 font-mono text-[13px] text-[var(--accent)]">{c.challanNumber}</td>
                   <td className="py-3 px-4 text-[var(--text-secondary)]">
@@ -202,4 +218,8 @@ export default function ChallansPage() {
       )}
     </div>
   )
+}
+
+export default function ChallansPage() {
+  return <Suspense><ChallansInner /></Suspense>
 }

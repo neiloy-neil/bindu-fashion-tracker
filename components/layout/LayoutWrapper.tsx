@@ -34,7 +34,7 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
   }, [])
 
   if (isLoginPage) {
-    return <div className="min-h-screen bg-[var(--background)]">{children}</div>
+    return <main className="min-h-screen bg-[var(--background)]">{children}</main>
   }
 
   return (
@@ -42,7 +42,7 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
       {/* Mobile Top Bar */}
       <div className="mobile-top-bar fixed top-0 left-0 right-0 z-50 h-[60px] flex items-center justify-between px-4 bg-[var(--surface)] border-b border-[var(--border)]">
         <div className="flex items-center gap-2.5">
-          <img src="/bindu-logo.webp" style={{ width: '26px', height: 'auto' }} className="object-contain" alt="Bindu" />
+          <img src="/bindu-logo.webp" width={26} height={26} className="object-contain" alt="Bindu" />
           <span className="text-[15px] font-semibold text-[var(--text-primary)]">
             Bindu Premium
           </span>
@@ -70,9 +70,9 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
 
       <Sidebar isOpen={mobileMenuOpen} setIsOpen={setMobileMenuOpen} />
 
-      <div className="main-content">
+      <main className="main-content">
         {children}
-      </div>
+      </main>
 
       <div className="hidden md:block fixed top-4 right-6 z-50">
         <NotificationBell />

@@ -13,14 +13,17 @@ export default async function IncomingTransfersPage() {
 
   const { role, branchId } = session.user
 
+  const ALLOWED = ['ADMIN', 'SUPER_ADMIN', 'BRANCH', 'ACCOUNTS', 'AUDITOR', 'AREA_MANAGER']
+  if (!ALLOWED.includes(role)) {
+    return <div className="p-6">Error: Unauthorized</div>
+  }
+
   const whereClause: Prisma.TransferWhereInput = { status: 'PENDING' }
   if (role === 'BRANCH') {
     if (!branchId) {
       return <div className="p-6">Error: User not assigned to a branch.</div>
     }
     whereClause.account = { branchId }
-  } else if (role !== 'ADMIN') {
-    return <div className="p-6">Error: Unauthorized</div>
   }
 
   const pendingTransfers = await prisma.transfer.findMany({

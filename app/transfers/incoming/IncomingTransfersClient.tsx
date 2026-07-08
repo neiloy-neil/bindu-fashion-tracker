@@ -18,6 +18,7 @@ export default function IncomingTransfersClient({ initialTransfers }: { initialT
   const [loadingId, setLoadingId] = useState<number | null>(null)
   const [rejectingId, setRejectingId] = useState<number | null>(null)
   const [rejectionReason, setRejectionReason] = useState('')
+  const [bulkLoading, setBulkLoading] = useState(false)
   const router = useRouter()
 
   const openReject = (id: number) => {
@@ -62,6 +63,34 @@ export default function IncomingTransfersClient({ initialTransfers }: { initialT
     }
   }
 
+  const handleAcknowledgeAll = async () => {
+    if (bulkLoading || loadingId !== null) return
+    setBulkLoading(true)
+    let succeeded = 0
+    let failed = 0
+    for (const t of transfers) {
+      try {
+        const res = await fetch(`/api/transfers/${t.id}/acknowledge`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'ACKNOWLEDGE' })
+        })
+        if (res.ok) {
+          succeeded++
+          setTransfers(prev => prev.filter(x => x.id !== t.id))
+        } else {
+          failed++
+        }
+      } catch {
+        failed++
+      }
+    }
+    setBulkLoading(false)
+    if (succeeded > 0) toast.success(`Acknowledged ${succeeded} transfer${succeeded > 1 ? 's' : ''}.`)
+    if (failed > 0) toast.error(`${failed} transfer${failed > 1 ? 's' : ''} could not be acknowledged.`)
+    router.refresh()
+  }
+
   if (transfers.length === 0) {
     return (
       <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-8 text-center text-[var(--text-muted)]">
@@ -72,6 +101,21 @@ export default function IncomingTransfersClient({ initialTransfers }: { initialT
 
   return (
     <div className="space-y-4">
+      {transfers.length > 1 && (
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={handleAcknowledgeAll}
+            disabled={bulkLoading || loadingId !== null}
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-bold bg-[var(--success)] hover:opacity-90 text-white rounded-lg disabled:opacity-40 transition-opacity"
+          >
+            {bulkLoading ? (
+              <span className="w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+            ) : null}
+            Acknowledge All ({transfers.length})
+          </button>
+        </div>
+      )}
       {transfers.map(t => {
         const isProcessing = loadingId === t.id
         const anyProcessing = loadingId !== null

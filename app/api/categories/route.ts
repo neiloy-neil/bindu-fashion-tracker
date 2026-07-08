@@ -6,15 +6,25 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const includeInactive = searchParams.get('includeInactive') === 'true'
     const type = searchParams.get('type') // 'INCOME' | 'EXPENSE' | null (all)
+    const branchType = request.headers.get('x-user-branch-type') // injected by proxy
+
+    // If branchType is set, only return categories applicable to that type (or with empty applicableTo = all types)
+    const branchTypeFilter = branchType
+      ? { OR: [{ applicableTo: { isEmpty: true } }, { applicableTo: { has: branchType } }] }
+      : {}
 
     const categories = await prisma.category.findMany({
       where: {
         ...(includeInactive ? {} : { isActive: true }),
         ...(type ? { type } : {}),
+        ...branchTypeFilter,
       },
       include: {
         children: {
-          where: includeInactive ? {} : { isActive: true },
+          where: {
+            ...(includeInactive ? {} : { isActive: true }),
+            ...branchTypeFilter,
+          },
           orderBy: { name: 'asc' },
         },
       },

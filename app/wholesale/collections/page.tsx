@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { formatCurrency } from '@/lib/utils'
+import { dhakaDateString } from '@/lib/new-entry'
 import toast from 'react-hot-toast'
-import { Search } from 'lucide-react'
+import { Search, X } from 'lucide-react'
 import { BrandSpinner } from '@/components/ui/BrandSpinner'
 import Link from 'next/link'
 
@@ -40,22 +41,31 @@ const METHOD_COLORS: Record<string, string> = {
   UDHAR: 'bg-yellow-500/15 text-yellow-400',
 }
 
+const today = dhakaDateString()
+const firstOfMonth = today.slice(0, 7) + '-01'
+
 export default function CollectionsPage() {
   const [payments, setPayments] = useState<Payment[]>([])
   const [returns, setReturns] = useState<Return[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [tab, setTab] = useState<'all' | 'payments' | 'returns'>('all')
+  const [startDate, setStartDate] = useState(firstOfMonth)
+  const [endDate, setEndDate] = useState(today)
 
-  useEffect(() => {
+  const load = useCallback(() => {
+    setLoading(true)
+    const params = new URLSearchParams({ startDate, endDate })
     Promise.all([
-      fetch('/api/wholesale/payments').then(r => r.json()),
-      fetch('/api/wholesale/returns').then(r => r.json()),
+      fetch(`/api/wholesale/payments?${params}`).then(r => r.json()),
+      fetch(`/api/wholesale/returns?${params}`).then(r => r.json()),
     ])
       .then(([p, r]) => { setPayments(p); setReturns(r) })
       .catch(() => toast.error('Failed to load collections'))
       .finally(() => setLoading(false))
-  }, [])
+  }, [startDate, endDate])
+
+  useEffect(() => { load() }, [load])
 
   const rows: Row[] = [
     ...payments.map(p => ({ kind: 'payment' as const, date: p.collectedAt, data: p })),
@@ -90,12 +100,32 @@ export default function CollectionsPage() {
 
   return (
     <div className="p-4 md:p-6 space-y-4">
-      <div>
-        <h1 className="text-xl font-semibold text-[var(--text-primary)]">Collections</h1>
-        <p className="text-sm text-[var(--text-muted)]">
-          <span className="text-green-400 font-semibold">{formatCurrency(totalCollected)}</span> collected
-          {totalReturned > 0 && <> · <span className="text-orange-400 font-semibold">−{formatCurrency(totalReturned)}</span> returned · net <span className="font-semibold text-[var(--text-primary)]">{formatCurrency(totalCollected - totalReturned)}</span></>}
-        </p>
+      <div className="flex items-start justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-xl font-semibold text-[var(--text-primary)]">Collections</h1>
+          <p className="text-sm text-[var(--text-muted)]">
+            <span className="text-green-400 font-semibold">{formatCurrency(totalCollected)}</span> collected
+            {totalReturned > 0 && <> · <span className="text-orange-400 font-semibold">−{formatCurrency(totalReturned)}</span> returned · net <span className="font-semibold text-[var(--text-primary)]">{formatCurrency(totalCollected - totalReturned)}</span></>}
+          </p>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <input
+            type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
+            className="input text-sm h-8 px-2"
+          />
+          <span className="text-[var(--text-muted)] text-sm">—</span>
+          <input
+            type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
+            className="input text-sm h-8 px-2"
+          />
+          <button
+            onClick={() => { setStartDate(firstOfMonth); setEndDate(today) }}
+            className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-raised)] transition-colors"
+            title="Reset to this month"
+          >
+            <X size={14} />
+          </button>
+        </div>
       </div>
 
       {/* Method breakdown */}

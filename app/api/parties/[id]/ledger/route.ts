@@ -8,10 +8,35 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   const resolvedParams = await params
   const id = parseInt(resolvedParams.id)
 
+  const { searchParams } = new URL(req.url)
+  const startDate = searchParams.get('startDate')
+  const endDate = searchParams.get('endDate')
+  const dateFilter = startDate && endDate ? {
+    gte: new Date(startDate + 'T00:00:00.000+06:00'),
+    lte: new Date(endDate + 'T23:59:59.999+06:00'),
+  } : undefined
+
   try {
+    // If date filter applied, calculate the balance before the filter window
+    let preFilterBalance = 0
+    if (dateFilter) {
+      const [prePurchases, prePayments] = await Promise.all([
+        prisma.purchase.findMany({
+          where: { partyId: id, date: { lt: dateFilter.gte } },
+          select: { amount: true },
+        }),
+        prisma.payment.findMany({
+          where: { partyId: id, approvalStatus: 'APPROVED', createdAt: { lt: dateFilter.gte } },
+          select: { amount: true },
+        }),
+      ])
+      preFilterBalance = prePurchases.reduce((s, p) => s + p.amount, 0)
+        - prePayments.reduce((s, p) => s + p.amount, 0)
+    }
+
     const [purchases, payments] = await Promise.all([
       prisma.purchase.findMany({
-        where: { partyId: id },
+        where: { partyId: id, ...(dateFilter ? { date: dateFilter } : {}) },
         select: {
           id: true, date: true, amount: true,
           invoiceNumber: true, note: true, attachmentUrl: true,
@@ -21,7 +46,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         take: 2000,
       }),
       prisma.payment.findMany({
-        where: { partyId: id },
+        where: { partyId: id, ...(dateFilter ? { createdAt: dateFilter } : {}) },
         select: {
           id: true, amount: true, method: true, approvalStatus: true,
           note: true, attachmentUrl: true, createdAt: true, transactionRef: true,
@@ -88,8 +113,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     // Sort by date asc
     ledger.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
 
-    // Calculate running balance
-    let runningBalance = 0
+    // Calculate running balance — seed with pre-filter balance if a date range is active
+    let runningBalance = preFilterBalance
     const ledgerWithBalance = ledger.map(item => {
       if (item.type === 'PURCHASE') {
         runningBalance += item.amount
@@ -100,7 +125,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       return { ...item, runningBalance }
     })
 
-    return NextResponse.json(ledgerWithBalance)
+    return NextResponse.json({ entries: ledgerWithBalance, preFilterBalance })
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }

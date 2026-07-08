@@ -41,6 +41,7 @@ export default function NewChallanModal({ onClose, onCreated }: Props) {
   const [items, setItems] = useState<ChallanItem[]>([{ description: '', quantity: '', unitPrice: '', amount: '', note: '' }])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [creditWarning, setCreditWarning] = useState<string | null>(null)
 
   useEffect(() => {
     Promise.all([
@@ -86,14 +87,10 @@ export default function NewChallanModal({ onClose, onCreated }: Props) {
   const paid = parseFloat(form.paidAtDelivery) || 0
   const due = netAmount - paid
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const submitChallan = async (force = false) => {
     setError(null)
-    if (!form.buyerId) { setError('Please select a buyer.'); return }
-    if (!form.branchId) { setError('Please select a branch.'); return }
+    setCreditWarning(null)
     const validItems = items.filter(it => it.description.trim() && parseFloat(it.amount) > 0)
-    if (!validItems.length) { setError('Add at least one item with a description and amount.'); return }
-
     setSaving(true)
     try {
       const res = await fetch('/api/wholesale/challans', {
@@ -109,9 +106,14 @@ export default function NewChallanModal({ onClose, onCreated }: Props) {
           notes: form.notes || null,
           attachmentUrl: form.attachmentUrl || null,
           items: validItems,
+          force,
         }),
       })
       const data = await res.json()
+      if (res.status === 422 && data.creditLimitExceeded) {
+        setCreditWarning(data.error)
+        return
+      }
       if (!res.ok) throw new Error(data.error || 'Failed to create challan')
       toast.success(`Challan ${data.challanNumber} created`)
       onCreated()
@@ -120,6 +122,16 @@ export default function NewChallanModal({ onClose, onCreated }: Props) {
     } finally {
       setSaving(false)
     }
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError(null)
+    if (!form.buyerId) { setError('Please select a buyer.'); return }
+    if (!form.branchId) { setError('Please select a branch.'); return }
+    const validItems = items.filter(it => it.description.trim() && parseFloat(it.amount) > 0)
+    if (!validItems.length) { setError('Add at least one item with a description and amount.'); return }
+    await submitChallan(false)
   }
 
   const isBranch = role === 'BRANCH'
@@ -140,6 +152,18 @@ export default function NewChallanModal({ onClose, onCreated }: Props) {
 
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
           {error && <p className="text-sm text-red-400 bg-red-500/10 rounded-lg px-3 py-2">{error}</p>}
+          {creditWarning && (
+            <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg px-3 py-3 space-y-2">
+              <p className="text-sm text-yellow-400 font-medium">⚠ Credit Limit Exceeded</p>
+              <p className="text-xs text-yellow-300/80">{creditWarning}</p>
+              <div className="flex gap-2 mt-1">
+                <button type="button" onClick={() => setCreditWarning(null)} className="px-3 py-1 text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">Cancel</button>
+                <button type="button" onClick={() => submitChallan(true)} disabled={saving} className="px-3 py-1 text-xs font-semibold bg-yellow-500 hover:bg-yellow-400 text-black rounded-md transition-colors disabled:opacity-50">
+                  {saving ? 'Creating…' : 'Create Anyway'}
+                </button>
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-3">
             {!isBranch && (

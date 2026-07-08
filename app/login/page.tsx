@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { signIn } from 'next-auth/react'
+import Image from 'next/image'
 
 export default function LoginPage() {
   const [username, setUsername] = useState('')
@@ -37,40 +38,58 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[var(--bg-primary)] text-[var(--text-primary)] relative overflow-hidden px-4">
-      
-      {/* Watermark Logo */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.03] pointer-events-none z-0">
-        <img src="/bindu-logo.webp" alt="Swirl Watermark" style={{ width: '800px', height: 'auto' }} className="object-contain" />
+
+      {/* Watermark Logo — decorative, must not be LCP element */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.03] pointer-events-none z-0" aria-hidden="true">
+        <img
+          src="/bindu-logo.webp"
+          alt=""
+          width={800}
+          height={800}
+          loading="lazy"
+          fetchPriority="low"
+          className="object-contain"
+        />
       </div>
 
       <div className="w-full max-w-md p-10 rounded-2xl bg-[var(--bg-card)] shadow-2xl border border-[var(--border)] relative z-10">
         <div className="text-center mb-10 flex flex-col items-center">
-          <img src="/bindu-logo.webp" alt="Bindu Premium Logo" style={{ width: '48px', height: 'auto' }} className="mb-4 object-contain" />
+          <Image
+            src="/bindu-logo.webp"
+            alt="Bindu Premium Logo"
+            width={48}
+            height={48}
+            priority
+            unoptimized
+            className="mb-4 object-contain"
+          />
           <h1 className="text-3xl font-display font-bold text-[var(--text-primary)]">
             Bindu Premium
           </h1>
-          <p className="text-sm text-[var(--text-muted)] mt-2 uppercase tracking-widest font-semibold">Log in to your account</p>
+          <p className="text-sm text-[var(--text-secondary)] mt-2 uppercase tracking-widest font-semibold">Log in to your account</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-6">
           <div>
-            <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2 tracking-wide">Username</label>
+            <label htmlFor="username" className="block text-sm font-semibold text-[var(--text-secondary)] mb-2 tracking-wide">Username</label>
             <input
+              id="username"
               type="text"
               required
-              className="w-full bg-[var(--bg-primary)] border border-[var(--border)] rounded-lg p-3 text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-glow)] transition-all"
+              className="w-full bg-[var(--bg-primary)] border border-[var(--border)] rounded-lg p-3 text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-ring)] transition-all"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               placeholder="admin"
             />
           </div>
-          
+
           <div>
-            <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2 tracking-wide">Password</label>
+            <label htmlFor="password" className="block text-sm font-semibold text-[var(--text-secondary)] mb-2 tracking-wide">Password</label>
             <input
+              id="password"
               type="password"
               required
-              className="w-full bg-[var(--bg-primary)] border border-[var(--border)] rounded-lg p-3 text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-glow)] transition-all"
+              className="w-full bg-[var(--bg-primary)] border border-[var(--border)] rounded-lg p-3 text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-ring)] transition-all"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
@@ -80,7 +99,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-4 bg-[var(--accent)] hover:bg-[var(--accent-dark)] text-white font-bold rounded-lg shadow-lg shadow-[var(--accent-glow)] transition-all flex justify-center items-center mt-4"
+            className="w-full py-4 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-bold rounded-lg shadow-lg shadow-[var(--accent-ring)] transition-all flex justify-center items-center mt-4"
           >
             {loading ? (
               <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">

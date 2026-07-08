@@ -3,10 +3,26 @@ import './globals.css'
 import { LayoutWrapper } from '@/components/layout/LayoutWrapper'
 import { Providers } from '@/components/Providers'
 import { Toaster } from 'react-hot-toast'
+import { Plus_Jakarta_Sans, Fraunces } from 'next/font/google'
+
+const jakartaSans = Plus_Jakarta_Sans({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-body',
+})
+
+const fraunces = Fraunces({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-display',
+})
 
 export const metadata: Metadata = {
   title: 'Bindu Premium — Tracking & Insights',
   description: 'Monthly sales, payments and expenditure management for Bindu Premium',
+  alternates: {
+    canonical: process.env.NEXTAUTH_URL ?? 'https://bindu-fashion-tracker.vercel.app',
+  },
 }
 
 export default function RootLayout({
@@ -17,11 +33,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className="light"
-      style={{
-        ['--font-body' as string]: '"Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif',
-        ['--font-display' as string]: '"Fraunces", Georgia, "Times New Roman", serif',
-      }}
+      className={`light ${jakartaSans.variable} ${fraunces.variable}`}
     >
       <body className="transition-colors duration-300 font-sans antialiased text-[var(--text-primary)] bg-[var(--bg-primary)]">
         <Providers>

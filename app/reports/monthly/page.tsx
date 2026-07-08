@@ -84,6 +84,52 @@ export default function MonthlyReportPage() {
     await exportMonthlyReportAsPdf(branchData, month, year, selectedBranchId, branches)
   }
 
+  const exportAsExcel = async () => {
+    if (!branchData || branchData.length === 0) return
+    const { downloadWorkbook } = await import('@/lib/excel-export')
+    const label = selectedBranchId === 'all' ? 'All Branches' : (branches.find(b => String(b.id) === selectedBranchId)?.name || selectedBranchId)
+    await downloadWorkbook(`monthly-report-${MONTHS[month - 1]}-${year}.xlsx`, [
+      {
+        name: 'Monthly Report',
+        columns: [
+          { header: 'Branch', key: 'branch', width: 22 },
+          { header: 'Gross Income', key: 'grossIncome', width: 16 },
+          { header: 'Total Income', key: 'totalIncome', width: 16 },
+          { header: 'Received Transfers', key: 'totalReceivedTransfers', width: 20 },
+          { header: 'Expenses', key: 'totalExpense', width: 16 },
+          { header: 'Transfers Out', key: 'totalTransfers', width: 16 },
+          { header: 'Payments', key: 'totalPayments', width: 16 },
+          { header: 'Advances', key: 'totalAdvances', width: 14 },
+          { header: 'Net Cash Flow', key: 'netCashFlow', width: 16 },
+        ],
+        rows: [
+          ...branchData.map((r: any) => ({
+            branch: r.branch?.name || label,
+            grossIncome: r.grossIncome,
+            totalIncome: r.totalIncome,
+            totalReceivedTransfers: r.totalReceivedTransfers,
+            totalExpense: r.totalExpense,
+            totalTransfers: r.totalTransfers,
+            totalPayments: r.totalPayments,
+            totalAdvances: r.totalAdvances,
+            netCashFlow: r.netCashFlow,
+          })),
+          {
+            branch: 'TOTAL',
+            grossIncome: branchData.reduce((s: number, r: any) => s + r.grossIncome, 0),
+            totalIncome: branchData.reduce((s: number, r: any) => s + r.totalIncome, 0),
+            totalReceivedTransfers: branchData.reduce((s: number, r: any) => s + r.totalReceivedTransfers, 0),
+            totalExpense: branchData.reduce((s: number, r: any) => s + r.totalExpense, 0),
+            totalTransfers: branchData.reduce((s: number, r: any) => s + r.totalTransfers, 0),
+            totalPayments: branchData.reduce((s: number, r: any) => s + r.totalPayments, 0),
+            totalAdvances: branchData.reduce((s: number, r: any) => s + r.totalAdvances, 0),
+            netCashFlow: branchData.reduce((s: number, r: any) => s + r.netCashFlow, 0),
+          },
+        ],
+      },
+    ])
+  }
+
   // Calculate totals
   const totals = branchData.reduce((acc, curr) => ({
     grossIncome: acc.grossIncome + curr.grossIncome,
@@ -160,6 +206,9 @@ export default function MonthlyReportPage() {
             <div className="flex flex-wrap gap-3 mb-6">
               <Button className="gap-2" onClick={exportAsPdf}>
                 <Download size={16} /> Export PDF Report
+              </Button>
+              <Button variant="outline" className="gap-2" onClick={exportAsExcel}>
+                <Download size={16} /> Export Excel
               </Button>
             </div>
 

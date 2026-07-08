@@ -17,10 +17,9 @@ import {
 } from '@/components/ui/select'
 
 const BRANCH_TYPES = [
-  { value: 'RETAIL',      label: 'Retail' },
-  { value: 'WHOLESALE',   label: 'Wholesale' },
-  { value: 'FACTORY',     label: 'Factory' },
-  { value: 'HEAD_OFFICE', label: 'Head Office' },
+  { value: 'RETAIL',    label: 'Retail' },
+  { value: 'WHOLESALE', label: 'Wholesale' },
+  { value: 'FACTORY',   label: 'Factory' },
 ]
 
 // Extended Category type with children

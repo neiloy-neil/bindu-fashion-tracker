@@ -15,11 +15,19 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const challanId = searchParams.get('challanId')
   const branchId = searchParams.get('branchId')
+  const startDate = searchParams.get('startDate')
+  const endDate = searchParams.get('endDate')
 
   let where: any = {}
   if (role === 'BRANCH' && userBranchId) where.branchId = parseInt(userBranchId)
   else if (branchId) where.branchId = parseInt(branchId)
   if (challanId) where.challanId = parseInt(challanId)
+  if (startDate && endDate) {
+    where.date = {
+      gte: new Date(startDate + 'T00:00:00.000+06:00'),
+      lte: new Date(endDate + 'T23:59:59.999+06:00'),
+    }
+  }
 
   try {
     const returns = await prisma.wholesaleReturn.findMany({

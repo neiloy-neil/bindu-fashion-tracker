@@ -11,7 +11,6 @@ import { MessageCircle, CheckSquare, X, Eye } from 'lucide-react'
 import CommentThread from '@/components/CommentThread'
 import EditRequestModal from '@/components/EditRequestModal'
 import EntryViewModal from '@/components/dashboard/EntryViewModal'
-import { downloadWorkbook } from '@/lib/excel-export'
 
 import { useSearchParams } from 'next/navigation'
 import { BrandSpinner } from '@/components/ui/BrandSpinner'
@@ -48,6 +47,7 @@ function Entries() {
   const [entriesReloadNonce, setEntriesReloadNonce] = useState(0)
 
   const [userRole, setUserRole] = useState<'ADMIN' | 'BRANCH' | null>(null)
+  const [monthLocked, setMonthLocked] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -100,11 +100,20 @@ function Entries() {
           limit: '1000',
         })
         if (branchFilter) params.set('branchId', branchFilter)
-        const res = await fetch(`/api/entries?${params}`)
-        const data = await res.json()
+        const [entriesRes, lockRes] = await Promise.all([
+          fetch(`/api/entries?${params}`),
+          branchFilter ? fetch(`/api/locked-months?branchId=${branchFilter}`) : Promise.resolve(null),
+        ])
+        const data = await entriesRes.json()
+        const lockData = lockRes ? await lockRes.json() : null
 
         if (!cancelled) {
           setEntries(data.entries || [])
+          if (lockData) {
+            setMonthLocked(lockData.locked?.some((l: any) => l.year === year && l.month === month) ?? false)
+          } else {
+            setMonthLocked(false)
+          }
         }
       } finally {
         if (!cancelled) {
@@ -183,6 +192,7 @@ function Entries() {
   const expenseCategories = categories.filter(c => c.type === 'EXPENSE')
 
   const exportToExcel = async () => {
+    const { downloadWorkbook } = await import('@/lib/excel-export')
     const rows = entries.map((e) => {
       const totals = computeTotals(e as any)
       const row: Record<string, string | number> = {
@@ -315,7 +325,7 @@ function Entries() {
 
   return (
     <>
-      <div className="sticky top-0 z-20 flex flex-col lg:flex-row lg:items-center justify-between gap-4 px-6 py-4 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur supports-[backdrop-filter]:bg-[var(--surface)]/80">
+      <div className="sticky top-0 z-20 flex flex-col lg:flex-row lg:items-center justify-between gap-4 px-4 md:px-6 py-4 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur supports-[backdrop-filter]:bg-[var(--surface)]/80">
         <div>
           <h1 className="text-lg font-semibold text-[var(--text-primary)] leading-none">Sheet View</h1>
           <p className="text-sm text-[var(--text-muted)] mt-1">{entries.length} entries • Click any cell to edit inline</p>
@@ -364,13 +374,19 @@ function Entries() {
             </svg>
             Export
           </Button>
-          <Button asChild size="sm" className="flex items-center gap-2">
-            <Link href="/entries/new">+ New Entry</Link>
+          <Button asChild size="sm" className="flex items-center gap-2" disabled={monthLocked}>
+            {monthLocked ? <span>+ New Entry</span> : <Link href="/entries/new">+ New Entry</Link>}
           </Button>
         </div>
       </div>
 
       <div className="flex-1 min-h-0 flex flex-col p-4 md:p-6 overflow-auto">
+        {monthLocked && (
+          <div className="mb-4 flex items-center gap-2 px-4 py-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4 shrink-0"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            This month is locked. Entries cannot be created or edited.
+          </div>
+        )}
         {userRole === 'BRANCH' && <BranchPendingItems />}
         {loading || categories.length === 0 ? (
           <div className="flex items-center justify-center h-[300px] gap-3">
@@ -383,7 +399,9 @@ function Entries() {
             <h3 className="text-xl text-[var(--text-primary)] mb-2 font-semibold">No register data submitted</h3>
             <p className="mb-6 text-sm">There are no entries for {MONTHS[month-1]} {year} yet.<br />If the shop is open today, click &apos;+ New Entry&apos; to start the daily sheet.</p>
             <div className="flex gap-3 justify-center">
-              <Button asChild className="min-w-[160px]"><Link href="/entries/new">+ New Entry</Link></Button>
+              <Button asChild={!monthLocked} disabled={monthLocked} className="min-w-[160px]">
+                {monthLocked ? <span>+ New Entry</span> : <Link href="/entries/new">+ New Entry</Link>}
+              </Button>
             </div>
           </div>
         ) : (

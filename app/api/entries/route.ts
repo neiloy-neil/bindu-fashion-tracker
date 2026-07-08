@@ -5,6 +5,7 @@ import { dateOnlyToUtc, newEntryPayloadSchema } from '@/lib/new-entry'
 import { logAudit } from '@/lib/audit'
 import { logger } from '@/lib/logger'
 import { signEntryAttachments } from '@/lib/storage'
+import { isMonthLocked } from '@/lib/locked-month'
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
@@ -93,6 +94,11 @@ export async function POST(req: NextRequest) {
 
   if (userRole === 'BRANCH' && !userBranchId) return NextResponse.json({ error: 'FORBIDDEN', message: 'No branch is assigned' }, { status: 403 })
   const finalBranchId = userRole === 'BRANCH' ? Number(userBranchId) : body.branchId
+
+  const entryDate = body.date ? new Date(body.date) : new Date()
+  if (userRole !== 'SUPER_ADMIN' && await isMonthLocked(finalBranchId, entryDate)) {
+    return NextResponse.json({ error: 'MONTH_LOCKED', message: 'This month has been locked and cannot accept new entries' }, { status: 403 })
+  }
 
   try {
     const entry = await prisma.$transaction(async tx => {

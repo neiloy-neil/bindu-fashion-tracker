@@ -26,6 +26,22 @@ export default function AdminExpenseApprovals() {
   const [rejectingId, setRejectingId] = useState<number | null>(null)
   const [rejectReason, setRejectReason] = useState('')
   const [actionLoadingId, setActionLoadingId] = useState<number | null>(null)
+  const [bulkApproving, setBulkApproving] = useState(false)
+
+  const handleApproveAll = async () => {
+    setBulkApproving(true)
+    const t = toast.loading(`Approving ${expenses.length} expenses…`)
+    let succeeded = 0
+    for (const exp of expenses) {
+      try {
+        const res = await fetch(`/api/expense-entries/${exp.id}/approve`, { method: 'POST' })
+        if (res.ok) succeeded++
+      } catch { /* continue */ }
+    }
+    setBulkApproving(false)
+    toast.success(`Approved ${succeeded} of ${expenses.length} expenses`, { id: t })
+    setExpenses([])
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -82,12 +98,22 @@ export default function AdminExpenseApprovals() {
 
   return (
     <div className="mb-5 rounded-xl border border-[var(--border)] border-l-4 border-l-[var(--danger)] bg-[var(--surface)] p-5">
-      <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-[var(--text-primary)]">
-        <span className="text-lg">🧾</span>
-        Pending Expense Approvals
-        <span className="ml-1 rounded-full bg-[var(--danger)]/20 px-2 py-0.5 text-xs font-bold text-[var(--danger)]">
-          {expenses.length}
-        </span>
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 text-sm font-semibold text-[var(--text-primary)]">
+          <span className="text-lg">🧾</span>
+          Pending Expense Approvals
+          <span className="ml-1 rounded-full bg-[var(--danger)]/20 px-2 py-0.5 text-xs font-bold text-[var(--danger)]">
+            {expenses.length}
+          </span>
+        </div>
+        {expenses.length > 1 && (
+          <Button size="sm" variant="outline" onClick={handleApproveAll} disabled={bulkApproving} className="text-xs h-7 gap-1.5">
+            {bulkApproving
+              ? <span className="w-3 h-3 rounded-full border-2 border-[var(--accent)]/40 border-t-[var(--accent)] animate-spin" />
+              : null}
+            Approve All ({expenses.length})
+          </Button>
+        )}
       </div>
       <div className="flex flex-col gap-3">
         {expenses.map(exp => (

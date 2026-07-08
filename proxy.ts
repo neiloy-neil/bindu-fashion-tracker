@@ -9,7 +9,8 @@ export async function proxy(req: NextRequest) {
     pathname.startsWith('/_next') ||
     pathname.startsWith('/favicon.ico') ||
     pathname.startsWith('/images') ||
-    pathname.startsWith('/uploads')
+    pathname.startsWith('/uploads') ||
+    pathname.startsWith('/api/auth')  // NextAuth handles its own auth
   ) {
     return NextResponse.next()
   }
@@ -33,11 +34,17 @@ export async function proxy(req: NextRequest) {
   }
 
   if (token && isPublicRoute && pathname === '/login') {
+    const branchType = token.branchType as string | null
+    const role = token.role as string
+    if (role === 'BRANCH' && branchType === 'WHOLESALE') {
+      return NextResponse.redirect(new URL('/wholesale/challans', req.url))
+    }
     return NextResponse.redirect(new URL('/entries', req.url))
   }
 
   if (token) {
     const role = token.role as string
+    const branchType = token.branchType as string | null
 
     // SUPER_ADMIN has full access to everything
     if (role === 'SUPER_ADMIN') {
@@ -54,6 +61,37 @@ export async function proxy(req: NextRequest) {
     }
 
     if (role === 'BRANCH') {
+      // Wholesale branches cannot access daily entry routes
+      if (branchType === 'WHOLESALE') {
+        if (
+          pathname.startsWith('/entries') ||
+          pathname.startsWith('/api/entries')
+        ) {
+          if (pathname.startsWith('/api/')) {
+            return new NextResponse(
+              JSON.stringify({ error: 'Forbidden', message: 'Wholesale branches use wholesale routes' }),
+              { status: 403, headers: { 'content-type': 'application/json' } }
+            )
+          }
+          return NextResponse.redirect(new URL('/wholesale/challans', req.url))
+        }
+      }
+      // Retail/Factory branches cannot access wholesale routes
+      if (branchType === 'RETAIL' || branchType === 'FACTORY') {
+        if (
+          pathname.startsWith('/wholesale') ||
+          pathname.startsWith('/api/wholesale')
+        ) {
+          if (pathname.startsWith('/api/')) {
+            return new NextResponse(
+              JSON.stringify({ error: 'Forbidden', message: 'This branch type does not use wholesale routes' }),
+              { status: 403, headers: { 'content-type': 'application/json' } }
+            )
+          }
+          return NextResponse.redirect(new URL('/entries', req.url))
+        }
+      }
+
       if (
         pathname.startsWith('/branches') ||
         pathname.startsWith('/import') ||
@@ -123,6 +161,9 @@ export async function proxy(req: NextRequest) {
     if (token.branchId) {
       requestHeaders.set('x-user-branch-id', String(token.branchId))
     }
+    if (branchType) {
+      requestHeaders.set('x-user-branch-type', branchType)
+    }
     if (token.managedBranchIds && Array.isArray(token.managedBranchIds)) {
       requestHeaders.set('x-user-managed-branches', token.managedBranchIds.join(','))
       requestHeaders.set('x-user-managed-branch-ids', JSON.stringify(token.managedBranchIds))
@@ -139,5 +180,5 @@ export async function proxy(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon\\.ico|api/auth).*)'],
 }

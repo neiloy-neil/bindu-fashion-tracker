@@ -27,6 +27,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
         ...(type !== undefined && { type }),
         ...(frequency !== undefined && { frequency: (type ?? existing.type) === 'EXPENSE' ? frequency : null }),
         ...(parentId !== undefined && { parentId: parentId ? Number(parentId) : null }),
+        ...(isActive !== undefined && { isActive: !!isActive }),
         ...(requiresAttachment !== undefined && { requiresAttachment: !!requiresAttachment }),
         ...(isAutoTransferred !== undefined && { isAutoTransferred: !!isAutoTransferred }),
         ...(applicableTo !== undefined && { applicableTo: Array.isArray(applicableTo) ? applicableTo : [] }),

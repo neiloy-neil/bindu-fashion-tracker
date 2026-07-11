@@ -30,7 +30,7 @@ export default function AdvancesPage() {
   const [view, setView] = useState<'list' | 'summary'>('summary')
 
   const url = `/api/hr/advances?month=${month}&year=${year}`
-  const { data, isLoading } = useSWR<{ advances: Advance[]; summary: Summary[]; total: number }>(url, fetcher, {
+  const { data, isLoading } = useSWR<{ advances: Advance[]; summary: Summary[]; total: number; cashTotal: number; productTotal: number }>(url, fetcher, {
     keepPreviousData: true,
     revalidateOnFocus: false,
   })

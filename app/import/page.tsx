@@ -24,7 +24,11 @@ export default function ImportPage() {
     if (!file) return
     if (empFileRef.current) empFileRef.current.value = ''
     try {
-      const rows = await parseEmployeeSheet(file)
+      const { rows, errors } = await parseEmployeeSheet(file)
+      if (errors.length > 0) {
+        errors.forEach(e => toast.error(e))
+        return
+      }
       setPreviewRows(rows)
     } catch (err: any) {
       toast.error(err.message ?? 'Failed to parse file')

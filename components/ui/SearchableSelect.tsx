@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect, useId } from 'react'
+import { createPortal } from 'react-dom'
 import { ChevronDown, Search, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -31,25 +32,62 @@ export function SearchableSelect({
 }: Props) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
-  const containerRef = useRef<HTMLDivElement>(null)
+  const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({})
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
   const searchRef = useRef<HTMLInputElement>(null)
   const id = useId()
 
   const selected = options.find(o => o.value === value)
 
+  // Position the portal dropdown directly under the trigger button
+  const updatePosition = () => {
+    if (!triggerRef.current) return
+    const rect = triggerRef.current.getBoundingClientRect()
+    const spaceBelow = window.innerHeight - rect.bottom
+    const maxH = Math.min(300, spaceBelow - 8)
+    setDropdownStyle({
+      position: 'fixed',
+      top: rect.bottom + 4,
+      left: rect.left,
+      width: rect.width,
+      minWidth: 180,
+      maxHeight: maxH,
+      zIndex: 9999,
+    })
+  }
+
   // Close on outside click
   useEffect(() => {
     if (!open) return
     const handler = (e: MouseEvent) => {
-      if (!containerRef.current?.contains(e.target as Node)) setOpen(false)
+      if (
+        !triggerRef.current?.contains(e.target as Node) &&
+        !dropdownRef.current?.contains(e.target as Node)
+      ) {
+        setOpen(false)
+      }
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [open])
 
+  // Reposition on scroll / resize while open
+  useEffect(() => {
+    if (!open) return
+    const handler = () => updatePosition()
+    window.addEventListener('scroll', handler, true)
+    window.addEventListener('resize', handler)
+    return () => {
+      window.removeEventListener('scroll', handler, true)
+      window.removeEventListener('resize', handler)
+    }
+  }, [open])
+
   // Focus search when opening
   useEffect(() => {
     if (open) {
+      updatePosition()
       setQuery('')
       setTimeout(() => searchRef.current?.focus(), 0)
     }
@@ -76,9 +114,60 @@ export function SearchableSelect({
     setQuery('')
   }
 
+  const dropdownEl = open ? (
+    <div
+      ref={dropdownRef}
+      id={id}
+      role="listbox"
+      style={dropdownStyle}
+      className={cn(
+        'rounded-lg border border-[var(--border)] bg-[var(--surface)] shadow-xl overflow-hidden',
+        'animate-in fade-in-0 zoom-in-95'
+      )}
+    >
+      {/* Search input */}
+      <div className="flex items-center gap-2 border-b border-[var(--border)] px-3 py-2">
+        <Search size={13} className="shrink-0 text-[var(--text-muted)]" />
+        <input
+          ref={searchRef}
+          type="text"
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          placeholder={searchPlaceholder}
+          className="flex-1 bg-transparent text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none"
+        />
+      </div>
+
+      {/* Options */}
+      <div className="overflow-y-auto py-1" style={{ maxHeight: 'calc(100% - 41px)' }}>
+        {filtered.length === 0 ? (
+          <div className="px-3 py-4 text-center text-xs text-[var(--text-muted)]">No results</div>
+        ) : hasGroups ? (
+          Object.entries(groups).map(([group, opts]) => (
+            <div key={group}>
+              {group && (
+                <div className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+                  {group}
+                </div>
+              )}
+              {opts.map(o => (
+                <OptionItem key={o.value} option={o} selected={value === o.value} onSelect={handleSelect} />
+              ))}
+            </div>
+          ))
+        ) : (
+          filtered.map(o => (
+            <OptionItem key={o.value} option={o} selected={value === o.value} onSelect={handleSelect} />
+          ))
+        )}
+      </div>
+    </div>
+  ) : null
+
   return (
-    <div ref={containerRef} className={cn('relative', className)}>
+    <div className={cn('relative', className)}>
       <button
+        ref={triggerRef}
         type="button"
         role="combobox"
         aria-expanded={open}
@@ -99,53 +188,7 @@ export function SearchableSelect({
         <ChevronDown size={14} className={cn('ml-2 shrink-0 text-[var(--text-muted)] transition-transform', open && 'rotate-180')} />
       </button>
 
-      {open && (
-        <div
-          id={id}
-          role="listbox"
-          className={cn(
-            'absolute z-50 mt-1 w-full min-w-[180px] rounded-lg border border-[var(--border)] bg-[var(--surface)] shadow-lg',
-            'animate-in fade-in-0 zoom-in-95'
-          )}
-        >
-          {/* Search input */}
-          <div className="flex items-center gap-2 border-b border-[var(--border)] px-3 py-2">
-            <Search size={13} className="shrink-0 text-[var(--text-muted)]" />
-            <input
-              ref={searchRef}
-              type="text"
-              value={query}
-              onChange={e => setQuery(e.target.value)}
-              placeholder={searchPlaceholder}
-              className="flex-1 bg-transparent text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none"
-            />
-          </div>
-
-          {/* Options */}
-          <div className="max-h-56 overflow-y-auto py-1">
-            {filtered.length === 0 ? (
-              <div className="px-3 py-4 text-center text-xs text-[var(--text-muted)]">No results</div>
-            ) : hasGroups ? (
-              Object.entries(groups).map(([group, opts]) => (
-                <div key={group}>
-                  {group && (
-                    <div className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-                      {group}
-                    </div>
-                  )}
-                  {opts.map(o => (
-                    <OptionItem key={o.value} option={o} selected={value === o.value} onSelect={handleSelect} />
-                  ))}
-                </div>
-              ))
-            ) : (
-              filtered.map(o => (
-                <OptionItem key={o.value} option={o} selected={value === o.value} onSelect={handleSelect} />
-              ))
-            )}
-          </div>
-        </div>
-      )}
+      {typeof window !== 'undefined' && dropdownEl && createPortal(dropdownEl, document.body)}
     </div>
   )
 }

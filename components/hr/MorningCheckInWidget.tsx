@@ -232,75 +232,77 @@ export function MorningCheckInWidget({ branchId }: Props) {
         </div>
       </div>
       
-      <div className="p-4 max-h-[420px] overflow-y-auto divide-y divide-[var(--border)]">
+      <div className="max-h-[420px] overflow-y-auto divide-y divide-[var(--border)]">
         {employees.map(emp => {
           const record = attendanceData[emp.id]
           const isAbsent = record?.isAbsent
 
           return (
-            <div key={emp.id} className="py-3 space-y-2">
-              {/* Employee name row */}
-              <div className="flex justify-between items-center">
-                <div>
-                  <p className="font-semibold text-[var(--text-primary)] text-sm">{emp.name}</p>
-                  <p className="text-xs text-[var(--text-muted)]">ID: {emp.employeeId || 'N/A'}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  {record && (
-                    <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${statusBadge(record.status)}`}>
-                      {record.status}
-                    </span>
-                  )}
-                  {isAbsent ? (
-                    <Button
-                      onClick={() => handleClearMark(emp.id)}
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 gap-1 text-xs text-[var(--danger)] hover:bg-[var(--danger-subtle)]"
-                    >
-                      <X size={12} /> Undo
-                    </Button>
-                  ) : (
-                    <Button
-                      onClick={() => handleMarkAbsent(emp.id)}
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 gap-1 text-xs bg-[var(--danger-subtle)] text-[var(--danger)] hover:bg-[var(--danger)] hover:text-white"
-                    >
-                      Absent
-                    </Button>
-                  )}
-                </div>
+            <div key={emp.id} className="flex items-center gap-2 px-4 py-2 min-w-0">
+              {/* Name + ID */}
+              <div className="w-36 shrink-0 min-w-0">
+                <p className="text-sm font-semibold text-[var(--text-primary)] truncate">{emp.name}</p>
+                <p className="text-[10px] text-[var(--text-muted)] truncate">ID: {emp.employeeId || 'N/A'}</p>
               </div>
 
-              {/* Time inputs — only visible if not absent */}
-              {!isAbsent && (
-                <div className="grid grid-cols-2 gap-2 pl-0">
-                  <div>
-                    <label className="block text-[10px] font-medium text-[var(--text-muted)] mb-1">Check-in Time</label>
+              {/* Check-in */}
+              {!isAbsent ? (
+                <>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <label className="text-[10px] text-[var(--text-muted)] whitespace-nowrap">In</label>
                     <input
                       type="time"
                       value={record?.checkInTimeStr || ''}
                       onChange={e => handleTimeChange(emp.id, 'checkInTimeStr', e.target.value)}
                       onClick={() => {
-                        // Auto-fill with current time if empty
-                        if (!record?.checkInTimeStr) {
-                          handleTimeChange(emp.id, 'checkInTimeStr', nowTimeStr())
-                        }
+                        if (!record?.checkInTimeStr) handleTimeChange(emp.id, 'checkInTimeStr', nowTimeStr())
                       }}
-                      className="w-full h-8 px-2 text-sm rounded-md border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
+                      className="h-7 w-24 px-1.5 text-xs rounded border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
                     />
                   </div>
-                  <div>
-                    <label className="block text-[10px] font-medium text-[var(--text-muted)] mb-1">Check-out Time</label>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <label className="text-[10px] text-[var(--text-muted)] whitespace-nowrap">Out</label>
                     <input
                       type="time"
                       value={record?.checkOutTimeStr || ''}
                       onChange={e => handleTimeChange(emp.id, 'checkOutTimeStr', e.target.value)}
-                      className="w-full h-8 px-2 text-sm rounded-md border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
+                      className="h-7 w-24 px-1.5 text-xs rounded border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
                     />
                   </div>
-                </div>
+                </>
+              ) : (
+                <div className="flex-1" />
+              )}
+
+              {/* Spacer */}
+              <div className="flex-1" />
+
+              {/* Status badge */}
+              {record && (
+                <span className={`inline-flex shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${statusBadge(record.status)}`}>
+                  {record.status}
+                </span>
+              )}
+
+              {/* Absent / Undo button */}
+              {isAbsent ? (
+                <Button
+                  onClick={() => handleClearMark(emp.id)}
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 shrink-0 gap-1 text-xs text-[var(--danger)] hover:bg-[var(--danger-subtle)]"
+                >
+                  <X size={12} /> Undo
+                </Button>
+              ) : (
+                <Button
+                  onClick={() => handleMarkAbsent(emp.id)}
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 shrink-0 gap-1 text-xs bg-[var(--danger-subtle)] text-[var(--danger)] hover:bg-[var(--danger)] hover:text-white"
+                >
+                  Absent
+                </Button>
               )}
             </div>
           )

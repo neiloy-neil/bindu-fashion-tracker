@@ -40,21 +40,36 @@ export function SearchableSelect({
 
   const selected = options.find(o => o.value === value)
 
-  // Position the portal dropdown directly under the trigger button
+  // Position the portal dropdown — flips upward if more space above
   const updatePosition = () => {
     if (!triggerRef.current) return
     const rect = triggerRef.current.getBoundingClientRect()
-    const spaceBelow = window.innerHeight - rect.bottom
-    const maxH = Math.min(300, spaceBelow - 8)
-    setDropdownStyle({
-      position: 'fixed',
-      top: rect.bottom + 4,
-      left: rect.left,
-      width: rect.width,
-      minWidth: 180,
-      maxHeight: maxH,
-      zIndex: 9999,
-    })
+    const spaceBelow = window.innerHeight - rect.bottom - 8
+    const spaceAbove = rect.top - 8
+    const preferred = 400 // desired max height
+    if (spaceBelow >= preferred || spaceBelow >= spaceAbove) {
+      // Open downward
+      setDropdownStyle({
+        position: 'fixed',
+        top: rect.bottom + 4,
+        left: rect.left,
+        width: rect.width,
+        minWidth: 180,
+        maxHeight: Math.min(preferred, spaceBelow),
+        zIndex: 9999,
+      })
+    } else {
+      // Flip upward
+      setDropdownStyle({
+        position: 'fixed',
+        bottom: window.innerHeight - rect.top + 4,
+        left: rect.left,
+        width: rect.width,
+        minWidth: 180,
+        maxHeight: Math.min(preferred, spaceAbove),
+        zIndex: 9999,
+      })
+    }
   }
 
   // Close on outside click

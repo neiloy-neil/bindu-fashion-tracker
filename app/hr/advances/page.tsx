@@ -20,7 +20,7 @@ type Advance = {
   dailyEntry: { date: string; branch: { id: number; name: string } }
 }
 
-type Summary = { employee: { id: number; name: string; employeeId: string; designation: string }; total: number; count: number }
+type Summary = { employee: { id: number; name: string; employeeId: string; designation: string }; cashTotal: number; productTotal: number; total: number; count: number }
 
 export default function AdvancesPage() {
   const now = new Date()
@@ -38,6 +38,8 @@ export default function AdvancesPage() {
   const advances = data?.advances ?? []
   const summary = data?.summary ?? []
   const total = data?.total ?? 0
+  const cashTotal = data?.cashTotal ?? 0
+  const productTotal = data?.productTotal ?? 0
 
   const filteredSummary = empSearch
     ? summary.filter(s => s.employee.name.toLowerCase().includes(empSearch.toLowerCase()) || s.employee.employeeId.toLowerCase().includes(empSearch.toLowerCase()))
@@ -55,7 +57,7 @@ export default function AdvancesPage() {
         <div>
           <h1 className="text-lg font-semibold text-[var(--text-primary)] leading-none">Advance Salary</h1>
           <p className="text-sm text-[var(--text-muted)] mt-1">
-            {MONTHS[month - 1]} {year} · {summary.length} employee{summary.length !== 1 ? 's' : ''} · {formatCurrency(total)} total
+            {MONTHS[month - 1]} {year} · {summary.length} employee{summary.length !== 1 ? 's' : ''} · {formatCurrency(cashTotal)} cash · {formatCurrency(productTotal)} product
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
@@ -112,11 +114,12 @@ export default function AdvancesPage() {
                       <th className="text-left py-3 px-4 font-medium">Employee</th>
                       <th className="text-left py-3 px-4 font-medium hidden md:table-cell">Designation</th>
                       <th className="text-center py-3 px-4 font-medium">Count</th>
-                      <th className="text-right py-3 px-4 font-medium">Total Advance</th>
+                      <th className="text-right py-3 px-4 font-medium">Cash <span className="normal-case text-[10px] text-[var(--success)]">(deducted)</span></th>
+                      <th className="text-right py-3 px-4 font-medium hidden lg:table-cell">Product</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredSummary.map(({ employee: emp, total: empTotal, count }) => (
+                    {filteredSummary.map(({ employee: emp, cashTotal: empCash, productTotal: empProduct, count }) => (
                       <tr
                         key={emp.id}
                         className="border-b border-[var(--border)] hover:bg-[var(--surface-raised)] transition-colors cursor-pointer"
@@ -128,16 +131,18 @@ export default function AdvancesPage() {
                         </td>
                         <td className="py-3 px-4 text-[var(--text-secondary)] hidden md:table-cell">{emp.designation}</td>
                         <td className="py-3 px-4 text-center text-[var(--text-secondary)]">{count}</td>
-                        <td className="py-3 px-4 text-right font-semibold text-[var(--danger)]">{formatCurrency(empTotal)}</td>
+                        <td className="py-3 px-4 text-right font-semibold text-[var(--danger)]">{formatCurrency(empCash)}</td>
+                        <td className="py-3 px-4 text-right text-[var(--text-secondary)] hidden lg:table-cell">{empProduct > 0 ? formatCurrency(empProduct) : '—'}</td>
                       </tr>
                     ))}
                   </tbody>
                   <tfoot>
                     <tr className="bg-[var(--surface-raised)] border-t-2 border-[var(--border)]">
                       <td colSpan={2} className="py-3 px-4 font-semibold text-[var(--text-primary)] hidden md:table-cell">Total</td>
-                      <td colSpan={2} className="py-3 px-4 text-right font-bold text-[var(--danger)] md:hidden">Total: {formatCurrency(total)}</td>
                       <td className="py-3 px-4 text-center font-semibold text-[var(--text-secondary)] hidden md:table-cell">{advances.length}</td>
-                      <td className="py-3 px-4 text-right font-bold text-[var(--danger)] hidden md:table-cell">{formatCurrency(total)}</td>
+                      <td className="py-3 px-4 text-right font-bold text-[var(--danger)] hidden md:table-cell">{formatCurrency(cashTotal)}</td>
+                      <td className="py-3 px-4 text-right font-semibold text-[var(--text-secondary)] hidden lg:table-cell">{formatCurrency(productTotal)}</td>
+                      <td colSpan={4} className="py-3 px-4 text-right font-bold text-[var(--danger)] md:hidden">Cash: {formatCurrency(cashTotal)}</td>
                     </tr>
                   </tfoot>
                 </table>

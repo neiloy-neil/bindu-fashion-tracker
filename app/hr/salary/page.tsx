@@ -265,9 +265,10 @@ function SalaryContent() {
   }, [rows, filterBranch, search, sortValue])
 
   const totals = useMemo(() => {
-    let advance = 0, leave = 0, late = 0, ot = 0, bonus = 0, conveyance = 0, net = 0
+    let trackerAdvance = 0, advance = 0, leave = 0, late = 0, ot = 0, bonus = 0, conveyance = 0, net = 0
     displayed.forEach(row => {
       const calc = calcSalary(row.employee, row.record as SalaryRecord)
+      trackerAdvance += row.record.trackerAdvanceTotal ?? 0
       advance += calc.advanceDeducted
       leave += calc.leaveDeduction
       late += calc.lateDeduction
@@ -276,7 +277,7 @@ function SalaryContent() {
       conveyance += calc.conveyance
       net += calc.netPayable
     })
-    return { advance, leave, late, ot, bonus, conveyance, net, count: displayed.length }
+    return { trackerAdvance, advance, leave, late, ot, bonus, conveyance, net, count: displayed.length }
   }, [displayed])
 
   const allChecked = displayed.length > 0 && displayed.every(r => (r.record.attendanceBonus ?? 0) === ATTENDANCE_BONUS_AMOUNT)
@@ -567,7 +568,7 @@ function SalaryContent() {
                     <TableCell className="font-semibold text-[var(--text-primary)]" colSpan={3}>
                       Total ({totals.count} emp.)
                     </TableCell>
-                    <TableCell className="text-center text-[var(--danger)] tabular-nums"></TableCell>
+                    <TableCell className="text-center text-[var(--danger)] tabular-nums">{formatTaka(Math.round(totals.trackerAdvance))}</TableCell>
                     <TableCell className="text-center text-[var(--danger)] tabular-nums">{formatTaka(Math.round(totals.advance))}</TableCell>
                     <TableCell className="text-center text-[var(--danger)] tabular-nums">{formatTaka(Math.round(totals.leave))}</TableCell>
                     <TableCell />

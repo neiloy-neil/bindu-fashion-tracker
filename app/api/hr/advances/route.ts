@@ -46,22 +46,29 @@ export async function GET(req: NextRequest) {
       dailyEntry: { select: { date: true, branch: { select: { id: true, name: true } } } },
     },
     orderBy: { createdAt: 'desc' },
-    take: 500,
   })
 
-  // Summary by employee
-  const byEmployee = new Map<number, { employee: any; total: number; count: number }>()
+  // Summary by employee — split CASH vs PRODUCT so UI can show both
+  const byEmployee = new Map<number, { employee: any; cashTotal: number; productTotal: number; total: number; count: number }>()
   for (const a of advances) {
     const key = a.employeeId
-    if (!byEmployee.has(key)) byEmployee.set(key, { employee: a.employee, total: 0, count: 0 })
+    if (!byEmployee.has(key)) byEmployee.set(key, { employee: a.employee, cashTotal: 0, productTotal: 0, total: 0, count: 0 })
     const rec = byEmployee.get(key)!
-    rec.total += a.amount ?? 0
+    const amt = a.amount ?? 0
+    if (a.type === 'CASH') rec.cashTotal += amt
+    else rec.productTotal += amt
+    rec.total += amt
     rec.count++
   }
+
+  const cashTotal = advances.filter(a => a.type === 'CASH').reduce((s, a) => s + (a.amount ?? 0), 0)
+  const productTotal = advances.filter(a => a.type !== 'CASH').reduce((s, a) => s + (a.amount ?? 0), 0)
 
   return NextResponse.json({
     advances,
     summary: Array.from(byEmployee.values()).sort((a, b) => b.total - a.total),
-    total: advances.reduce((s, a) => s + (a.amount ?? 0), 0),
+    total: cashTotal + productTotal,
+    cashTotal,
+    productTotal,
   })
 }

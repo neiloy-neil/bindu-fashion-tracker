@@ -25,7 +25,13 @@ export default async function NewEntryPage() {
     prisma.ledgerAccount.findMany({ where: { isActive: true }, orderBy: { name: 'asc' } }),
     prisma.party.findMany({ where: { isActive: true }, orderBy: { name: 'asc' } }),
     (prisma.category as any).findMany({ where: { isActive: true, type: 'EXPENSE' }, orderBy: { name: 'asc' } }) as Promise<Category[]>,
-    prisma.employee.findMany({ where: { isActive: true }, orderBy: { name: 'asc' } }),
+    prisma.employee.findMany({
+      where: {
+        isActive: true,
+        ...(session.user.role === 'BRANCH' && session.user.branchId ? { branchId: session.user.branchId } : {}),
+      },
+      orderBy: { name: 'asc' },
+    }),
   ])
 
   return (

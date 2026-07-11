@@ -7,36 +7,43 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
+  const { searchParams } = new URL(req.url)
+  const branchId = searchParams.get('branchId') ? parseInt(searchParams.get('branchId')!) : null
+  const queryMonth = searchParams.get('month') ? parseInt(searchParams.get('month')!) : null
+  const queryYear = searchParams.get('year') ? parseInt(searchParams.get('year')!) : null
+
   try {
     const now = new Date()
-    const currentMonth = now.getMonth() + 1
-    const currentYear = now.getFullYear()
+    const currentMonth = queryMonth ?? (now.getMonth() + 1)
+    const currentYear = queryYear ?? now.getFullYear()
 
-    // Get active employees count
+    const branchFilter = branchId ? { branchId } : {}
+
+    // Get active employees count (scoped to branch if provided)
     const activeEmployees = await prisma.employee.count({
-      where: { isActive: true }
+      where: { isActive: true, ...branchFilter }
     })
 
-    // Get processed records for current month
+    // Get processed records for the requested month, scoped to branch if provided
     const processedRecords = await prisma.salaryRecord.findMany({
-      where: { month: currentMonth, year: currentYear },
+      where: {
+        month: currentMonth,
+        year: currentYear,
+        ...(branchId ? { employee: { branchId } } : {}),
+      },
       include: { employee: true }
     })
 
     const isLocked = processedRecords.some(r => r.lockedAt !== null)
 
-    // Calculate total net payable
-    // We duplicate the calcSalary logic minimally here, or better, we could import calcSalary from '@/lib/hr/calculations'.
-    // Since we are in an API route, let's just import calcSalary.
     const { calcSalary } = await import('@/lib/hr/calculations')
-    
+
     let totalNetPayable = 0
     for (const rec of processedRecords) {
       const calc = calcSalary(rec.employee, rec, 0)
       totalNetPayable += calc.netPayable
     }
 
-    // Unprocessed count
     const processedCount = processedRecords.length
     const isProcessed = processedCount > 0
 
@@ -47,7 +54,8 @@ export async function GET(req: NextRequest) {
       isLocked,
       isProcessed,
       month: currentMonth,
-      year: currentYear
+      year: currentYear,
+      branchId,
     })
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })

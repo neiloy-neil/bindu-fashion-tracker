@@ -112,6 +112,13 @@ export async function POST(req: NextRequest) {
       ])
       if (categories.length !== body.items.length) throw new Error('One or more income categories are invalid')
       if (expenseCategories.length !== expenseCatIds.length) throw new Error('One or more expense categories are invalid')
+
+      // Validate advance salary employees belong to the entry's branch (for BRANCH role)
+      if (userRole === 'BRANCH' && body.advanceSalaries.length > 0) {
+        const empIds = body.advanceSalaries.map(a => a.employeeId)
+        const validEmps = await tx.employee.count({ where: { id: { in: empIds }, branchId: finalBranchId } })
+        if (validEmps !== new Set(empIds).size) throw new Error('One or more employees do not belong to your branch')
+      }
       if (new Set(accounts.map(account => account.id)).size !== new Set(body.transfers.map(transfer => transfer.accountId)).size) {
         throw new Error('One or more transfer accounts are invalid')
       }
@@ -265,29 +272,22 @@ export async function POST(req: NextRequest) {
       })()
     }
 
-    // Trigger async advance salary sync
+    // Trigger advance salary sync fire-and-forget — errors are logged but never block the response
     if (body.advanceSalaries && body.advanceSalaries.length > 0) {
       const entryDate = new Date(body.date)
       const host = req.headers.get('host') || 'localhost:3000'
       const proto = req.headers.get('x-forwarded-proto') || 'http'
       const appUrl = process.env.NEXT_PUBLIC_APP_URL || `${proto}://${host}`
-      try {
-        await fetch(`${appUrl}/api/hr/sync/advance`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-user-role': 'ADMIN' },
-          body: JSON.stringify({
-            month: entryDate.getMonth() + 1,
-            year: entryDate.getFullYear(),
-          })
-        })
-      } catch (error) {
-        logger.error('entry.advance_sync_background_failed', error, {
-          entryId: entry.id,
-          branchId: finalBranchId,
-          month: entryDate.getMonth() + 1,
-          year: entryDate.getFullYear(),
-        })
-      }
+      void fetch(`${appUrl}/api/hr/sync/advance`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-user-role': 'ADMIN' },
+        body: JSON.stringify({ month: entryDate.getMonth() + 1, year: entryDate.getFullYear() }),
+      }).catch(error => logger.error('entry.advance_sync_background_failed', error, {
+        entryId: entry.id,
+        branchId: finalBranchId,
+        month: entryDate.getMonth() + 1,
+        year: entryDate.getFullYear(),
+      }))
     }
 
     // Fire in-app notifications for branch-to-branch transfers (fire-and-forget)

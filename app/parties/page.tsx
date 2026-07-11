@@ -6,7 +6,7 @@ import PartyListClient from './PartyListClient'
 
 export default async function PartiesPage() {
   const session = await getServerSession(authOptions)
-  if (!session || session.user.role !== 'ADMIN') {
+  if (!session || !['ADMIN', 'SUPER_ADMIN'].includes(session.user.role)) {
     redirect('/login')
   }
 

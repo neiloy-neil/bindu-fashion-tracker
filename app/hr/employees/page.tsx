@@ -229,16 +229,22 @@ export default function EmployeesPage() {
           <p className="text-sm text-[var(--text-muted)] mt-1">{filteredEmployees.length} total employees</p>
         </div>
         <div className="flex items-center gap-2">
-          <input type="file" ref={fileInputRef} className="hidden" accept=".xlsx" onChange={handleImport} />
-          <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
-            <Upload size={14} className="mr-2" /> Import
-          </Button>
+          {['ADMIN', 'SUPER_ADMIN', 'HR_ADMIN'].includes(userRole ?? '') && (
+            <>
+              <input type="file" ref={fileInputRef} className="hidden" accept=".xlsx" onChange={handleImport} />
+              <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
+                <Upload size={14} className="mr-2" /> Import
+              </Button>
+            </>
+          )}
           <Button variant="outline" onClick={handleExport}>
             <Download size={14} className="mr-2" /> Export
           </Button>
-          <Button onClick={() => { setEditingEmployee(null); setIsModalOpen(true) }}>
-            <Plus size={14} className="mr-2" /> Add Employee
-          </Button>
+          {['ADMIN', 'SUPER_ADMIN', 'HR_ADMIN'].includes(userRole ?? '') && (
+            <Button onClick={() => { setEditingEmployee(null); setIsModalOpen(true) }}>
+              <Plus size={14} className="mr-2" /> Add Employee
+            </Button>
+          )}
         </div>
       </div>
 
@@ -339,20 +345,24 @@ export default function EmployeesPage() {
                     <Button variant="ghost" size="icon" className="h-8 w-8 text-[var(--text-muted)] hover:text-[var(--info)] hover:bg-[var(--info-subtle)]" onClick={() => { setViewingEmployee(emp); setIsProfileOpen(true) }}>
                       <User size={14} />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-[var(--text-muted)] hover:text-[var(--accent)] hover:bg-[var(--accent-subtle)]" onClick={() => { 
-                      setTransferringEmployee(emp); 
-                      setTransferTargetBranch('');
-                      setTransferReason('');
-                      setIsTransferOpen(true);
-                    }}>
-                      <ArrowRightLeft size={14} />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-[var(--text-muted)] hover:text-[var(--accent)] hover:bg-[var(--accent-subtle)]" onClick={() => { setEditingEmployee(emp); setIsModalOpen(true) }}>
-                      <Pencil size={14} />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-[var(--text-muted)] hover:text-[var(--danger)] hover:bg-[var(--danger-subtle)]" onClick={() => handleDelete(emp)}>
-                      <Trash2 size={14} />
-                    </Button>
+                    {['ADMIN', 'SUPER_ADMIN', 'HR_ADMIN'].includes(userRole ?? '') && (
+                      <>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-[var(--text-muted)] hover:text-[var(--accent)] hover:bg-[var(--accent-subtle)]" onClick={() => {
+                          setTransferringEmployee(emp);
+                          setTransferTargetBranch('');
+                          setTransferReason('');
+                          setIsTransferOpen(true);
+                        }}>
+                          <ArrowRightLeft size={14} />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-[var(--text-muted)] hover:text-[var(--accent)] hover:bg-[var(--accent-subtle)]" onClick={() => { setEditingEmployee(emp); setIsModalOpen(true) }}>
+                          <Pencil size={14} />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-[var(--text-muted)] hover:text-[var(--danger)] hover:bg-[var(--danger-subtle)]" onClick={() => handleDelete(emp)}>
+                          <Trash2 size={14} />
+                        </Button>
+                      </>
+                    )}
                   </TableCell>
                 </TableRow>
               ))

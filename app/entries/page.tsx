@@ -374,9 +374,11 @@ function Entries() {
             </svg>
             Export
           </Button>
-          <Button asChild size="sm" className="flex items-center gap-2" disabled={monthLocked}>
-            {monthLocked ? <span>+ New Entry</span> : <Link href="/entries/new">+ New Entry</Link>}
-          </Button>
+          {['ADMIN', 'SUPER_ADMIN', 'BRANCH'].includes(userRole ?? '') && (
+            <Button asChild size="sm" className="flex items-center gap-2" disabled={monthLocked}>
+              {monthLocked ? <span>+ New Entry</span> : <Link href="/entries/new">+ New Entry</Link>}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -399,9 +401,11 @@ function Entries() {
             <h3 className="text-xl text-[var(--text-primary)] mb-2 font-semibold">No register data submitted</h3>
             <p className="mb-6 text-sm">There are no entries for {MONTHS[month-1]} {year} yet.<br />If the shop is open today, click &apos;+ New Entry&apos; to start the daily sheet.</p>
             <div className="flex gap-3 justify-center">
-              <Button asChild={!monthLocked} disabled={monthLocked} className="min-w-[160px]">
-                {monthLocked ? <span>+ New Entry</span> : <Link href="/entries/new">+ New Entry</Link>}
-              </Button>
+              {['ADMIN', 'SUPER_ADMIN', 'BRANCH'].includes(userRole ?? '') && (
+                <Button asChild={!monthLocked} disabled={monthLocked} className="min-w-[160px]">
+                  {monthLocked ? <span>+ New Entry</span> : <Link href="/entries/new">+ New Entry</Link>}
+                </Button>
+              )}
             </div>
           </div>
         ) : (

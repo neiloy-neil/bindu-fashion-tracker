@@ -164,7 +164,7 @@ export default function LeaveRequestsPage() {
                     <TableCell className="text-right">
                       {leave.status === 'PENDING' ? (
                         <div className="flex items-center justify-end gap-2">
-                          {userRole !== 'BRANCH' && (
+                          {['ADMIN', 'SUPER_ADMIN', 'HR_ADMIN'].includes(userRole ?? '') && (
                             <>
                               <Button size="sm" variant="outline" className="text-[var(--success)] hover:text-[var(--success)] hover:bg-[var(--success-subtle)]" onClick={() => updateStatus(leave.id, 'APPROVED')}>
                                 Approve

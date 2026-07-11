@@ -74,8 +74,10 @@ function SlipsContent() {
           setRole('HR_ADMIN')
         } else if (isBranchRole) {
           setRole('BRANCH')
-        } else {
+        } else if (['ADMIN', 'SUPER_ADMIN'].includes(sessionRole ?? '')) {
           setRole('ADMIN')
+        } else {
+          setRole('BRANCH')
         }
 
         // Determine lock status from any returned record
@@ -317,15 +319,17 @@ function SlipsContent() {
             <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
             <SelectContent>{yearOptions.map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}</SelectContent>
           </Select>
-          <Button
-            onClick={toggleLock}
-            disabled={locking}
-            variant={isLocked ? 'outline' : 'default'}
-            className="gap-2"
-          >
-            {isLocked ? <LockOpen size={15} /> : <Lock size={15} />}
-            {locking ? 'Updating...' : isLocked ? 'Unapprove' : 'Approve for Branch'}
-          </Button>
+          {(role === 'ADMIN' || role === 'HR_ADMIN') && (
+            <Button
+              onClick={toggleLock}
+              disabled={locking}
+              variant={isLocked ? 'outline' : 'default'}
+              className="gap-2"
+            >
+              {isLocked ? <LockOpen size={15} /> : <Lock size={15} />}
+              {locking ? 'Updating...' : isLocked ? 'Unapprove' : 'Approve for Branch'}
+            </Button>
+          )}
           <Button onClick={downloadAll} disabled={loading} variant="outline" className="gap-2">
             <Download size={15} />{loading ? 'Generating...' : 'Download All as ZIP'}
           </Button>

@@ -58,7 +58,7 @@ export async function PUT(
       where: { id: entryIdNum },
       data: {
         ...(date && { date: new Date(date) }),
-        ...(branchId && userRole === 'ADMIN' && { branchId: typeof branchId === 'string' ? parseInt(branchId) : branchId }),
+        ...(branchId && ['ADMIN', 'SUPER_ADMIN'].includes(userRole ?? '') && { branchId: typeof branchId === 'string' ? parseInt(branchId) : branchId }),
         ...fields,
       },
       include: { branch: true },

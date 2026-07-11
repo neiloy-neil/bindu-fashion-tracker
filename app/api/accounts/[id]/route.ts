@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma'
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const userRole = req.headers.get('x-user-role')
-  if (userRole !== 'ADMIN') {
+  if (!['ADMIN', 'SUPER_ADMIN'].includes(userRole ?? '')) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
   }
 
@@ -37,7 +37,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const userRole = req.headers.get('x-user-role')
-  if (userRole !== 'ADMIN') {
+  if (!['ADMIN', 'SUPER_ADMIN'].includes(userRole ?? '')) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
   }
 

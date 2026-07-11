@@ -49,7 +49,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   }
 
   try {
-    if (role === 'ADMIN' || role === 'HR_ADMIN' || role === 'AUDITOR') {
+    if (role === 'ADMIN' || role === 'SUPER_ADMIN' || role === 'HR_ADMIN' || role === 'AUDITOR') {
       const employee = await prisma.employee.findUnique({
         where: { id: employeeId },
         select: employeeFullSelect,
@@ -111,7 +111,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   const { id } = await params
   const role = req.headers.get('x-user-role')
   const userBranchId = req.headers.get('x-user-branch-id')
-  if (!role || !['ADMIN', 'HR_ADMIN', 'BRANCH'].includes(role)) {
+  if (!role || !['ADMIN', 'SUPER_ADMIN', 'HR_ADMIN', 'BRANCH'].includes(role)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
@@ -163,7 +163,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   const { id } = await params
   const role = req.headers.get('x-user-role')
   const userBranchId = req.headers.get('x-user-branch-id')
-  if (!role || !['ADMIN', 'HR_ADMIN', 'BRANCH'].includes(role)) {
+  if (!role || !['ADMIN', 'SUPER_ADMIN', 'HR_ADMIN', 'BRANCH'].includes(role)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 

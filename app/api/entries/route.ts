@@ -182,7 +182,7 @@ export async function POST(req: NextRequest) {
           pettyCashOpening: body.pettyCashOpening ?? 0,
           pettyCashUsed: body.pettyCashUsed ?? 0,
           pettyCashReplenished: body.pettyCashReplenished ?? 0,
-          pettyCashClosing: (body.pettyCashOpening ?? 0) - (body.pettyCashUsed ?? 0) + (body.pettyCashReplenished ?? 0),
+          pettyCashClosing: Math.max(0, (body.pettyCashOpening ?? 0) - (body.pettyCashUsed ?? 0) + (body.pettyCashReplenished ?? 0)),
           items: { create: body.items.map(item => ({
             categoryId: item.categoryId, amount: item.amount, note: item.note || null,
             partyName: item.partyName || null, receiptUrls: item.receiptKeys,

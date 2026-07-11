@@ -157,7 +157,8 @@ export function NewEntryForm({ initialData, userId }: Props) {
   const transfersWatch = useWatch({ control, name: 'transfers' })
   const paymentsWatch = useWatch({ control, name: 'payments' })
   const advanceSalariesWatch = useWatch({ control, name: 'advanceSalaries' })
-  
+  const pettyCashReplenishedWatch = useWatch({ control, name: 'pettyCashReplenished' })
+
   const hasInvalidPayments = paymentsWatch?.some(p => (p.method === 'BANK' || p.method === 'CHEQUE') && !p.attachmentKey)
 
   const totals = useMemo(() => {
@@ -166,10 +167,11 @@ export function NewEntryForm({ initialData, userId }: Props) {
       transfers: (transfersWatch || []).map(t => ({ amount: Number(t.amount) })),
       payments: (paymentsWatch || []).map(p => ({ amount: Number(p.amount), method: p.method })),
       expenseEntries: (expenseEntriesWatch || []).map(e => ({ amount: Number(e.amount) })),
-      advanceSalaries: (advanceSalariesWatch || []).map(a => ({ amount: Number(a.amount), type: a.type }))
+      advanceSalaries: (advanceSalariesWatch || []).map(a => ({ amount: Number(a.amount), type: a.type })),
+      pettyCashReplenished: Number(pettyCashReplenishedWatch) || 0,
     }
     return computeTotals(fakeEntry)
-  }, [incomeItemsWatch, expenseEntriesWatch, transfersWatch, paymentsWatch, advanceSalariesWatch, categories])
+  }, [incomeItemsWatch, expenseEntriesWatch, transfersWatch, paymentsWatch, advanceSalariesWatch, pettyCashReplenishedWatch, categories])
 
   const selectedBranchObj = useMemo(() => branches.find(b => String(b.id) === branchId), [branches, branchId])
   const isFactory = selectedBranchObj?.type === 'FACTORY'

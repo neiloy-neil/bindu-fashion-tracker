@@ -61,7 +61,7 @@ export default function LeaveRequestsPage() {
       })
       if (!res.ok) throw new Error('Failed to update status')
       toast.success(`Leave ${status.toLowerCase()} successfully`)
-      fetchLeaves()
+      setLeaves(prev => prev.map(l => l.id === id ? { ...l, status } : l))
     } catch (e: any) {
       toast.error(e.message)
     }
@@ -164,12 +164,16 @@ export default function LeaveRequestsPage() {
                     <TableCell className="text-right">
                       {leave.status === 'PENDING' ? (
                         <div className="flex items-center justify-end gap-2">
-                          <Button size="sm" variant="outline" className="text-[var(--success)] hover:text-[var(--success)] hover:bg-[var(--success-subtle)]" onClick={() => updateStatus(leave.id, 'APPROVED')}>
-                            Approve
-                          </Button>
-                          <Button size="sm" variant="outline" className="text-[var(--danger)] hover:text-[var(--danger)] hover:bg-[var(--danger-subtle)]" onClick={() => updateStatus(leave.id, 'REJECTED')}>
-                            Reject
-                          </Button>
+                          {userRole !== 'BRANCH' && (
+                            <>
+                              <Button size="sm" variant="outline" className="text-[var(--success)] hover:text-[var(--success)] hover:bg-[var(--success-subtle)]" onClick={() => updateStatus(leave.id, 'APPROVED')}>
+                                Approve
+                              </Button>
+                              <Button size="sm" variant="outline" className="text-[var(--danger)] hover:text-[var(--danger)] hover:bg-[var(--danger-subtle)]" onClick={() => updateStatus(leave.id, 'REJECTED')}>
+                                Reject
+                              </Button>
+                            </>
+                          )}
                         </div>
                       ) : (
                         <span className="text-[var(--text-muted)] text-xs">

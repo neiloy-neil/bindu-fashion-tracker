@@ -47,35 +47,35 @@ function SlipsContent() {
 
     const load = async () => {
       try {
-        const [setRes, slipsRes, empsRes] = await Promise.all([
+        const [setRes, slipsRes, sessionRes] = await Promise.all([
           fetch('/api/hr/settings'),
           fetch(`/api/hr/slips?month=${month}&year=${year}`),
-          fetch('/api/hr/employees?active=true')
+          fetch('/api/auth/session')
         ])
 
         const nextSettings = setRes.ok ? await setRes.json() : null
-        
+
         if (!slipsRes.ok) {
           if (!cancelled) {
             toast.error('Failed to load slips')
           }
           return
         }
-        
-        const slips: SalaryCalc[] = await slipsRes.json()
 
-        if (empsRes.ok) {
-          await empsRes.json()
-        }
+        const slips: SalaryCalc[] = await slipsRes.json()
+        const session = sessionRes.ok ? await sessionRes.json() : null
 
         if (cancelled) return
 
         setSettings(nextSettings)
-        const isBranchRole = empsRes.status === 403
-        if (isBranchRole) {
-           setRole('BRANCH')
+        const sessionRole = session?.user?.role ?? null
+        const isBranchRole = sessionRole === 'BRANCH'
+        if (sessionRole === 'HR_ADMIN') {
+          setRole('HR_ADMIN')
+        } else if (isBranchRole) {
+          setRole('BRANCH')
         } else {
-           setRole('ADMIN')
+          setRole('ADMIN')
         }
 
         // Determine lock status from any returned record

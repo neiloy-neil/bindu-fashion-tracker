@@ -120,6 +120,21 @@ export interface ExpenseEntry {
 export interface Employee {
   id: number
   name: string
+  employeeId?: string | null
+  designation?: string | null
+  basicSalary?: number
+  conveyance?: number
+  yearlyLeaveAllowance?: number
+  mobileNumber?: string | null
+  dateOfBirth?: string | null
+  joiningDate?: string | null
+  address?: string | null
+  emergencyContact?: string | null
+  bloodGroup?: string | null
+  nidNumber?: string | null
+  oldIdCard?: string | null
+  photoUrl?: string | null
+  branchId?: number | null
   isActive: boolean
   createdAt?: string | Date
 }

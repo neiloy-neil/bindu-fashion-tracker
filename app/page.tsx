@@ -10,6 +10,7 @@ import { SummaryStats, Branch } from '@/lib/types'
 import AdminEditRequests from '@/components/dashboard/AdminEditRequests'
 import AdminExpenseApprovals from '@/components/dashboard/AdminExpenseApprovals'
 import AdminPaymentApprovals from '@/components/dashboard/AdminPaymentApprovals'
+import AdminSupportRequests from '@/components/dashboard/AdminSupportRequests'
 import RecentActivity from '@/components/dashboard/RecentActivity'
 import { MorningCheckInWidget } from '@/components/hr/MorningCheckInWidget'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
@@ -910,6 +911,7 @@ function Dashboard() {
             <>
               {userRole === 'ADMIN' && (
                 <div>
+                  <AdminSupportRequests />
                   <AdminExpenseApprovals />
                   <AdminPaymentApprovals />
                   <AdminEditRequests />

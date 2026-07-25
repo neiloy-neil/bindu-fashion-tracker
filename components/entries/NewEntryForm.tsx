@@ -230,9 +230,8 @@ export function NewEntryForm({ initialData, userId }: Props) {
     if (draft) {
       try {
         const parsed = JSON.parse(draft)
-        const validated = newEntryFormSchema.safeParse(parsed)
-        if (validated.success && window.confirm('Restore your saved New Entry draft?')) form.reset(validated.data)
-        else if (!validated.success || window.confirm('Discard the saved draft?')) localStorage.removeItem(draftKey)
+        if (window.confirm('Restore your saved New Entry draft?')) form.reset(parsed)
+        else localStorage.removeItem(draftKey)
       } catch { localStorage.removeItem(draftKey) }
     }
   }, [draftKey, form])

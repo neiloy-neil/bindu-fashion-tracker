@@ -875,11 +875,11 @@ function Dashboard() {
       {/* Body */}
       <div className="flex-1 p-6 space-y-5 min-h-0">
 
-        {(userRole === 'ADMIN' || userRole === 'BRANCH') && (
+        {(userRole === 'ADMIN' || userRole === 'SUPER_ADMIN' || userRole === 'BRANCH') && (
           <PendingItems
-            payroll={userRole === 'ADMIN' ? payrollData : null}
+            payroll={['ADMIN', 'SUPER_ADMIN'].includes(userRole) ? payrollData : null}
             transfersCount={transfersCountData?.count || 0}
-            chequesCount={userRole === 'ADMIN' ? (chequesCountData?.length || 0) : 0}
+            chequesCount={['ADMIN', 'SUPER_ADMIN'].includes(userRole) ? (chequesCountData?.length || 0) : 0}
           />
         )}
 
@@ -909,7 +909,7 @@ function Dashboard() {
             </div>
           ) : (
             <>
-              {userRole === 'ADMIN' && (
+              {(userRole === 'ADMIN' || userRole === 'SUPER_ADMIN') && (
                 <div>
                   <AdminSupportRequests />
                   <AdminExpenseApprovals />
@@ -940,7 +940,7 @@ function Dashboard() {
                   valueClass={data.netBalance >= 0 ? 'text-[var(--success)]' : 'text-[var(--danger)]'}
                   accent={data.netBalance >= 0 ? 'var(--success)' : 'var(--danger)'}
                 />
-                {userRole === 'ADMIN' && (
+                {(userRole === 'ADMIN' || userRole === 'SUPER_ADMIN') && (
                   <StatCard
                     label="Active Branches"
                     value={data.branchStats.length}

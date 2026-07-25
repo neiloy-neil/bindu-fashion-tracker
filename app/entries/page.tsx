@@ -352,7 +352,7 @@ function Entries() {
           >
             {[2024, 2025, 2026, 2027].map((y) => <option key={y} value={y}>{y}</option>)}
           </select>
-          {userRole === 'ADMIN' && (
+          {['ADMIN', 'SUPER_ADMIN'].includes(userRole ?? '') && (
             <select
               value={branchFilter}
               onChange={(e) => setBranchFilter(e.target.value)}

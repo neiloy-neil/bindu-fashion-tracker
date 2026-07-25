@@ -89,7 +89,7 @@ export default function LeaveRequestsPage() {
               <SelectItem value="REJECTED">Rejected</SelectItem>
             </SelectContent>
           </Select>
-          {(userRole === 'BRANCH' || userRole === 'ADMIN' || userRole === 'HR_ADMIN') && (
+          {(userRole === 'BRANCH' || userRole === 'ADMIN' || userRole === 'SUPER_ADMIN' || userRole === 'HR_ADMIN') && (
             <Button onClick={() => setIsModalOpen(true)}>
               <Plus className="w-4 h-4 mr-2" />
               Add Leave

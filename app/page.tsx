@@ -79,7 +79,7 @@ function DateFilter({
 }) {
   return (
       <div className="flex flex-wrap items-center gap-2">
-      {userRole === 'ADMIN' && (
+      {(userRole === 'ADMIN' || userRole === 'SUPER_ADMIN') && (
         <Select value={branchId} onValueChange={onBranchChange}>
           <SelectTrigger className="h-8 w-[160px] text-sm">
             <SelectValue />
@@ -1047,7 +1047,7 @@ function Dashboard() {
                 <>
 
                   {/* Payroll summary (admin) */}
-                  {userRole === 'ADMIN' && payrollData && (
+                  {(userRole === 'ADMIN' || userRole === 'SUPER_ADMIN') && payrollData && (
                     <PayrollSummary data={payrollData} />
                   )}
 
@@ -1122,7 +1122,7 @@ function Dashboard() {
                     </Table>
                   </div>
 
-                  {userRole === 'ADMIN' && (
+                  {(userRole === 'ADMIN' || userRole === 'SUPER_ADMIN') && (
                     <div>
                       <RecentActivity />
                     </div>

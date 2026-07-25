@@ -107,7 +107,7 @@ export default function EntryViewModal({ entry, changesStr, onClose, onDeleted }
             <p className="text-sm text-[var(--text-secondary)]">{entry.branch?.name} Branch • {new Date(entry.date).toLocaleDateString('en-BD', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
           </div>
           <div className="flex items-center gap-4">
-            {(userRole === 'ADMIN' || (userRole === 'BRANCH' && new Date(entry.date).toISOString().split('T')[0] === dhakaDateString())) && (
+            {(['ADMIN', 'SUPER_ADMIN'].includes(userRole ?? '') || (userRole === 'BRANCH' && new Date(entry.date).toISOString().split('T')[0] === dhakaDateString())) && (
               <Button variant="ghost" onClick={handleDelete} className="gap-1 text-sm font-bold text-[var(--danger)] hover:bg-[var(--danger-subtle)] hover:text-[var(--danger)]">
                 <Trash2 size={16} /> Delete
               </Button>

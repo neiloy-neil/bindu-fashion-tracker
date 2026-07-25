@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-const positiveAmount = z.coerce.number().finite().positive('Amount must be greater than zero')
+const positiveAmount = z.coerce.number().finite().nonnegative('Amount cannot be negative')
 const optionalText = z.string().trim().optional().default('')
 const storageReference = z.string().min(1)
 

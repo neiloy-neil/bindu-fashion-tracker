@@ -98,7 +98,7 @@ export const newEntryFormSchema = z.object({
   incomeItems: z.array(z.object({
     id: z.string(),
     categoryId: z.union([z.string(), z.number()]).refine(v => v !== '', { message: 'Required' }),
-    amount: z.union([z.string(), z.number()]).refine(v => Number(v) > 0, 'Amount must be greater than zero'),
+    amount: z.union([z.string(), z.number()]).refine(v => Number(v) >= 0, 'Amount cannot be negative'),
     detail: z.object({
       note: z.string().default(''),
       partyName: z.string().default(''),
@@ -109,14 +109,14 @@ export const newEntryFormSchema = z.object({
     id: z.string(),
     branchId: z.string().optional(),
     accountId: z.string().min(1, 'Required'),
-    amount: z.union([z.string(), z.number()]).refine(v => Number(v) > 0, 'Amount must be greater than zero'),
+    amount: z.union([z.string(), z.number()]).refine(v => Number(v) >= 0, 'Amount cannot be negative'),
     note: z.string()
   })),
   payments: z.array(z.object({
     id: z.string(),
     partyId: z.string().min(1, 'Required'),
     method: z.string().min(1, 'Required'),
-    amount: z.union([z.string(), z.number()]).refine(v => Number(v) > 0, 'Amount must be greater than zero'),
+    amount: z.union([z.string(), z.number()]).refine(v => Number(v) >= 0, 'Amount cannot be negative'),
     note: z.string(),
     issueDate: z.string().optional(),
     withdrawDate: z.string().optional(),
@@ -125,7 +125,7 @@ export const newEntryFormSchema = z.object({
   expenseEntries: z.array(z.object({
     id: z.string(),
     categoryId: z.string().min(1, 'Required'),
-    amount: z.union([z.string(), z.number()]).refine(v => Number(v) > 0, 'Amount must be greater than zero'),
+    amount: z.union([z.string(), z.number()]).refine(v => Number(v) >= 0, 'Amount cannot be negative'),
     note: z.string(),
     attachmentKey: z.any().optional()
   })),

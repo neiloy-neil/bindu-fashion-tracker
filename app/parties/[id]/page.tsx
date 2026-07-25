@@ -6,7 +6,7 @@ import PartyProfileClient from './PartyProfileClient'
 
 export default async function PartyProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions)
-  if (!session || session.user.role !== 'ADMIN') {
+  if (!session || !['ADMIN', 'SUPER_ADMIN'].includes(session.user.role)) {
     redirect('/login')
   }
 

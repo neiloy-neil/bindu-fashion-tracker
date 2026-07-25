@@ -373,7 +373,7 @@ function EmployeeModalForm({
 export function EmployeeModal(props: Props) {
   return (
     <Dialog open={props.open} onOpenChange={props.onOpenChange}>
-      <EmployeeModalForm {...props} />
+      <EmployeeModalForm key={props.employee?.id ?? 'new'} {...props} />
     </Dialog>
   )
 }

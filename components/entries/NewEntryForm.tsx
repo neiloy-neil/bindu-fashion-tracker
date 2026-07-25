@@ -535,7 +535,7 @@ export function NewEntryForm({ initialData, userId }: Props) {
               <ExpenseSection control={control} register={form.register} setValue={setValue} expenseCategories={filterByBranchType(expenseCategories)} inputClass={inputClass} selectClass={selectClass} errors={errors} generateId={generateId} />
               {/* HO can send transfers to factory; factory cannot send transfers out */}
               {!isFactory && <TransferSection control={control} register={form.register} accounts={accounts} branches={allBranches || branches} currentBranchId={branchId} inputClass={inputClass} selectClass={selectClass} errors={errors} generateId={generateId} />}
-              <AdvanceSalarySection control={control} register={form.register} employees={employees} inputClass={inputClass} selectClass={selectClass} errors={errors} generateId={generateId} />
+              <AdvanceSalarySection control={control} register={form.register} employees={branchId ? employees.filter(e => String(e.branchId) === branchId) : employees} inputClass={inputClass} selectClass={selectClass} errors={errors} generateId={generateId} />
               {!hideIncome && <PaymentSection control={control} register={form.register} setValue={setValue} parties={parties} inputClass={inputClass} selectClass={selectClass} errors={errors} generateId={generateId} />}
             </div>
           )}

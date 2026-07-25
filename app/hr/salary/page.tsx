@@ -48,7 +48,7 @@ function SalaryContent() {
   const [confirmClearMonth, setConfirmClearMonth] = useState(false)
   
   const { data: session } = useSession()
-  const isAdmin = session?.user?.role === 'ADMIN'
+  const isAdmin = session?.user?.role === 'ADMIN' || session?.user?.role === 'SUPER_ADMIN'
   const [filterBranch, setFilterBranch] = useState('all')
   const [branches, setBranches] = useState<Branch[]>([])
   const [pageLoading, setPageLoading] = useState(true)

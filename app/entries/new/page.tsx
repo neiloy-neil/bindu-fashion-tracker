@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic'
 export default async function NewEntryPage() {
   const session = await getServerSession(authOptions)
   if (!session?.user) redirect('/login')
-  if (session.user.role !== 'ADMIN' && session.user.role !== 'BRANCH') redirect('/entries')
+  if (!['ADMIN', 'SUPER_ADMIN', 'BRANCH'].includes(session.user.role)) redirect('/entries')
 
   const [branches, allBranches, categories, accounts, parties, expenseCategories, employees] = await Promise.all([
     prisma.branch.findMany({

@@ -96,6 +96,7 @@ export async function GET(req: NextRequest) {
       if (item.category.name === 'Opening Balance') {
         openingBalance += item.amount
       } else if (item.category.type === 'INCOME') {
+        if (item.category.name === 'Branch Transfer Received') continue
         entrySale += item.amount
         if (!isDigital(item.category.name)) physicalIn += item.amount
         incomeBreakdown[item.category.name] = (incomeBreakdown[item.category.name] || 0) + item.amount

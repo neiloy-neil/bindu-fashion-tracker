@@ -1,7 +1,7 @@
 'use client'
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
-import type { Feature } from '@/lib/permissions'
+import type { Feature } from '@/lib/permission-types'
 
 type PermissionMap = Record<Feature, boolean>
 

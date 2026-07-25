@@ -6,7 +6,7 @@ import { PlusCircle, Pencil, ToggleLeft, ToggleRight, KeyRound, ShieldCheck } fr
 import toast from 'react-hot-toast'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
-import { FEATURES, type Feature } from '@/lib/permissions'
+import { FEATURES, type Feature } from '@/lib/permission-types'
 
 type User = {
   id: number

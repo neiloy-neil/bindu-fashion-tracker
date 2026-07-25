@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { headers } from 'next/headers'
 import { prisma } from '@/lib/prisma'
 import { logAudit } from '@/lib/audit'
-import { FEATURES } from '@/lib/permissions'
+import { FEATURES } from '@/lib/permission-types'
 
 async function getCallerInfo() {
   const h = await headers()

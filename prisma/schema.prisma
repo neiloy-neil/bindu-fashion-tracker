@@ -67,8 +67,9 @@ model User {
 
   phoneNumber String?
 
-  employeeId Int?      @unique
-  employee   Employee? @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+  employeeId  Int?             @unique
+  employee    Employee?        @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+  permissions UserPermission[]
 }
 
 model DailyEntry {
@@ -698,6 +699,21 @@ model LockedMonth {
 
   @@unique([branchId, year, month])
   @@index([branchId])
+}
+
+model UserPermission {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  feature   String   // e.g. "entries.create", "hr.employees.write"
+  granted   Boolean  // true = grant beyond role default · false = deny within role default
+  grantedBy Int?     // SUPER_ADMIN user id who set this
+  note      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, feature])
+  @@index([userId])
 }
 
 model WholesaleReturn {

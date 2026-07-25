@@ -33,6 +33,7 @@ export function computeTotals(entry: any) {
         if (item.category.name === 'Opening Balance') {
           openingBalance += item.amount || 0
         } else if (item.category.type === 'INCOME') {
+          if (item.category.name === 'Branch Transfer Received') continue
           totalSale += item.amount || 0
           
           // Digital sales (auto-transferred) are not physical cash, so we deduct them from the expected net balance

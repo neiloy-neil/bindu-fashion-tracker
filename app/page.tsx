@@ -1102,8 +1102,8 @@ function Dashboard() {
                               )}>
                                 ৳{formatCurrency(Math.abs(b.netBalance))}
                               </TableCell>
-                              <TableCell className="text-right tabular-nums font-semibold text-[var(--warning)]">
-                                ৳{formatCurrency(b.physicalCash || 0)}
+                              <TableCell className={cn('text-right tabular-nums font-semibold', b.physicalCash == null ? 'text-[var(--text-muted)]' : b.physicalCash >= 0 ? 'text-[var(--warning)]' : 'text-[var(--danger)]')}>
+                                {b.physicalCash == null ? '—' : `৳${formatCurrency(b.physicalCash)}`}
                               </TableCell>
                               <TableCell className="text-right">
                                 <span className={cn(

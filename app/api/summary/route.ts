@@ -57,6 +57,7 @@ export async function GET(req: NextRequest) {
         id: true,
         date: true,
         branchId: true,
+        actualPhysicalCash: true,
         items: { select: { amount: true, category: { select: { name: true, type: true } } } },
         transfers: { select: { amount: true, status: true } },
         receivedTransfers: { select: { amount: true } },
@@ -168,7 +169,8 @@ export async function GET(req: NextRequest) {
         physicalCashIn: 0,
         physicalCashOut: 0,
         netBalance: 0,
-        physicalCash: 0,
+        physicalCash: null,   // null until we see an entry with actualPhysicalCash recorded
+        _lastEntryDate: null, // internal tracking — not sent to client
       })
     }
 
@@ -178,16 +180,16 @@ export async function GET(req: NextRequest) {
     bStat.openingBalance += openingBalance
     bStat.physicalCashIn += physicalIn
     bStat.physicalCashOut += physicalOut
-    
-    // Instead of using pure accumulation of opening balances for net balance, we just use the daily computed net.
-    // The previous implementation used openingBalance + entrySale - entryExp for a day, but across a month, 
-    // simply summing the opening balances of every day is wrong!
-    // It should be Net Balance = Total Income - Total Expense.
     bStat.netBalance += (entrySale - entryExp)
-    
-    // Physical cash sum across the month is also flawed if we sum daily opening balances.
-    // Instead, just report total physical in minus total physical out over the period.
-    bStat.physicalCash += (physicalIn - physicalOut)
+
+    // Track the most recent entry's actualPhysicalCash — that is what the branch physically counted.
+    // We use the latest entry date so multi-entry periods show the closing day's cash.
+    if (entry.actualPhysicalCash != null) {
+      if (bStat._lastEntryDate == null || entry.date > bStat._lastEntryDate) {
+        bStat._lastEntryDate = entry.date
+        bStat.physicalCash = entry.actualPhysicalCash
+      }
+    }
 
     // Daily trend
     if (!dailyTrendMap.has(dateStr)) {
@@ -202,7 +204,7 @@ export async function GET(req: NextRequest) {
     dTrend.totalExpense += entryExp
   }
 
-  const branchStats = Array.from(branchStatsMap.values())
+  const branchStats = Array.from(branchStatsMap.values()).map(({ _lastEntryDate, ...rest }) => rest)
   const dailyTrend = Array.from(dailyTrendMap.values()).sort((a, b) => a.date.localeCompare(b.date))
 
   const expenseBreakdownArr = Object.entries(expenseBreakdown)

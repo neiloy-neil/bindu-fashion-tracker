@@ -86,6 +86,37 @@ export function PaymentSection({ control, register, setValue, parties, inputClas
                 <div><Label className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">Withdrawal date</Label><Input type="date" className="h-10 w-full text-sm" {...register(`payments.${idx}.withdrawDate` as const)} /></div>
               </>
             )}
+            {paymentsWatch[idx]?.method === 'BANK' && (() => {
+              const selectedPartyId = paymentsWatch[idx]?.partyId
+              const selectedParty = parties.find(p => String(p.id) === String(selectedPartyId))
+              const bankAccounts = selectedParty?.bankInfo ?? []
+              if (!bankAccounts.length) return null
+              return (
+                <div className="sm:col-span-4">
+                  <Label className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">Bank Account</Label>
+                  <Controller
+                    control={control}
+                    name={`payments.${idx}.partyBankInfoId` as const}
+                    render={({ field }) => (
+                      <Select value={field.value ?? ''} onValueChange={field.onChange}>
+                        <SelectTrigger className="h-10 w-full text-sm">
+                          <SelectValue placeholder="Select bank account" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {bankAccounts.map(b => (
+                            <SelectItem key={b.id} value={String(b.id)}>
+                              {b.label || b.bankName || b.accountName || b.accountNo}
+                              {b.accountNo ? ` — ${b.accountNo}` : ''}
+                              {b.isDefault ? ' (Default)' : ''}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                </div>
+              )
+            })()}
              
             {(paymentsWatch[idx]?.method === 'BANK' || paymentsWatch[idx]?.method === 'CHEQUE') && (
               <div className="sm:col-span-4 mt-2 rounded-lg border border-[var(--border)] bg-[var(--surface-raised)] p-3">

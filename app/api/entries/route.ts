@@ -191,11 +191,15 @@ export async function POST(req: NextRequest) {
             ...transfer,
             status: accounts.find(account => account.id === transfer.accountId)?.type === 'BRANCH' ? 'PENDING' : 'NOT_APPLICABLE',
           })) },
-          expenseEntries: { create: body.expenseEntries.map(expense => ({
-            categoryId: expense.categoryId, amount: expense.amount, note: expense.note || null,
-            attachmentUrl: expense.attachmentKey || null,
-            approvalStatus: 'APPROVED',
-          })) },
+          expenseEntries: { create: body.expenseEntries.map(expense => {
+            const cat = expenseCategories.find((c: any) => c.id === expense.categoryId)
+            const needsApproval = userRole === 'BRANCH' && cat?.requiresApproval
+            return {
+              categoryId: expense.categoryId, amount: expense.amount, note: expense.note || null,
+              attachmentUrl: expense.attachmentKey || null,
+              approvalStatus: needsApproval ? 'PENDING' : 'APPROVED',
+            }
+          }) },
           advanceSalaries: { create: body.advanceSalaries.map(advance => ({
             employeeId: advance.employeeId, type: advance.type, amount: advance.amount,
             productDescription: advance.productDescription || null, note: advance.note || null,
@@ -211,6 +215,7 @@ export async function POST(req: NextRequest) {
             dailyEntryId: created.id, partyId: payment.partyId, method: payment.method,
             amount: payment.amount, note: payment.note || null, attachmentUrl: payment.attachmentKey || null,
             approvalStatus: needsApproval ? 'PENDING' : 'APPROVED',
+            ...(payment.partyBankInfoId ? { partyBankInfoId: Number(payment.partyBankInfoId) } : {}),
             cheque: payment.method === 'CHEQUE' ? { create: {
               issueDate: dateOnlyToUtc(payment.issueDate!), withdrawDate: dateOnlyToUtc(payment.withdrawDate!), status: 'PENDING',
             } } : undefined,

@@ -179,8 +179,10 @@ export function NewEntryForm({ initialData, userId }: Props) {
   const hideIncome = isFactory || isHeadOffice
 
   const branchType = selectedBranchObj?.type ?? ''
-  const filterByBranchType = <T extends { applicableTo?: string[] }>(cats: T[]): T[] =>
-    cats.filter(c => !c.applicableTo?.length || c.applicableTo.includes(branchType))
+  const filterByBranchType = <T extends { applicableTo?: string[] }>(cats: T[]): T[] => {
+    if (!branchType) return cats
+    return cats.filter(c => !c.applicableTo?.length || c.applicableTo.includes(branchType))
+  }
 
   useEffect(() => {
     let timeoutId: NodeJS.Timeout

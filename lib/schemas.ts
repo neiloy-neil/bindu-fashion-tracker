@@ -120,7 +120,8 @@ export const newEntryFormSchema = z.object({
     note: z.string(),
     issueDate: z.string().optional(),
     withdrawDate: z.string().optional(),
-    attachmentKey: z.any().optional()
+    attachmentKey: z.any().optional(),
+    partyBankInfoId: z.string().optional()
   })),
   expenseEntries: z.array(z.object({
     id: z.string(),

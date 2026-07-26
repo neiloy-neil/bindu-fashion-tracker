@@ -79,12 +79,26 @@ export interface Transfer {
   receivingEntryId?: number | null
 }
 
+export interface PartyBankInfo {
+  id: number
+  partyId: number
+  type: string
+  label?: string | null
+  accountNo: string
+  accountName?: string | null
+  bankName?: string | null
+  branchName?: string | null
+  routingNo?: string | null
+  isDefault: boolean
+}
+
 export interface Party {
   id: number
   name: string
   isActive: boolean
   balance: number
   createdAt?: string | Date
+  bankInfo?: PartyBankInfo[]
 }
 
 export interface Payment {

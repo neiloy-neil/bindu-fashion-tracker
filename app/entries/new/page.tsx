@@ -23,7 +23,7 @@ export default async function NewEntryPage() {
     }),
     prisma.category.findMany({ where: { isActive: true, type: 'INCOME' }, orderBy: { name: 'asc' } }) as Promise<Category[]>,
     prisma.ledgerAccount.findMany({ where: { isActive: true }, orderBy: { name: 'asc' } }),
-    prisma.party.findMany({ where: { isActive: true }, orderBy: { name: 'asc' } }),
+    prisma.party.findMany({ where: { isActive: true }, orderBy: { name: 'asc' }, include: { bankInfo: true } }),
     (prisma.category as any).findMany({ where: { isActive: true, type: 'EXPENSE' }, orderBy: { name: 'asc' } }) as Promise<Category[]>,
     prisma.employee.findMany({
       where: {

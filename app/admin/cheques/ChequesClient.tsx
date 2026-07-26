@@ -141,7 +141,7 @@ export function ChequesClient() {
           <p className="text-sm text-[var(--text-muted)] mt-1">Approve cheques and party payments from branches.</p>
         </div>
       </div>
-      <div className="flex-1 p-6 space-y-6 min-h-0 flex flex-col overflow-auto">
+      <div className="flex-1 p-3 sm:p-6 space-y-6 min-h-0 flex flex-col overflow-auto">
 
       {/* Top-level tabs */}
       <div className="flex gap-2 border-b border-border pb-0">

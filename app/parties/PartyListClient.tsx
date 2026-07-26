@@ -142,7 +142,7 @@ export default function PartyListClient({ initialParties }: { initialParties: an
           </Button>
         </div>
       </div>
-      <div className="flex-1 p-6 space-y-6 min-h-0 flex flex-col overflow-auto">
+      <div className="flex-1 p-3 sm:p-6 space-y-6 min-h-0 flex flex-col overflow-auto">
 
         {/* Stats Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

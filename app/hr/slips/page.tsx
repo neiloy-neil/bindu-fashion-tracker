@@ -247,7 +247,7 @@ function SlipsContent() {
     if (allSlips.length === 0) {
       return (
         <>
-          <div className="sticky top-0 z-10 flex items-center justify-between gap-4 px-6 py-4 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur">
+          <div className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-2 px-4 sm:px-6 py-3 sm:py-4 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur">
             <h1 className="text-lg font-semibold text-[var(--text-primary)] leading-none">Salary Slips</h1>
             <div className="flex items-center gap-2">
               <Select value={String(month)} onValueChange={v => setMonth(+(v ?? month))}>
@@ -275,7 +275,7 @@ function SlipsContent() {
     const slip = allSlips[0]
     return (
       <>
-        <div className="sticky top-0 z-10 flex items-center justify-between gap-4 px-6 py-4 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur">
+        <div className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-2 px-4 sm:px-6 py-3 sm:py-4 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur">
           <h1 className="text-lg font-semibold text-[var(--text-primary)] leading-none">Salary Slips</h1>
           <div className="flex items-center gap-2">
             <Select value={String(month)} onValueChange={v => setMonth(+(v ?? month))}>
@@ -306,7 +306,7 @@ function SlipsContent() {
 
   return (
     <>
-      <div className="sticky top-0 z-10 flex items-center justify-between gap-4 px-6 py-4 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur">
+      <div className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-2 px-4 sm:px-6 py-3 sm:py-4 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur">
         <div>
           <h1 className="text-lg font-semibold text-[var(--text-primary)] leading-none">Salary Slips</h1>
           <p className="text-sm text-[var(--text-muted)] mt-1">
@@ -338,7 +338,7 @@ function SlipsContent() {
           </Button>
         </div>
       </div>
-      <div className="flex-1 p-6 space-y-6 min-h-0">
+      <div className="flex-1 p-3 sm:p-6 space-y-6 min-h-0">
 
       {/* Summary strip */}
       <div className="grid grid-cols-3 gap-4">

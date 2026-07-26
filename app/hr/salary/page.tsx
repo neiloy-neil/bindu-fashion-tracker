@@ -324,7 +324,7 @@ function SalaryContent() {
 
   return (
     <>
-      <div className="sticky top-0 z-10 flex items-center justify-between gap-4 px-6 py-4 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur">
+      <div className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-2 px-4 sm:px-6 py-3 sm:py-4 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur">
         <div>
           <h1 className="text-lg font-semibold text-[var(--text-primary)] leading-none flex items-center gap-2">
             Salary Processing {isLocked && <Lock size={16} className="text-[var(--text-muted)]" />}
@@ -343,7 +343,7 @@ function SalaryContent() {
         </div>
       </div>
 
-      <div className="flex-1 p-6 space-y-6 min-h-0">
+      <div className="flex-1 p-3 sm:p-6 space-y-6 min-h-0">
         <div className="flex flex-wrap items-center gap-2 p-4 border-b border-[var(--border)] bg-[var(--surface)] rounded-xl">
           <Button onClick={syncTrackerAdvances} disabled={syncing || isLocked} variant="outline" size="sm" className="gap-2 text-[var(--brand-orange)] border-[var(--brand-orange)] hover:bg-[var(--warning-subtle)]">
             <RefreshCw size={14} className={syncing ? "animate-spin" : ""} /> Sync Advances

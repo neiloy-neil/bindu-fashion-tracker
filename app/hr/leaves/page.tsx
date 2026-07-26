@@ -71,14 +71,14 @@ export default function LeaveRequestsPage() {
 
   return (
     <>
-      <div className="sticky top-0 z-10 flex items-center justify-between gap-4 px-6 py-4 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur">
-        <div>
-          <h1 className="text-lg font-semibold text-[var(--text-primary)] leading-none">Leave Requests</h1>
-          <p className="text-sm text-[var(--text-muted)] mt-1">Manage employee absences and leave approvals</p>
+      <div className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-2 px-4 sm:px-6 py-3 sm:py-4 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur">
+        <div className="min-w-0">
+          <h1 className="text-base sm:text-lg font-semibold text-[var(--text-primary)] leading-none">Leave Requests</h1>
+          <p className="hidden sm:block text-sm text-[var(--text-muted)] mt-1">Manage employee absences and leave approvals</p>
         </div>
         <div className="flex items-center gap-2">
           <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v ?? 'all')}>
-            <SelectTrigger className="w-[150px]">
+            <SelectTrigger className="w-[130px] sm:w-[150px]">
               <Filter className="w-4 h-4 mr-2" />
               <SelectValue placeholder="Status" />
             </SelectTrigger>
@@ -98,7 +98,7 @@ export default function LeaveRequestsPage() {
         </div>
       </div>
 
-      <div className="flex-1 p-6 space-y-6 min-h-0">
+      <div className="flex-1 p-3 sm:p-6 space-y-6 min-h-0">
         <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] overflow-hidden">
           <div className="px-5 py-4 border-b border-[var(--border)]">
             <h3 className="text-sm font-semibold text-[var(--text-primary)]">

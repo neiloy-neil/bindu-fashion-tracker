@@ -144,7 +144,7 @@ export default function AttendanceDashboardPage() {
   return (
     <>
       {/* Header */}
-      <div className="sticky top-0 z-10 flex items-center justify-between gap-4 px-6 py-4 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur">
+      <div className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-2 px-4 sm:px-6 py-3 sm:py-4 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur">
         <div>
           <h1 className="text-lg font-semibold text-[var(--text-primary)] leading-none">Attendance</h1>
           <p className="text-sm text-[var(--text-muted)] mt-1">Record daily check-ins and view monthly reports</p>

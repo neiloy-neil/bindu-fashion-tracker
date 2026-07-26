@@ -385,24 +385,24 @@ export function NewEntryForm({ initialData, userId }: Props) {
 
   return (
     <>
-      <div className="sticky top-0 z-10 flex items-center justify-between gap-4 px-6 py-4 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur">
-        <div>
-          <h1 className="text-lg font-semibold text-[var(--text-primary)] leading-none flex items-center gap-2">
+      <div className="sticky top-0 z-10 flex items-center justify-between gap-2 px-4 sm:px-6 py-3 sm:py-4 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur">
+        <div className="min-w-0">
+          <h1 className="text-base sm:text-lg font-semibold text-[var(--text-primary)] leading-none flex items-center gap-2 truncate">
             📝 {isFactory ? 'Factory Daily Entry' : 'Daily Entry'}
-            {isFactory && <span className="text-xs bg-brand text-white px-2 py-0.5 rounded-full font-medium ml-2">FACTORY</span>}
+            {isFactory && <span className="text-xs bg-brand text-white px-2 py-0.5 rounded-full font-medium ml-2 hidden sm:inline">FACTORY</span>}
           </h1>
-          <p className="text-sm text-[var(--text-muted)] mt-1">
+          <p className="hidden sm:block text-sm text-[var(--text-muted)] mt-1">
             Submit the end-of-day financial report for {isFactory ? 'your factory.' : 'your branch.'}
           </p>
         </div>
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
           {lastSavedAt ? (
-            <span className="flex items-center gap-1.5 text-xs text-[var(--success)] bg-[var(--success)]/10 border border-[var(--success)]/30 px-2.5 py-1 rounded-full">
+            <span className="hidden sm:flex items-center gap-1.5 text-xs text-[var(--success)] bg-[var(--success)]/10 border border-[var(--success)]/30 px-2.5 py-1 rounded-full">
               <CheckCircle size={12} />
               Draft saved {lastSavedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </span>
           ) : (
-            <span className="text-xs text-[var(--text-muted)]">Auto-saves as you type</span>
+            <span className="hidden sm:inline text-xs text-[var(--text-muted)]">Auto-saves as you type</span>
           )}
           <Button
             type="button"

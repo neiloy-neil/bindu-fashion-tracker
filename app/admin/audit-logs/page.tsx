@@ -82,7 +82,7 @@ export default function AuditLogsPage() {
 
   return (
     <>
-      <div className="sticky top-0 z-10 flex items-center justify-between gap-4 px-6 py-4 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur supports-[backdrop-filter]:bg-[var(--surface)]/80">
+      <div className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-2 px-4 sm:px-6 py-3 sm:py-4 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur supports-[backdrop-filter]:bg-[var(--surface)]/80">
         <div>
           <h1 className="text-lg font-semibold text-[var(--text-primary)] leading-none flex items-center gap-2">
             📋 Immutable Audit Trail
@@ -92,7 +92,7 @@ export default function AuditLogsPage() {
           </p>
         </div>
       </div>
-      <div className="flex-1 p-6 space-y-6 min-h-0 flex flex-col overflow-auto">
+      <div className="flex-1 p-3 sm:p-6 space-y-6 min-h-0 flex flex-col overflow-auto">
 
       <div className="bg-[var(--surface)] p-4 rounded-xl border border-[var(--border)] flex gap-4">
         <div>

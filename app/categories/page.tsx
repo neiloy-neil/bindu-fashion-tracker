@@ -389,7 +389,7 @@ export default function CategoriesPage() {
         </Button>
       </div>
 
-      <div className="flex-1 p-6 space-y-6">
+      <div className="flex-1 overflow-y-auto p-6 space-y-6 min-h-0">
         {loading ? (
           <div className="flex items-center justify-center h-64 gap-3">
             <div className="w-5 h-5 rounded-full border-2 border-[var(--border-strong)] border-t-[var(--accent)] animate-spin" />

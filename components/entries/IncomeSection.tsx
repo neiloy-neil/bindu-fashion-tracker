@@ -31,6 +31,7 @@ export function IncomeSection({ control, register, setValue, categories, inputCl
   return (
     <div>
       <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Income / Sales</h3>
+      <div className="max-h-[480px] overflow-y-auto space-y-0 pr-1">
       {fields.map((field, idx) => {
         const currentCategoryId = incomeItemsWatch[idx]?.categoryId;
         const currentCat = categories.find(c => String(c.id) === String(currentCategoryId));
@@ -138,7 +139,8 @@ export function IncomeSection({ control, register, setValue, categories, inputCl
           </div>
         </div>
       )})}
-      <Button type="button" variant="ghost" size="sm" onClick={() => append({ id: generateId(), categoryId: '', amount: '', detail: { note: '', partyName: '', files: [] } })} className="h-auto gap-1 px-0 text-xs text-primary hover:text-primary">
+      </div>
+      <Button type="button" variant="ghost" size="sm" onClick={() => append({ id: generateId(), categoryId: '', amount: '', detail: { note: '', partyName: '', files: [] } })} className="mt-2 h-auto gap-1 px-0 text-xs text-primary hover:text-primary">
         <Plus size={14} /> Add Income
       </Button>
     </div>

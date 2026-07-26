@@ -149,6 +149,7 @@ export function ExpenseSection({ control, register, setValue, expenseCategories,
     <div>
       {/* Daily expenses — always visible */}
       <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Daily Expenses</h3>
+      <div className="max-h-[480px] overflow-y-auto pr-1">
       {dailyIndices.map(idx => (
         <ExpenseRow
           key={fields[idx].id}
@@ -165,6 +166,7 @@ export function ExpenseSection({ control, register, setValue, expenseCategories,
           selectClass={selectClass}
         />
       ))}
+      </div>
       {dailyCategories.length > 0 ? (
         <button
           type="button"
@@ -207,6 +209,7 @@ export function ExpenseSection({ control, register, setValue, expenseCategories,
               <span className="text-xs text-[var(--text-secondary)] italic">No periodic categories set up yet.</span>
             )}
           </div>
+          <div className="max-h-[320px] overflow-y-auto pr-1">
           {periodicIndices.map(idx => (
             <ExpenseRow
               key={fields[idx].id}
@@ -223,6 +226,7 @@ export function ExpenseSection({ control, register, setValue, expenseCategories,
               selectClass={selectClass}
             />
           ))}
+          </div>
           {periodicCategories.length > 0 && (
             <button
               type="button"

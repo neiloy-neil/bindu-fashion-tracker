@@ -61,12 +61,16 @@ export async function GET(req: NextRequest) {
 
     const calculatedLeaves: Record<number, number> = {}
     leaves.forEach(l => {
-      const overlapStart = l.startDate < startOfMonth ? startOfMonth : l.startDate
-      const overlapEnd = l.endDate > endOfMonth ? endOfMonth : l.endDate
-      if (overlapStart <= overlapEnd) {
-        const diffTime = overlapEnd.getTime() - overlapStart.getTime()
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1
-        calculatedLeaves[l.employeeId] = (calculatedLeaves[l.employeeId] || 0) + diffDays
+      if (l.isHalfDay) {
+        calculatedLeaves[l.employeeId] = (calculatedLeaves[l.employeeId] || 0) + 0.5
+      } else {
+        const overlapStart = l.startDate < startOfMonth ? startOfMonth : l.startDate
+        const overlapEnd = l.endDate > endOfMonth ? endOfMonth : l.endDate
+        if (overlapStart <= overlapEnd) {
+          const diffTime = overlapEnd.getTime() - overlapStart.getTime()
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1
+          calculatedLeaves[l.employeeId] = (calculatedLeaves[l.employeeId] || 0) + diffDays
+        }
       }
     })
 

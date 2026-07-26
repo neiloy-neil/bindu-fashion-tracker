@@ -4,6 +4,17 @@ import { useEffect, useState, useCallback } from 'react'
 import { toast } from 'react-hot-toast'
 import { BrandSpinner } from '@/components/ui/BrandSpinner'
 import { Button } from '@/components/ui/button'
+import { ViewReceiptModal } from '@/components/entries/ViewReceiptModal'
+
+type TimelineEvent = {
+  id: number
+  type: string
+  fromValue: string | null
+  toValue: string | null
+  note: string | null
+  createdAt: string
+  actor: { id: number; username: string } | null
+}
 
 type Request = {
   id: number
@@ -16,6 +27,7 @@ type Request = {
   createdAt: string
   updatedAt: string
   assignedTo?: { id: number; username: string } | null
+  events?: TimelineEvent[]
 }
 
 const STATUS_TABS = ['ALL', 'PENDING', 'IN_PROGRESS', 'RESOLVED', 'REJECTED'] as const
@@ -62,6 +74,7 @@ export default function BranchRequestsPage() {
   const [activeTab, setActiveTab] = useState<string>('ALL')
 
   // Modal state
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [showModal, setShowModal] = useState(false)
   const [type, setType] = useState('MAINTENANCE')
   const [priority, setPriority] = useState('MEDIUM')
@@ -219,10 +232,10 @@ export default function BranchRequestsPage() {
 
                 {/* Attachment */}
                 {req.attachmentUrl && (
-                  <a href={req.attachmentUrl} target="_blank" rel="noopener noreferrer"
+                  <button onClick={() => setPreviewUrl(req.attachmentUrl!)}
                     className="inline-flex items-center gap-1.5 text-sm text-[var(--accent)] hover:underline">
                     📎 View Attachment
-                  </a>
+                  </button>
                 )}
 
                 {/* Admin comment */}
@@ -230,6 +243,37 @@ export default function BranchRequestsPage() {
                   <div className="p-3 rounded-lg bg-[var(--accent)]/5 border border-[var(--accent)]/20">
                     <p className="text-[11px] text-[var(--text-muted)] mb-1 font-semibold uppercase tracking-wide">Admin Response</p>
                     <p className="text-sm text-[var(--text-primary)] whitespace-pre-wrap">{req.adminComment}</p>
+                  </div>
+                )}
+
+                {/* Mini timeline — skip CREATED event (redundant with submission date) */}
+                {req.events && req.events.filter(e => e.type !== 'CREATED').length > 0 && (
+                  <div className="border-t border-[var(--border)] pt-3 space-y-1.5">
+                    <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wide mb-2">Activity</p>
+                    {req.events.filter(e => e.type !== 'CREATED').map(ev => {
+                      const icon =
+                        ev.type === 'STATUS_CHANGED'   ? '🔄' :
+                        ev.type === 'ASSIGNED'         ? '👤' :
+                        ev.type === 'UNASSIGNED'       ? '↩️' :
+                        ev.type === 'COMMENT_ADDED'    ? '💬' :
+                        ev.type === 'PRIORITY_CHANGED' ? '⚡' : '•'
+                      const STATUS_LABEL: Record<string, string> = { PENDING: 'Pending', IN_PROGRESS: 'In Progress', RESOLVED: 'Resolved', REJECTED: 'Rejected' }
+                      const label =
+                        ev.type === 'STATUS_CHANGED'   ? `Status: ${STATUS_LABEL[ev.fromValue!] ?? ev.fromValue} → ${STATUS_LABEL[ev.toValue!] ?? ev.toValue}` :
+                        ev.type === 'ASSIGNED'         ? `Assigned to ${ev.toValue}` :
+                        ev.type === 'UNASSIGNED'       ? `Unassigned` :
+                        ev.type === 'COMMENT_ADDED'    ? `Admin commented` :
+                        ev.type === 'PRIORITY_CHANGED' ? `Priority: ${ev.fromValue} → ${ev.toValue}` : ev.type
+                      const d = new Date(ev.createdAt)
+                      const timeStr = d.toLocaleString('en-BD', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+                      return (
+                        <div key={ev.id} className="flex items-start gap-2 text-[11px]">
+                          <span className="mt-px shrink-0">{icon}</span>
+                          <span className="text-[var(--text-secondary)] flex-1">{label}</span>
+                          <span className="text-[var(--text-muted)] whitespace-nowrap">{timeStr}</span>
+                        </div>
+                      )
+                    })}
                   </div>
                 )}
 
@@ -253,6 +297,8 @@ export default function BranchRequestsPage() {
           </div>
         )}
       </div>
+
+      {previewUrl && <ViewReceiptModal url={previewUrl} onClose={() => setPreviewUrl(null)} />}
 
       {/* New Request Modal */}
       {showModal && (

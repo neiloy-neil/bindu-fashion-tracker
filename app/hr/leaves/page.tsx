@@ -144,12 +144,19 @@ export default function LeaveRequestsPage() {
                     <TableCell className="font-medium text-[var(--text-primary)]">{leave.employee.name}</TableCell>
                     <TableCell className="text-[var(--text-secondary)]">{leave.employee.branch?.name || 'HQ'}</TableCell>
                     <TableCell>
-                      <Badge variant={leave.type === 'UNPAID' ? 'destructive' : 'secondary'}>
-                        {leave.type}
-                      </Badge>
+                      <div className="flex items-center gap-1.5">
+                        <Badge variant={leave.type === 'UNPAID' ? 'destructive' : 'secondary'}>
+                          {leave.type}
+                        </Badge>
+                        {leave.isHalfDay && (
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-500/15 text-purple-500 border border-purple-500/30">½</span>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell className="text-[var(--text-secondary)] whitespace-nowrap">
-                      {new Date(leave.startDate).toLocaleDateString()} - {new Date(leave.endDate).toLocaleDateString()}
+                      {leave.isHalfDay
+                        ? new Date(leave.startDate).toLocaleDateString()
+                        : `${new Date(leave.startDate).toLocaleDateString()} - ${new Date(leave.endDate).toLocaleDateString()}`}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1.5">

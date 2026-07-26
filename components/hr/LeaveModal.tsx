@@ -25,7 +25,8 @@ export function LeaveModal({ open, onOpenChange, onSuccess, userRole, userBranch
     type: 'CASUAL',
     startDate: '',
     endDate: '',
-    reason: ''
+    reason: '',
+    isHalfDay: false,
   })
 
   useEffect(() => {
@@ -62,7 +63,8 @@ export function LeaveModal({ open, onOpenChange, onSuccess, userRole, userBranch
           employeeId: Number(formData.employeeId),
           type: formData.type,
           startDate: formData.startDate,
-          endDate: formData.endDate,
+          endDate: formData.isHalfDay ? formData.startDate : formData.endDate,
+          isHalfDay: formData.isHalfDay,
           reason: formData.reason || undefined
         })
       })
@@ -80,7 +82,8 @@ export function LeaveModal({ open, onOpenChange, onSuccess, userRole, userBranch
         type: 'CASUAL',
         startDate: '',
         endDate: '',
-        reason: ''
+        reason: '',
+        isHalfDay: false,
       })
     } catch (err: any) {
       toast.error(err.message)
@@ -120,15 +123,39 @@ export function LeaveModal({ open, onOpenChange, onSuccess, userRole, userBranch
               </SelectContent>
             </Select>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="flex items-center gap-2 py-1">
+            <input
+              id="halfDay"
+              type="checkbox"
+              checked={formData.isHalfDay}
+              onChange={e => setFormData(p => ({ ...p, isHalfDay: e.target.checked, endDate: e.target.checked ? p.startDate : p.endDate }))}
+              className="w-4 h-4 rounded border-[var(--border)] accent-[var(--accent)]"
+            />
+            <label htmlFor="halfDay" className="text-sm font-medium text-[var(--text-primary)] cursor-pointer select-none">
+              Half Day Leave <span className="text-[var(--text-muted)] font-normal">(0.5 day)</span>
+            </label>
+          </div>
+
+          <div className={`grid gap-4 ${formData.isHalfDay ? 'grid-cols-1' : 'grid-cols-2'}`}>
             <div className="space-y-1.5">
-              <Label>Start Date *</Label>
-              <Input type="date" required value={formData.startDate} onChange={e => setFormData(p => ({ ...p, startDate: e.target.value }))} />
+              <Label>{formData.isHalfDay ? 'Date *' : 'Start Date *'}</Label>
+              <Input
+                type="date"
+                required
+                value={formData.startDate}
+                onChange={e => setFormData(p => ({
+                  ...p,
+                  startDate: e.target.value,
+                  endDate: p.isHalfDay ? e.target.value : p.endDate
+                }))}
+              />
             </div>
-            <div className="space-y-1.5">
-              <Label>End Date *</Label>
-              <Input type="date" required value={formData.endDate} onChange={e => setFormData(p => ({ ...p, endDate: e.target.value }))} />
-            </div>
+            {!formData.isHalfDay && (
+              <div className="space-y-1.5">
+                <Label>End Date *</Label>
+                <Input type="date" required value={formData.endDate} onChange={e => setFormData(p => ({ ...p, endDate: e.target.value }))} />
+              </div>
+            )}
           </div>
           <div className="space-y-1.5">
             <Label>Reason (Optional)</Label>

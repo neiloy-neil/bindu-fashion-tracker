@@ -8,6 +8,7 @@ const leaveSchema = z.object({
   startDate: z.string().pipe(z.coerce.date()),
   endDate: z.string().pipe(z.coerce.date()),
   type: z.enum(['SICK', 'CASUAL', 'UNPAID', 'ANNUAL', 'MARRIAGE']),
+  isHalfDay: z.boolean().optional().default(false),
   reason: z.string().optional()
 })
 

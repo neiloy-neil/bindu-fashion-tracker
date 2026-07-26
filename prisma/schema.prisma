@@ -63,11 +63,12 @@ model User {
   auditLogs             AuditLog[]
   employeeTransfers     EmployeeTransfer[]
   createdAt             DateTime           @default(now())
-  acknowledgedTransfers Transfer[]         @relation("TransferAcknowledger")
-  salaryRecords         SalaryRecord[]
-  approvedLeaves        LeaveRecord[]      @relation("LeaveApprover")
-  notifications         Notification[]
-  lockedMonths          LockedMonth[]      @relation("LockedMonthsBy")
+  acknowledgedTransfers   Transfer[]              @relation("TransferAcknowledger")
+  salaryRecords           SalaryRecord[]
+  approvedLeaves          LeaveRecord[]           @relation("LeaveApprover")
+  notifications           Notification[]
+  lockedMonths            LockedMonth[]           @relation("LockedMonthsBy")
+  branchRequestEvents     BranchRequestEvent[]    @relation("BranchRequestEventActor")
 
   phoneNumber String?
 
@@ -225,12 +226,29 @@ model BranchRequest {
   attachmentUrl String?
   assignedToId  Int?
 
-  branch      Branch @relation(fields: [branchId], references: [id])
-  requestedBy User   @relation(fields: [requestedById], references: [id])
-  assignedTo  User?  @relation("AssignedBranchRequests", fields: [assignedToId], references: [id])
+  branch      Branch               @relation(fields: [branchId], references: [id])
+  requestedBy User                 @relation(fields: [requestedById], references: [id])
+  assignedTo  User?                @relation("AssignedBranchRequests", fields: [assignedToId], references: [id])
+  events      BranchRequestEvent[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model BranchRequestEvent {
+  id        Int      @id @default(autoincrement())
+  requestId Int
+  type      String   // CREATED | STATUS_CHANGED | ASSIGNED | UNASSIGNED | COMMENT_ADDED | PRIORITY_CHANGED
+  actorId   Int?
+  fromValue String?
+  toValue   String?
+  note      String?  @db.Text
+  createdAt DateTime @default(now())
+
+  request BranchRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  actor   User?         @relation("BranchRequestEventActor", fields: [actorId], references: [id])
+
+  @@index([requestId])
 }
 
 model LedgerAccount {
@@ -539,6 +557,7 @@ model LeaveRecord {
   startDate    DateTime
   endDate      DateTime
   type         String // SICK, CASUAL, UNPAID, ANNUAL, MARRIAGE
+  isHalfDay    Boolean  @default(false)
   status       String   @default("PENDING") // PENDING, APPROVED, REJECTED
   reason       String?  @db.Text
   approvedById Int?

@@ -12,6 +12,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@
 import { PaymentMethodModal } from '@/components/parties/PaymentMethodModal'
 import { PurchaseModal } from '@/components/parties/PurchaseModal'
 import { PaymentModal } from '@/components/parties/PaymentModal'
+import { ViewReceiptModal } from '@/components/entries/ViewReceiptModal'
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
 
@@ -38,6 +39,7 @@ export default function PartyProfileClient({ party: initialParty }: { party: any
   const [isBankModalOpen, setIsBankModalOpen] = useState(false)
   const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false)
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
   // Handler for when a modal action succeeds
   const handleSuccess = () => {
@@ -289,9 +291,9 @@ export default function PartyProfileClient({ party: initialParty }: { party: any
                           {entry.invoiceNumber && <p className="font-mono text-xs text-[var(--text-secondary)]">Inv: {entry.invoiceNumber}</p>}
                           {entry.note && <p className="text-[var(--text-muted)] truncate" title={entry.note}>{entry.note}</p>}
                           {entry.attachmentUrl && (
-                            <a href={entry.attachmentUrl} target="_blank" rel="noreferrer" className="text-[var(--accent)] text-xs hover:underline inline-flex items-center gap-1">
+                            <button onClick={() => setPreviewUrl(entry.attachmentUrl)} className="text-[var(--accent)] text-xs hover:underline inline-flex items-center gap-1">
                               <FileText size={12} /> View Invoice
-                            </a>
+                            </button>
                           )}
                         </div>
                       ) : (
@@ -308,9 +310,9 @@ export default function PartyProfileClient({ party: initialParty }: { party: any
                           {entry.branch && <p className="text-[var(--text-muted)] text-xs">Branch: {entry.branch.name}</p>}
                           {entry.note && <p className="text-[var(--text-muted)] truncate" title={entry.note}>{entry.note}</p>}
                           {entry.attachmentUrl && (
-                            <a href={entry.attachmentUrl} target="_blank" rel="noreferrer" className="text-[var(--accent)] text-xs hover:underline inline-flex items-center gap-1">
+                            <button onClick={() => setPreviewUrl(entry.attachmentUrl)} className="text-[var(--accent)] text-xs hover:underline inline-flex items-center gap-1">
                               <FileText size={12} /> View Receipt/Cheque
-                            </a>
+                            </button>
                           )}
                         </div>
                       )}
@@ -416,7 +418,8 @@ export default function PartyProfileClient({ party: initialParty }: { party: any
         </div>
       </div>
 
-      <PaymentMethodModal 
+      {previewUrl && <ViewReceiptModal url={previewUrl} onClose={() => setPreviewUrl(null)} />}
+      <PaymentMethodModal
         isOpen={isBankModalOpen} 
         onClose={() => setIsBankModalOpen(false)} 
         partyId={party.id} 

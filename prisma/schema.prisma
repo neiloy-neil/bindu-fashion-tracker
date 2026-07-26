@@ -20,6 +20,8 @@ model Branch {
   phoneNumber     String?
   isActive        Boolean            @default(true)
   shiftStartTime  String             @default("09:00")
+  shiftEndTime    String             @default("21:00")
+  gracePeriodMins Int                @default(15)
   pettyCashTarget Float              @default(0)
   openingBalance  Float              @default(0)
   createdAt       DateTime           @default(now())

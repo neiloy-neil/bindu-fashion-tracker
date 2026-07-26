@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
-import { Pencil, Trash2, Plus, MapPin, Phone, User, Building2 } from 'lucide-react'
+import { Pencil, Trash2, Plus, MapPin, Phone, User, Building2, Clock } from 'lucide-react'
 
 const BRANCH_COLORS = [
   'bg-[var(--success-subtle)] text-[var(--success)]',
@@ -39,6 +39,9 @@ const emptyForm = {
   phoneNumber: '',
   isActive: true,
   openingBalance: '',
+  shiftStartTime: '09:00',
+  shiftEndTime: '21:00',
+  gracePeriodMins: '15',
 }
 
 export default function BranchesPage() {
@@ -78,6 +81,9 @@ export default function BranchesPage() {
       phoneNumber: branch.phoneNumber ?? '',
       isActive: branch.isActive ?? true,
       openingBalance: branch.openingBalance != null ? String(branch.openingBalance) : '',
+      shiftStartTime: branch.shiftStartTime || '09:00',
+      shiftEndTime: branch.shiftEndTime || '21:00',
+      gracePeriodMins: String(branch.gracePeriodMins ?? 15),
     })
     setModalOpen(true)
   }
@@ -196,6 +202,12 @@ export default function BranchesPage() {
                     Opening: <span className="font-semibold text-[var(--text-primary)]">৳{branch.openingBalance.toLocaleString()}</span>
                   </div>
                 )}
+                <div className="flex items-center gap-1 text-xs text-[var(--text-muted)] mt-1">
+                  <Clock size={10} />
+                  <span>{branch.shiftStartTime || '09:00'} – {branch.shiftEndTime || '21:00'}</span>
+                  <span className="text-[var(--border-strong)]">·</span>
+                  <span>{branch.gracePeriodMins ?? 15}m grace</span>
+                </div>
 
                 <div className="mt-auto pt-3 flex items-center justify-between">
                   {branch._count?.employees !== undefined && (
@@ -293,8 +305,49 @@ export default function BranchesPage() {
                 placeholder="0"
               />
               <p className="text-xs text-[var(--text-muted)]">
-                Starting cash balance for this branch. Used as the opening balance on their very first daily entry.
+                Starting cash balance — used as opening balance on the very first daily entry.
               </p>
+            </div>
+
+            {/* Shift timing */}
+            <div className="col-span-2">
+              <div className="rounded-lg border border-[var(--border)] p-4 space-y-3">
+                <p className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
+                  <Clock size={14} className="text-[var(--accent)]" /> Shift Timing
+                </p>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Opening Time</Label>
+                    <Input
+                      type="time"
+                      value={form.shiftStartTime}
+                      onChange={e => set('shiftStartTime', e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Closing Time</Label>
+                    <Input
+                      type="time"
+                      value={form.shiftEndTime}
+                      onChange={e => set('shiftEndTime', e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Grace Period (min)</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      max="60"
+                      value={form.gracePeriodMins}
+                      onChange={e => set('gracePeriodMins', e.target.value)}
+                      placeholder="15"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-[var(--text-muted)]">
+                  Employees checking in after opening time + grace period are marked <strong>LATE</strong>.
+                </p>
+              </div>
             </div>
 
             <div className="col-span-2 flex items-center justify-between rounded-lg border border-[var(--border)] px-4 py-3">

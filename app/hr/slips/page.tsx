@@ -106,6 +106,8 @@ function SlipsContent() {
               contactPerson: null, 
               phoneNumber: null,
               shiftStartTime: '09:00',
+              shiftEndTime: '21:00',
+              gracePeriodMins: 15,
               pettyCashTarget: 0,
               openingBalance: 0,
             })

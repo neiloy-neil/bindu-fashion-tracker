@@ -35,21 +35,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Branch ID is required' }, { status: 400 })
     }
 
-    // Get the branch to find shiftStartTime
     const branch = await prisma.branch.findUnique({
       where: { id: targetBranchId },
-      select: { shiftStartTime: true }
+      select: { shiftStartTime: true, shiftEndTime: true, gracePeriodMins: true }
     })
 
     if (!branch) {
       return NextResponse.json({ error: 'Branch not found' }, { status: 404 })
     }
 
-    const shiftTime = branch.shiftStartTime || "09:00"
+    const shiftTime = branch.shiftStartTime || '09:00'
     const [shiftHour, shiftMin] = shiftTime.split(':').map(Number)
-    
-    // Allow a grace period (e.g., 15 minutes)
-    const gracePeriodMinutes = 15
+    const gracePeriodMinutes = branch.gracePeriodMins ?? 15
     const shiftStartTotalMinutes = shiftHour * 60 + shiftMin + gracePeriodMinutes
 
     const dateObj = new Date(date)

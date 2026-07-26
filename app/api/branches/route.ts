@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
   }
 
-  const { name, code, isActive, type, address, contactPerson, phoneNumber, openingBalance } = await req.json()
+  const { name, code, isActive, type, address, contactPerson, phoneNumber, openingBalance, shiftStartTime, shiftEndTime, gracePeriodMins } = await req.json()
 
   if (!name || !code) {
     return NextResponse.json({ error: 'Name and code are required' }, { status: 400 })
@@ -40,6 +40,9 @@ export async function POST(req: NextRequest) {
         name, code, type, address, contactPerson, phoneNumber,
         isActive: isActive !== undefined ? isActive : true,
         openingBalance: openingBalance ? parseFloat(openingBalance) : 0,
+        shiftStartTime: shiftStartTime || '09:00',
+        shiftEndTime: shiftEndTime || '21:00',
+        gracePeriodMins: gracePeriodMins ? parseInt(gracePeriodMins) : 15,
       }
     })
     return NextResponse.json(branch, { status: 201 })

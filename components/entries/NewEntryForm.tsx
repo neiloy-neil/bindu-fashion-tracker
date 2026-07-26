@@ -162,9 +162,14 @@ export function NewEntryForm({ initialData, userId }: Props) {
   const hasInvalidPayments = paymentsWatch?.some(p => (p.method === 'BANK' || p.method === 'CHEQUE') && !p.attachmentKey)
 
   const totals = useMemo(() => {
+    // Auto-transferred categories (e.g. POS, Nagad, Bkash) are deducted server-side as
+    // transfers. Mirror that here so the displayed net balance matches what the server expects.
+    const autoTransfers = (incomeItemsWatch || [])
+      .filter(item => categories.find(c => String(c.id) === String(item.categoryId))?.isAutoTransferred)
+      .map(item => ({ amount: Number(item.amount) }))
     const fakeEntry = {
       items: (incomeItemsWatch || []).map(item => ({ amount: Number(item.amount), category: categories.find(c => String(c.id) === String(item.categoryId)) || null })),
-      transfers: (transfersWatch || []).map(t => ({ amount: Number(t.amount) })),
+      transfers: [...(transfersWatch || []).map(t => ({ amount: Number(t.amount) })), ...autoTransfers],
       payments: (paymentsWatch || []).map(p => ({ amount: Number(p.amount), method: p.method })),
       expenseEntries: (expenseEntriesWatch || []).map(e => ({ amount: Number(e.amount) })),
       advanceSalaries: (advanceSalariesWatch || []).map(a => ({ amount: Number(a.amount), type: a.type })),

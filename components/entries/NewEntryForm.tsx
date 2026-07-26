@@ -316,7 +316,7 @@ export function NewEntryForm({ initialData, userId }: Props) {
       // Upload pending attachment files for Payments
       const processedPayments = await Promise.all(data.payments.map(async p => {
         const key = await uploadFile(p.attachmentKey as any)
-        return { ...p, method: p.method as 'CASH' | 'BANK' | 'CHEQUE', partyId: Number(p.partyId), amount: Number(p.amount), attachmentKey: key }
+        return { ...p, method: p.method as 'CASH' | 'BANK' | 'CHEQUE', partyId: Number(p.partyId), amount: Number(p.amount), attachmentKey: key, partyBankInfoId: p.partyBankInfoId ? Number(p.partyBankInfoId) : undefined }
       }))
 
       // Upload pending attachment files for Expenses

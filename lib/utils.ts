@@ -35,11 +35,8 @@ export function computeTotals(entry: any) {
         } else if (item.category.type === 'INCOME') {
           if (item.category.name === 'Branch Transfer Received') continue
           totalSale += item.amount || 0
-          
-          // Digital sales (auto-transferred) are not physical cash, so we deduct them from the expected net balance
-          if (item.category.isAutoTransferred) {
-            totalExpense += item.amount || 0
-          }
+          // Auto-transferred digital income (Nagad, Bkash, POS) is already offset by a Transfer
+          // record created at submission — do NOT deduct here to avoid double-counting.
         } else if (item.category.type === 'EXPENSE') {
           totalExpense += item.amount || 0
         }

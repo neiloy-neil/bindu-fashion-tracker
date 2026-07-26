@@ -194,7 +194,7 @@ export async function POST(req: NextRequest) {
           expenseEntries: { create: body.expenseEntries.map(expense => ({
             categoryId: expense.categoryId, amount: expense.amount, note: expense.note || null,
             attachmentUrl: expense.attachmentKey || null,
-            approvalStatus: userRole === 'BRANCH' ? 'PENDING' : 'APPROVED',
+            approvalStatus: 'APPROVED',
           })) },
           advanceSalaries: { create: body.advanceSalaries.map(advance => ({
             employeeId: advance.employeeId, type: advance.type, amount: advance.amount,

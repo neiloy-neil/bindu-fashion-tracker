@@ -567,13 +567,14 @@ export function NewEntryForm({ initialData, userId }: Props) {
 
             <div className="w-full sm:w-64">
               <Label htmlFor="actualPhysicalCash" className="mb-1.5 block text-xs font-medium text-[var(--accent)]">Actual Physical Cash *</Label>
-              <Input 
+              <Input
                 id="actualPhysicalCash"
-                type="number" 
+                type="number"
                 className="h-12 w-full border-[var(--accent)]/50 bg-[var(--surface)]/80 text-lg font-mono text-[var(--text-primary)]"
                 placeholder="Enter exact cash amount"
                 {...form.register('actualPhysicalCash')}
               />
+              <p className="mt-1 text-[11px] text-[var(--text-muted)]">Main drawer only — do not include the petty cash fund</p>
               <ErrorMsg error={errors.actualPhysicalCash} />
             </div>
           </div>

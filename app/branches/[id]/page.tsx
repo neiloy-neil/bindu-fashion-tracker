@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { ArrowLeft, MapPin, Phone, User, Building2, Pencil, TrendingUp, TrendingDown, CalendarDays } from 'lucide-react'
+import { ArrowLeft, MapPin, Phone, User, Building2, Pencil, TrendingUp, TrendingDown, CalendarDays, Plus, Trash2, PartyPopper } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 
 const TYPE_LABELS: Record<string, string> = {
@@ -45,6 +45,53 @@ export default function BranchDetailPage() {
   const [editOpen, setEditOpen] = useState(false)
   const [form, setForm] = useState(emptyForm)
   const [saving, setSaving] = useState(false)
+
+  // Holidays
+  const [holidays, setHolidays] = useState<any[]>([])
+  const [holidayModalOpen, setHolidayModalOpen] = useState(false)
+  const [hForm, setHForm] = useState({ date: '', name: '', note: '' })
+  const [hSaving, setHSaving] = useState(false)
+
+  useEffect(() => {
+    if (!id) return
+    fetch(`/api/branches/${id}/holidays`)
+      .then(r => r.json())
+      .then(d => setHolidays(Array.isArray(d) ? d : []))
+      .catch(() => {})
+  }, [id, reloadNonce])
+
+  const addHoliday = async () => {
+    if (!hForm.date || !hForm.name.trim()) { toast.error('Date and holiday name are required'); return }
+    setHSaving(true)
+    try {
+      const res = await fetch(`/api/branches/${id}/holidays`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(hForm),
+      })
+      if (!res.ok) throw new Error((await res.json()).error || 'Failed')
+      toast.success('Holiday added')
+      setHolidayModalOpen(false)
+      setHForm({ date: '', name: '', note: '' })
+      setReloadNonce(n => n + 1)
+    } catch (e: any) {
+      toast.error(e.message)
+    } finally {
+      setHSaving(false)
+    }
+  }
+
+  const deleteHoliday = async (hid: number) => {
+    if (!confirm('Remove this holiday?')) return
+    try {
+      const res = await fetch(`/api/branches/${id}/holidays/${hid}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error('Failed to delete')
+      toast.success('Holiday removed')
+      setHolidays(h => h.filter(x => x.id !== hid))
+    } catch (e: any) {
+      toast.error(e.message)
+    }
+  }
 
   useEffect(() => {
     setLoading(true)
@@ -233,7 +280,116 @@ export default function BranchDetailPage() {
             </div>
           </div>
         )}
+
+        {/* Holidays */}
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] overflow-hidden">
+          <div className="px-5 py-4 border-b border-[var(--border)] flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <PartyPopper size={15} className="text-[var(--warning)]" />
+              <h2 className="text-sm font-semibold text-[var(--text-primary)]">
+                Branch Holidays
+                {holidays.length > 0 && (
+                  <span className="ml-2 text-xs font-normal text-[var(--text-muted)]">{holidays.length} set</span>
+                )}
+              </h2>
+            </div>
+            {isAdmin && (
+              <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" onClick={() => setHolidayModalOpen(true)}>
+                <Plus size={12} /> Add Holiday
+              </Button>
+            )}
+          </div>
+
+          {holidays.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-10 gap-2 text-[var(--text-muted)]">
+              <CalendarDays size={28} className="opacity-30" />
+              <p className="text-sm">No holidays configured for this branch</p>
+              {isAdmin && (
+                <Button size="sm" variant="ghost" className="text-xs mt-1 gap-1" onClick={() => setHolidayModalOpen(true)}>
+                  <Plus size={12} /> Add first holiday
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="divide-y divide-[var(--border)]">
+              {holidays.map((h: any) => {
+                const d = new Date(h.date)
+                const isPast = d < new Date(new Date().toDateString())
+                return (
+                  <div key={h.id} className="flex items-center gap-4 px-5 py-3">
+                    <div className={`text-center min-w-[44px] rounded-lg px-2 py-1 ${isPast ? 'bg-[var(--surface-raised)] text-[var(--text-muted)]' : 'bg-[var(--warning-subtle)] text-[var(--warning)]'}`}>
+                      <p className="text-[10px] font-semibold uppercase tracking-wide leading-none">
+                        {d.toLocaleDateString('en-BD', { month: 'short' })}
+                      </p>
+                      <p className="text-lg font-bold leading-tight">
+                        {d.getUTCDate()}
+                      </p>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-sm font-medium truncate ${isPast ? 'text-[var(--text-muted)]' : 'text-[var(--text-primary)]'}`}>{h.name}</p>
+                      <p className="text-xs text-[var(--text-muted)]">
+                        {d.toLocaleDateString('en-BD', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                        {h.note && <span className="ml-2 italic">· {h.note}</span>}
+                      </p>
+                    </div>
+                    {isPast && (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--surface-raised)] text-[var(--text-muted)] font-medium shrink-0">Past</span>
+                    )}
+                    {isAdmin && (
+                      <Button
+                        variant="ghost" size="icon"
+                        className="h-7 w-7 text-[var(--text-muted)] hover:text-[var(--danger)] hover:bg-[var(--danger-subtle)] shrink-0"
+                        onClick={() => deleteHoliday(h.id)}
+                      >
+                        <Trash2 size={13} />
+                      </Button>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* Holiday modal */}
+      <Dialog open={holidayModalOpen} onOpenChange={setHolidayModalOpen}>
+        <DialogContent className="sm:max-w-[420px]">
+          <DialogHeader>
+            <DialogTitle>Add Branch Holiday</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label>Date *</Label>
+              <Input
+                type="date"
+                value={hForm.date}
+                onChange={e => setHForm(f => ({ ...f, date: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Holiday Name *</Label>
+              <Input
+                value={hForm.name}
+                onChange={e => setHForm(f => ({ ...f, name: e.target.value }))}
+                placeholder="e.g. Eid ul-Fitr, National Day"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Note <span className="text-[var(--text-muted)] font-normal">(optional)</span></Label>
+              <Input
+                value={hForm.note}
+                onChange={e => setHForm(f => ({ ...f, note: e.target.value }))}
+                placeholder="Any additional note"
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-3 pt-2 border-t border-[var(--border)]">
+            <Button variant="outline" onClick={() => setHolidayModalOpen(false)} disabled={hSaving}>Cancel</Button>
+            <Button onClick={addHoliday} disabled={hSaving}>{hSaving ? 'Saving…' : 'Add Holiday'}</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Edit modal */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>

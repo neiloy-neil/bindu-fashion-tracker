@@ -194,11 +194,10 @@ export function Sidebar({ isOpen, setIsOpen }: { isOpen?: boolean; setIsOpen?: (
         {/* Nav */}
         <nav className="flex-1 overflow-y-auto px-2 py-2">
 
-          {/* Main */}
-          {section('main', 'Main', true)}
-          {items('main', <>
+          {/* Dashboard — always visible at top, no collapsible section */}
+          <div className="pt-1 pb-1">
             {item('/', 'Dashboard', <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>)}
-          </>)}
+          </div>
 
           {/* Cash Flow — hidden for WHOLESALE branch users */}
           {role !== 'HR_ADMIN' && !(role === 'BRANCH' && branchType === 'WHOLESALE') && (<>

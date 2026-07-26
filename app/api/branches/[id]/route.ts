@@ -70,7 +70,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
   const resolvedParams = await params
   const branchId = parseInt(resolvedParams.id)
-  const { name, code, isActive, type, address, contactPerson, phoneNumber, pettyCashTarget } = await req.json()
+  const { name, code, isActive, type, address, contactPerson, phoneNumber, pettyCashTarget, openingBalance } = await req.json()
 
   const dataToUpdate: any = {}
   if (name !== undefined) dataToUpdate.name = name
@@ -81,6 +81,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   if (contactPerson !== undefined) dataToUpdate.contactPerson = contactPerson
   if (phoneNumber !== undefined) dataToUpdate.phoneNumber = phoneNumber
   if (pettyCashTarget !== undefined) dataToUpdate.pettyCashTarget = parseFloat(pettyCashTarget) || 0
+  if (openingBalance !== undefined) dataToUpdate.openingBalance = parseFloat(openingBalance) || 0
 
   try {
     const branch = await prisma.branch.update({

@@ -107,6 +107,7 @@ function SlipsContent() {
               phoneNumber: null,
               shiftStartTime: '09:00',
               pettyCashTarget: 0,
+              openingBalance: 0,
             })
           }
           

@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
   }
 
-  const { name, code, isActive, type, address, contactPerson, phoneNumber } = await req.json()
+  const { name, code, isActive, type, address, contactPerson, phoneNumber, openingBalance } = await req.json()
 
   if (!name || !code) {
     return NextResponse.json({ error: 'Name and code are required' }, { status: 400 })
@@ -36,7 +36,11 @@ export async function POST(req: NextRequest) {
     }
 
     const branch = await prisma.branch.create({
-      data: { name, code, type, address, contactPerson, phoneNumber, isActive: isActive !== undefined ? isActive : true }
+      data: {
+        name, code, type, address, contactPerson, phoneNumber,
+        isActive: isActive !== undefined ? isActive : true,
+        openingBalance: openingBalance ? parseFloat(openingBalance) : 0,
+      }
     })
     return NextResponse.json(branch, { status: 201 })
   } catch (error: any) {

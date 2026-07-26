@@ -21,6 +21,7 @@ model Branch {
   isActive        Boolean            @default(true)
   shiftStartTime  String             @default("09:00")
   pettyCashTarget Float              @default(0)
+  openingBalance  Float              @default(0)
   createdAt       DateTime           @default(now())
   entries         DailyEntry[]
   attendances     Attendance[]

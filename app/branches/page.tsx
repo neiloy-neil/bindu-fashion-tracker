@@ -38,6 +38,7 @@ const emptyForm = {
   contactPerson: '',
   phoneNumber: '',
   isActive: true,
+  openingBalance: '',
 }
 
 export default function BranchesPage() {
@@ -76,6 +77,7 @@ export default function BranchesPage() {
       contactPerson: branch.contactPerson ?? '',
       phoneNumber: branch.phoneNumber ?? '',
       isActive: branch.isActive ?? true,
+      openingBalance: branch.openingBalance != null ? String(branch.openingBalance) : '',
     })
     setModalOpen(true)
   }
@@ -189,6 +191,12 @@ export default function BranchesPage() {
                   </div>
                 )}
 
+                {branch.openingBalance > 0 && (
+                  <div className="text-xs text-[var(--text-muted)] mt-1">
+                    Opening: <span className="font-semibold text-[var(--text-primary)]">৳{branch.openingBalance.toLocaleString()}</span>
+                  </div>
+                )}
+
                 <div className="mt-auto pt-3 flex items-center justify-between">
                   {branch._count?.employees !== undefined && (
                     <span className="text-xs text-[var(--text-muted)] flex items-center gap-1">
@@ -272,6 +280,21 @@ export default function BranchesPage() {
                 onChange={e => set('address', e.target.value)}
                 placeholder="Full address"
               />
+            </div>
+
+            <div className="col-span-2 space-y-1.5">
+              <Label>Opening Balance (৳)</Label>
+              <Input
+                type="number"
+                min="0"
+                step="0.01"
+                value={form.openingBalance}
+                onChange={e => set('openingBalance', e.target.value)}
+                placeholder="0"
+              />
+              <p className="text-xs text-[var(--text-muted)]">
+                Starting cash balance for this branch. Used as the opening balance on their very first daily entry.
+              </p>
             </div>
 
             <div className="col-span-2 flex items-center justify-between rounded-lg border border-[var(--border)] px-4 py-3">

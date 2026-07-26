@@ -41,11 +41,16 @@ export async function GET(
       }
     })
 
-    const openingBalance = lastEntry?.actualPhysicalCash || 0
-    const pettyCashOpening = lastEntry?.pettyCashClosing ?? null
+    const branch = await prisma.branch.findUnique({
+      where: { id: branchId },
+      select: { pettyCashTarget: true, openingBalance: true },
+    })
 
-    // Also fetch branch petty cash target
-    const branch = await prisma.branch.findUnique({ where: { id: branchId }, select: { pettyCashTarget: true } })
+    // If no prior entry exists, fall back to the branch's configured opening balance
+    const openingBalance = lastEntry
+      ? (lastEntry.actualPhysicalCash ?? 0)
+      : (branch?.openingBalance ?? 0)
+    const pettyCashOpening = lastEntry?.pettyCashClosing ?? null
 
     return NextResponse.json({ openingBalance, pettyCashOpening, pettyCashTarget: branch?.pettyCashTarget ?? 0 })
   } catch (error: any) {

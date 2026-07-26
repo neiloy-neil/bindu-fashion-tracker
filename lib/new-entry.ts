@@ -21,6 +21,7 @@ const paymentSchema = z.object({
   attachmentKey: z.string().optional(),
   issueDate: z.string().optional(),
   withdrawDate: z.string().optional(),
+  partyBankInfoId: z.coerce.number().int().positive().optional(),
 }).superRefine((payment, context) => {
   if ((payment.method === 'BANK' || payment.method === 'CHEQUE') && !payment.attachmentKey) {
     context.addIssue({ code: 'custom', path: ['attachmentKey'], message: 'A payslip attachment is required' })

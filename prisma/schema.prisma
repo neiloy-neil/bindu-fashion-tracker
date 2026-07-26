@@ -130,6 +130,7 @@ model Category {
   parent             Category?  @relation("CategoryChildren", fields: [parentId], references: [id])
   children           Category[] @relation("CategoryChildren")
   requiresAttachment Boolean    @default(true)
+  requiresApproval   Boolean    @default(false) // if true, BRANCH-submitted expenses need admin approval
   applicableTo       String[]   @default([]) // empty = all branch types; otherwise e.g. ["RETAIL","WHOLESALE"]
 }
 

@@ -32,6 +32,7 @@ type CategoryWithChildren = {
   frequency?: string | null
   parentId?: number | null
   requiresAttachment?: boolean
+  requiresApproval?: boolean
   isAutoTransferred?: boolean
   applicableTo?: string[]
   children?: CategoryWithChildren[]
@@ -263,6 +264,7 @@ export default function CategoriesPage() {
   const [frequency, setFrequency] = useState<string>('DAILY')
   const [isActive, setIsActive] = useState(true)
   const [requiresAttachment, setRequiresAttachment] = useState(true)
+  const [requiresApproval, setRequiresApproval] = useState(false)
   const [isAutoTransferred, setIsAutoTransferred] = useState(false)
   const [applicableTo, setApplicableTo] = useState<string[]>([])
 
@@ -302,6 +304,7 @@ export default function CategoriesPage() {
         isActive,
         isAutoTransferred,
         requiresAttachment,
+        requiresApproval,
         parentId: parentCategory?.id || null,
         applicableTo,
       }
@@ -353,6 +356,7 @@ export default function CategoriesPage() {
     setFrequency(cat.frequency ?? 'DAILY')
     setIsActive(cat.isActive)
     setRequiresAttachment(cat.requiresAttachment ?? true)
+    setRequiresApproval(cat.requiresApproval ?? false)
     setIsAutoTransferred(cat.isAutoTransferred ?? false)
     setApplicableTo(cat.applicableTo ?? [])
     setShowModal(true)
@@ -495,6 +499,18 @@ export default function CategoriesPage() {
                     Requires Attachment (shows upload box)
                   </Label>
                 </div>
+                {type === 'EXPENSE' && (
+                  <div className="flex items-center gap-3">
+                    <Checkbox
+                      id="requiresApproval"
+                      checked={requiresApproval}
+                      onCheckedChange={(checked) => setRequiresApproval(checked === true)}
+                    />
+                    <Label htmlFor="requiresApproval" className="cursor-pointer text-sm font-medium text-[var(--text-primary)]">
+                      Requires Approval <span className="text-[var(--text-muted)] font-normal">(branch submissions need admin review)</span>
+                    </Label>
+                  </div>
+                )}
                 {type === 'INCOME' && !parentCategory && (
                   <div className="flex items-center gap-3">
                     <Checkbox

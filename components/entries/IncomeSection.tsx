@@ -17,9 +17,10 @@ interface Props {
   selectClass: string
   errors: FieldErrors<NewEntryFormValues>
   generateId: () => string
+  isFirstEntry?: boolean
 }
 
-export function IncomeSection({ control, register, setValue, categories, inputClass, selectClass, errors, generateId }: Props) {
+export function IncomeSection({ control, register, setValue, categories, inputClass, selectClass, errors, generateId, isFirstEntry }: Props) {
   const { fields, append, remove } = useFieldArray({
     control,
     name: 'incomeItems'
@@ -35,7 +36,8 @@ export function IncomeSection({ control, register, setValue, categories, inputCl
       {fields.map((field, idx) => {
         const currentCategoryId = incomeItemsWatch[idx]?.categoryId;
         const currentCat = categories.find(c => String(c.id) === String(currentCategoryId));
-        const isOpeningBalance = currentCat?.name === 'Opening Balance';
+        // Lock Opening Balance only when it's auto-carried from a prior entry; on first entry allow manual input
+        const isOpeningBalance = currentCat?.name === 'Opening Balance' && !isFirstEntry;
 
         return (
         <div key={field.id} className="relative mb-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 group">

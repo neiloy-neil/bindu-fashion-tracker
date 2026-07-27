@@ -123,26 +123,44 @@ export async function POST(req: NextRequest) {
         throw new Error('One or more transfer accounts are invalid')
       }
 
-      // --- AUTO-TRANSFER DIGITAL SALES ---
+      // --- AUTO-TRANSFER DIGITAL SALES TO HEAD OFFICE ---
       const digitalSales = body.items.map(item => ({
         item, cat: categories.find(c => c.id === item.categoryId)
       })).filter(({ cat }) => cat?.isAutoTransferred)
 
-      for (const { item, cat } of digitalSales) {
-        if (!cat) continue;
-        let account = await tx.ledgerAccount.findFirst({
-          where: { name: { equals: cat.name, mode: 'insensitive' } }
+      if (digitalSales.length > 0) {
+        const headOfficeBranch = await tx.branch.findFirst({
+          where: { type: 'HEAD_OFFICE' }
         })
-        if (!account) {
-          account = await tx.ledgerAccount.create({
-            data: { name: cat.name, type: 'BANK', isActive: true }
+
+        for (const { item, cat } of digitalSales) {
+          if (!cat) continue;
+          // Find existing account; if it's a stale BANK-type without a branch link, upgrade it
+          let account = await tx.ledgerAccount.findFirst({
+            where: { name: { equals: cat.name, mode: 'insensitive' } }
+          })
+          if (!account) {
+            account = await tx.ledgerAccount.create({
+              data: {
+                name: cat.name,
+                type: headOfficeBranch ? 'BRANCH' : 'BANK',
+                isActive: true,
+                branchId: headOfficeBranch?.id ?? null,
+              }
+            })
+          } else if (headOfficeBranch && (account.type !== 'BRANCH' || account.branchId !== headOfficeBranch.id)) {
+            // Migrate stale BANK-type account to point to Head Office
+            account = await tx.ledgerAccount.update({
+              where: { id: account.id },
+              data: { type: 'BRANCH', branchId: headOfficeBranch.id }
+            })
+          }
+          body.transfers.push({
+            accountId: account.id,
+            amount: item.amount,
+            note: `Auto-transferred from ${cat.name} sale`
           })
         }
-        body.transfers.push({
-          accountId: account.id,
-          amount: item.amount,
-          note: `Auto-transferred from ${cat.name} sale`
-        })
       }
       // ------------------------------------
 
@@ -154,9 +172,13 @@ export async function POST(req: NextRequest) {
             where: { branchId: finalBranchId, date: { lt: dateOnlyToUtc(body.date) } },
             orderBy: { date: 'desc' },
           })
-          const expectedOpeningBalance = lastEntry?.actualPhysicalCash || 0
-          if (Math.abs(openingBalanceItem.amount - expectedOpeningBalance) > 0.01) {
-            throw new Error(`Opening balance mismatch. Expected ৳${expectedOpeningBalance}, but got ৳${openingBalanceItem.amount}.`)
+          // Only enforce the carry-forward match when a prior entry exists.
+          // On the first entry for a branch, the manager sets their own starting balance.
+          if (lastEntry) {
+            const expectedOpeningBalance = lastEntry.actualPhysicalCash ?? 0
+            if (Math.abs(openingBalanceItem.amount - expectedOpeningBalance) > 0.01) {
+              throw new Error(`Opening balance mismatch. Expected ৳${expectedOpeningBalance}, but got ৳${openingBalanceItem.amount}.`)
+            }
           }
         }
       }

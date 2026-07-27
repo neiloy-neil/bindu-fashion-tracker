@@ -52,7 +52,7 @@ export async function GET(
       : (branch?.openingBalance ?? 0)
     const pettyCashOpening = lastEntry?.pettyCashClosing ?? null
 
-    return NextResponse.json({ openingBalance, pettyCashOpening, pettyCashTarget: branch?.pettyCashTarget ?? 0 })
+    return NextResponse.json({ openingBalance, pettyCashOpening, pettyCashTarget: branch?.pettyCashTarget ?? 0, isFirstEntry: !lastEntry })
   } catch (error: any) {
     logger.error('Error fetching last balance:', error)
     return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 })

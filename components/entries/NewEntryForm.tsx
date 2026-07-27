@@ -114,6 +114,7 @@ export function NewEntryForm({ initialData, userId }: Props) {
 
   const [showIncome, setShowIncome] = useState(true)
   const [showExpense, setShowExpense] = useState(true)
+  const [isFirstEntry, setIsFirstEntry] = useState(false)
 
   const today = dhakaDateString()
   const draftKey = `newEntryDraft:v2:${userId}`
@@ -249,6 +250,7 @@ export function NewEntryForm({ initialData, userId }: Props) {
         .then(r => r.json())
         .then(data => {
           if (!data.error) {
+            setIsFirstEntry(!!data.isFirstEntry)
             const openingCat = categories.find(c => c.name === 'Opening Balance')
             if (openingCat) {
               const currentIncome = form.getValues('incomeItems')
@@ -257,7 +259,7 @@ export function NewEntryForm({ initialData, userId }: Props) {
                 setValue(`incomeItems.${idx}.amount`, data.openingBalance)
               } else {
                 setValue('incomeItems', [
-                  { id: generateId(), categoryId: String(openingCat.id), amount: data.openingBalance || 0, detail: { note: 'Auto-filled from previous closing balance', partyName: '', files: [] } },
+                  { id: generateId(), categoryId: String(openingCat.id), amount: data.openingBalance || 0, detail: { note: data.isFirstEntry ? 'Enter your starting physical cash balance' : 'Auto-filled from previous closing balance', partyName: '', files: [] } },
                   ...currentIncome
                 ])
               }
@@ -506,6 +508,7 @@ export function NewEntryForm({ initialData, userId }: Props) {
                   selectClass={selectClass}
                   errors={errors}
                   generateId={generateId}
+                  isFirstEntry={isFirstEntry}
                 />
               </div>
             )}

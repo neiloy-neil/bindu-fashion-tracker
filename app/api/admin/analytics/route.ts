@@ -83,7 +83,7 @@ export async function GET(request: Request) {
 
       for (const t of entry.transfers) {
         dayExpense += Number(t.amount)
-        categoryMap.set('Bank Transfer', (categoryMap.get('Bank Transfer') || 0) + Number(t.amount))
+        categoryMap.set('Branch to Branch Transfer', (categoryMap.get('Branch to Branch Transfer') || 0) + Number(t.amount))
       }
 
       for (const p of entry.payments) {

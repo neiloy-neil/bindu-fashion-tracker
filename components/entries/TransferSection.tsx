@@ -143,7 +143,7 @@ export function TransferSection({ control, register, accounts, branches, current
 
   return (
     <div>
-      <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Bank / Bkash Transfers</h3>
+      <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Branch to Branch Transfers</h3>
       {fields.map((field, idx) => (
         <TransferRow
           key={field.id}

@@ -66,17 +66,94 @@ export default function AuditLogsPage() {
 
 
 
-  const renderJsonViewer = (dataStr: string | null) => {
-    if (!dataStr) return <span className="text-[var(--text-muted)]">-</span>
+  const SKIP_FIELDS = new Set(['id', 'createdAt', 'updatedAt', 'receiptUrl', 'receiptUrls', 'eodChecklist', 'attachmentUrl'])
+
+  const formatValue = (key: string, val: unknown): string => {
+    if (val === null || val === undefined) return '—'
+    if (typeof val === 'boolean') return val ? 'Yes' : 'No'
+    if (typeof val === 'number') {
+      if (key.toLowerCase().includes('cash') || key.toLowerCase().includes('balance') || key.toLowerCase().includes('amount')) {
+        return `৳${val.toLocaleString('en-BD')}`
+      }
+      return String(val)
+    }
+    if (typeof val === 'string') {
+      // ISO date
+      if (/^\d{4}-\d{2}-\d{2}T/.test(val)) {
+        return new Date(val).toLocaleString('en-BD', { dateStyle: 'medium', timeStyle: 'short' })
+      }
+      return val
+    }
+    if (Array.isArray(val)) {
+      if (val.length === 0) return '(empty)'
+      // permissions array
+      if (val[0] && typeof val[0] === 'object' && 'feature' in (val[0] as object)) {
+        return (val as Array<{ feature: string; granted: boolean }>)
+          .map(p => `${p.feature}: ${p.granted ? '✓' : '✗'}`)
+          .join(', ')
+      }
+      return `${val.length} item${val.length !== 1 ? 's' : ''}`
+    }
+    return JSON.stringify(val)
+  }
+
+  const camelToLabel = (key: string) =>
+    key.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase())
+
+  const renderFields = (dataStr: string | null, highlightKeys?: Set<string>) => {
+    if (!dataStr) return <span className="text-[var(--text-muted)] text-xs">—</span>
     try {
-      const parsed = JSON.parse(dataStr)
+      const obj = JSON.parse(dataStr) as Record<string, unknown>
+      const entries = Object.entries(obj).filter(([k]) => !SKIP_FIELDS.has(k))
+      if (entries.length === 0) return <span className="text-[var(--text-muted)] text-xs">No data</span>
       return (
-        <div className="bg-[var(--bg-card)] p-2 rounded text-xs text-[var(--accent-light)] max-h-32 overflow-y-auto whitespace-pre-wrap font-mono border border-[var(--border)]">
-          {JSON.stringify(parsed, null, 2)}
+        <div className="space-y-0.5">
+          {entries.map(([k, v]) => (
+            <div key={k} className={`flex gap-1.5 text-xs rounded px-1 py-0.5 ${highlightKeys?.has(k) ? 'bg-[var(--warning)]/10' : ''}`}>
+              <span className="text-[var(--text-muted)] shrink-0 min-w-[90px]">{camelToLabel(k)}:</span>
+              <span className="text-[var(--text-primary)] font-medium break-all">{formatValue(k, v)}</span>
+            </div>
+          ))}
         </div>
       )
     } catch {
-      return <span>{dataStr}</span>
+      return <span className="text-xs text-[var(--text-muted)]">{dataStr}</span>
+    }
+  }
+
+  const renderDiff = (oldStr: string | null, newStr: string | null) => {
+    if (!oldStr && !newStr) return <span className="text-[var(--text-muted)] text-xs">—</span>
+    try {
+      const oldObj = oldStr ? JSON.parse(oldStr) as Record<string, unknown> : {}
+      const newObj = newStr ? JSON.parse(newStr) as Record<string, unknown> : {}
+      const allKeys = new Set([...Object.keys(oldObj), ...Object.keys(newObj)].filter(k => !SKIP_FIELDS.has(k)))
+      const changedKeys = Array.from(allKeys).filter(k => JSON.stringify(oldObj[k]) !== JSON.stringify(newObj[k]))
+
+      if (changedKeys.length === 0) return <span className="text-[var(--text-muted)] text-xs italic">No field changes detected</span>
+
+      return (
+        <div className="space-y-1.5">
+          {changedKeys.map(k => (
+            <div key={k} className="text-xs rounded-lg border border-[var(--border)] overflow-hidden">
+              <div className="px-2 py-0.5 bg-[var(--surface-raised)] text-[var(--text-muted)] font-semibold text-[10px] uppercase tracking-wide">
+                {camelToLabel(k)}
+              </div>
+              <div className="flex divide-x divide-[var(--border)]">
+                <div className="flex-1 px-2 py-1 bg-[var(--danger)]/5">
+                  <span className="text-[var(--danger)] text-[10px] font-bold block mb-0.5">Before</span>
+                  <span className="text-[var(--text-primary)] break-all">{formatValue(k, oldObj[k])}</span>
+                </div>
+                <div className="flex-1 px-2 py-1 bg-[var(--success)]/5">
+                  <span className="text-[var(--success)] text-[10px] font-bold block mb-0.5">After</span>
+                  <span className="text-[var(--text-primary)] break-all">{formatValue(k, newObj[k])}</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )
+    } catch {
+      return <span className="text-xs text-[var(--text-muted)]">Could not parse changes</span>
     }
   }
 
@@ -175,29 +252,15 @@ export default function AuditLogsPage() {
                       {log.reason || 'None provided'}
                     </span>
                   </TableCell>
-                  <TableCell>
-                    {log.action === 'UPDATE' ? (
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <div className="text-xs text-[var(--danger)] mb-1 font-bold">Old Values</div>
-                          {renderJsonViewer(log.oldValues)}
-                        </div>
-                        <div>
-                          <div className="text-xs text-[var(--success)] mb-1 font-bold">New Values</div>
-                          {renderJsonViewer(log.newValues)}
-                        </div>
-                      </div>
-                    ) : log.action === 'CREATE' ? (
-                      <div>
-                        <div className="text-xs text-[var(--success)] mb-1 font-bold">Initial Snapshot</div>
-                        {renderJsonViewer(log.newValues)}
-                      </div>
-                    ) : (
-                      <div>
-                        <div className="text-xs text-[var(--danger)] mb-1 font-bold">Final Snapshot</div>
-                        {renderJsonViewer(log.oldValues)}
-                      </div>
-                    )}
+                  <TableCell className="max-w-sm">
+                    <div className="max-h-48 overflow-y-auto pr-1">
+                      {log.action === 'UPDATE'
+                        ? renderDiff(log.oldValues, log.newValues)
+                        : log.action === 'CREATE'
+                        ? renderFields(log.newValues)
+                        : renderFields(log.oldValues)
+                      }
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}

@@ -92,7 +92,7 @@ export function Sidebar({ isOpen, setIsOpen }: { isOpen?: boolean; setIsOpen?: (
     }
     void load()
     return () => { cancelled = true }
-  }, [])
+  }, [pathname])
 
   const toggleSection = useCallback((key: SectionKey) => {
     setOpen(prev => {

@@ -66,15 +66,15 @@ export const ROLE_DEFAULTS: Record<string, Feature[]> = {
   ],
   AUDITOR: [
     'entries.view', 'transfers.view', 'reports.daily', 'reports.monthly', 'reports.petty_cash',
-    'hr.employees.view', 'wholesale.view', 'admin.audit',
+    'hr.employees.view', 'wholesale.view', 'parties.view', 'admin.audit',
   ],
   AREA_MANAGER: [
     'entries.view', 'transfers.view', 'reports.daily', 'reports.monthly', 'reports.petty_cash',
-    'wholesale.view',
+    'wholesale.view', 'parties.view',
   ],
   ACCOUNTS: [
     'entries.view', 'transfers.view', 'reports.daily', 'reports.monthly', 'reports.petty_cash',
-    'wholesale.view', 'wholesale.write',
+    'wholesale.view', 'wholesale.write', 'parties.view', 'parties.write',
   ],
   BRANCH: [
     'entries.create', 'entries.view', 'entries.delete',

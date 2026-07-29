@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic'
 export default async function ChequesPage() {
   const session = await getServerSession(authOptions)
   if (!session?.user) redirect('/login')
-  if (session.user.role !== 'ADMIN' && session.user.role !== 'SUPER_ADMIN') redirect('/entries')
+  if (!['ADMIN', 'SUPER_ADMIN', 'ACCOUNTS', 'AUDITOR'].includes(session.user.role)) redirect('/entries')
 
   return (
     <div className="flex-1 p-6 space-y-6">

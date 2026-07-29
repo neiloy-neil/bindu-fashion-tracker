@@ -99,7 +99,8 @@ export async function proxy(req: NextRequest) {
         pathname.startsWith('/parties') ||
         pathname.startsWith('/categories') ||
         pathname.startsWith('/api/admin') ||
-        pathname.startsWith('/api/parties')
+        pathname.startsWith('/api/parties') ||
+        pathname.startsWith('/api/categories')
       ) {
         if (pathname.startsWith('/api/')) {
           return new NextResponse(
@@ -116,7 +117,9 @@ export async function proxy(req: NextRequest) {
         pathname.startsWith('/admin/users') ||
         pathname.startsWith('/admin/settings') ||
         pathname.startsWith('/branches') ||
-        pathname.startsWith('/import')
+        pathname.startsWith('/import') ||
+        pathname.startsWith('/categories') ||
+        pathname.startsWith('/api/categories')
       ) {
         if (pathname.startsWith('/api/')) {
           return new NextResponse(

@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma'
 
 export async function GET(req: NextRequest) {
   const userRole = req.headers.get('x-user-role')
-  if (!['ADMIN', 'SUPER_ADMIN'].includes(userRole ?? '')) {
+  if (!['ADMIN', 'SUPER_ADMIN', 'ACCOUNTS', 'AUDITOR', 'AREA_MANAGER'].includes(userRole ?? '')) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
   }
 

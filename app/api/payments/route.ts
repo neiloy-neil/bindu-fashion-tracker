@@ -4,7 +4,7 @@ import { directPaymentSchema } from '@/lib/schemas'
 
 export async function GET(req: NextRequest) {
   const userRole = req.headers.get('x-user-role')
-  if (!['ADMIN', 'SUPER_ADMIN'].includes(userRole ?? '')) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (!['ADMIN', 'SUPER_ADMIN', 'ACCOUNTS'].includes(userRole ?? '')) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const { searchParams } = new URL(req.url)
   const approvalStatus = searchParams.get('approvalStatus') || 'PENDING'

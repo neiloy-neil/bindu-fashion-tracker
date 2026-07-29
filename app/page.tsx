@@ -564,7 +564,10 @@ function AccountsDashboard({ wholesaleData, month, year, viewMode, startDate, en
   endDate: string
 }) {
   const fetcher = (url: string) => fetch(url).then(r => r.json())
-  const { data: pendingCount } = useSWR('/api/transfers/pending-count', fetcher, { revalidateOnFocus: false })
+  const { data: pendingTransfers } = useSWR('/api/transfers/pending-count', fetcher, { revalidateOnFocus: false })
+  const { data: pendingPayments } = useSWR('/api/payments?approvalStatus=PENDING', fetcher, { revalidateOnFocus: false })
+  const { data: pendingCheques } = useSWR('/api/cheques?status=PENDING', fetcher, { revalidateOnFocus: false })
+  const { data: parties } = useSWR('/api/parties', fetcher, { revalidateOnFocus: false })
 
   const ws = wholesaleData || {}
   const period = viewMode === 'daily'
@@ -573,47 +576,152 @@ function AccountsDashboard({ wholesaleData, month, year, viewMode, startDate, en
     ? `${startDate} to ${endDate}`
     : `${MONTHS[month - 1]} ${year}`
 
+  const pendingPaymentsCount = Array.isArray(pendingPayments) ? pendingPayments.length : 0
+  const pendingChequesCount = Array.isArray(pendingCheques) ? pendingCheques.length : 0
+  const pendingTransfersCount = pendingTransfers?.count ?? 0
+  const totalPendingActions = pendingPaymentsCount + pendingChequesCount + pendingTransfersCount
+
+  const topParties = Array.isArray(parties)
+    ? [...parties].filter((p: any) => p.balance > 0).sort((a: any, b: any) => b.balance - a.balance).slice(0, 5)
+    : []
+  const totalPayable = Array.isArray(parties)
+    ? parties.reduce((sum: number, p: any) => sum + (p.balance > 0 ? p.balance : 0), 0)
+    : 0
+
   return (
-    <div className="p-6 space-y-6 max-w-4xl mx-auto">
+    <div className="flex-1 p-6 space-y-6 max-w-5xl mx-auto w-full">
+      {/* Header */}
       <div>
         <h1 className="text-lg font-semibold text-[var(--text-primary)]">Accounts Overview</h1>
         <p className="text-sm text-[var(--text-muted)] mt-0.5">{period}</p>
       </div>
 
-      <div>
-        <h2 className="text-sm font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-3">Wholesale</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          {[
-            { label: 'Invoiced', value: ws.invoiced ?? 0, color: 'var(--accent)' },
-            { label: 'Collected', value: ws.collected ?? 0, color: '#059669' },
-            { label: 'Outstanding', value: ws.outstanding ?? 0, color: '#d97706' },
-            { label: 'Active Buyers', value: ws.activeBuyers ?? '—', color: 'var(--text-secondary)', raw: true },
-          ].map(({ label, value, color, raw }) => (
-            <div key={label} className="rounded-xl bg-[var(--surface)] p-4 border border-[var(--border)]">
-              <p className="text-xs text-[var(--text-muted)] mb-1">{label}</p>
-              <p className="text-xl font-bold" style={{ color }}>{raw ? value : formatCurrency(value as number)}</p>
-            </div>
-          ))}
-        </div>
-        <div className="mt-3 flex gap-2">
-          <Link href="/wholesale/challans" className="text-xs text-[var(--accent)] hover:underline">View Challans →</Link>
-          <span className="text-[var(--border)]">·</span>
-          <Link href="/wholesale/collections" className="text-xs text-[var(--accent)] hover:underline">Collections →</Link>
-        </div>
-      </div>
-
-      <div>
-        <h2 className="text-sm font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-3">Transfers</h2>
-        <div className="grid grid-cols-1 gap-4 mb-3">
-          <div className="rounded-xl bg-[var(--surface)] p-4 border border-[var(--border)]">
-            <p className="text-xs text-[var(--text-muted)] mb-1">Pending Incoming</p>
-            <p className="text-2xl font-bold text-[var(--accent)]">{pendingCount?.count ?? '—'}</p>
+      {/* Pending Actions */}
+      {totalPendingActions > 0 && (
+        <div className="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5">
+          <h2 className="text-sm font-semibold text-[var(--text-primary)] mb-4">Pending Actions</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {pendingPaymentsCount > 0 && (
+              <Link href="/admin/cheques" className="flex items-center gap-4 p-4 rounded-xl border border-[var(--border)] hover:border-[var(--accent)] hover:bg-[var(--surface-raised)] transition-all group">
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-[var(--warning-subtle)] text-[var(--warning)] flex-shrink-0">
+                  <DollarSign className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-[var(--text-primary)]">{pendingPaymentsCount} Pending Payment{pendingPaymentsCount !== 1 ? 's' : ''}</p>
+                  <p className="text-xs text-[var(--text-muted)]">Awaiting approval</p>
+                </div>
+                <ChevronRight className="w-4 h-4 text-[var(--text-muted)] ml-auto group-hover:text-[var(--accent)]" />
+              </Link>
+            )}
+            {pendingChequesCount > 0 && (
+              <Link href="/admin/cheques" className="flex items-center gap-4 p-4 rounded-xl border border-[var(--border)] hover:border-[var(--accent)] hover:bg-[var(--surface-raised)] transition-all group">
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-[var(--danger-subtle)] text-[var(--danger)] flex-shrink-0">
+                  <FileText className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-[var(--text-primary)]">{pendingChequesCount} Pending Cheque{pendingChequesCount !== 1 ? 's' : ''}</p>
+                  <p className="text-xs text-[var(--text-muted)]">Require clearance</p>
+                </div>
+                <ChevronRight className="w-4 h-4 text-[var(--text-muted)] ml-auto group-hover:text-[var(--accent)]" />
+              </Link>
+            )}
+            {pendingTransfersCount > 0 && (
+              <Link href="/transfers/incoming" className="flex items-center gap-4 p-4 rounded-xl border border-[var(--border)] hover:border-[var(--accent)] hover:bg-[var(--surface-raised)] transition-all group">
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-[var(--info-subtle)] text-[var(--info)] flex-shrink-0">
+                  <AlertCircle className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-[var(--text-primary)]">{pendingTransfersCount} Pending Transfer{pendingTransfersCount !== 1 ? 's' : ''}</p>
+                  <p className="text-xs text-[var(--text-muted)]">Awaiting receipt</p>
+                </div>
+                <ChevronRight className="w-4 h-4 text-[var(--text-muted)] ml-auto group-hover:text-[var(--accent)]" />
+              </Link>
+            )}
+            {totalPendingActions === 0 && (
+              <div className="flex items-center gap-4 p-4 rounded-xl border border-[var(--border)] sm:col-span-3">
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-[var(--success-subtle)] text-[var(--success)] flex-shrink-0">
+                  <CheckCircle className="w-5 h-5" />
+                </div>
+                <p className="text-sm font-semibold text-[var(--text-primary)]">All caught up — no pending actions</p>
+              </div>
+            )}
           </div>
         </div>
-        <div className="flex gap-2">
-          <Link href="/transfers/incoming" className="text-xs text-[var(--accent)] hover:underline">Incoming Transfers →</Link>
-          <span className="text-[var(--border)]">·</span>
-          <Link href="/transfers/history" className="text-xs text-[var(--accent)] hover:underline">History →</Link>
+      )}
+
+      {/* Party Payables */}
+      <div className="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-sm font-semibold text-[var(--text-primary)]">Party Payables</h2>
+          <Link href="/parties" className="text-xs text-[var(--accent)] hover:underline">View all →</Link>
+        </div>
+        <div className="mb-4 p-4 rounded-xl bg-[var(--surface-raised)] border border-[var(--border)]">
+          <p className="text-xs text-[var(--text-muted)] mb-1">Total Outstanding</p>
+          <p className="text-2xl font-bold tabular-nums text-[var(--warning)]">৳{formatCurrency(totalPayable)}</p>
+          <p className="text-xs text-[var(--text-muted)] mt-1">Across {topParties.length} part{topParties.length !== 1 ? 'ies' : 'y'} with balance</p>
+        </div>
+        {topParties.length > 0 ? (
+          <div className="space-y-2">
+            {topParties.map((p: any) => (
+              <Link key={p.id} href={`/parties/${p.id}`} className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-[var(--surface-raised)] transition-colors group">
+                <span className="text-sm text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]">{p.name}</span>
+                <span className="text-sm font-semibold tabular-nums text-[var(--warning)]">৳{formatCurrency(p.balance)}</span>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-[var(--text-muted)] text-center py-4">No outstanding balances</p>
+        )}
+      </div>
+
+      {/* Wholesale + Transfers row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-semibold text-[var(--text-primary)]">Wholesale</h2>
+            <Link href="/wholesale/challans" className="text-xs text-[var(--accent)] hover:underline">View →</Link>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              { label: 'Invoiced', value: ws.totalNetAmount ?? 0, color: 'var(--accent)' },
+              { label: 'Collected', value: ws.totalCollected ?? 0, color: '#059669' },
+              { label: 'Outstanding', value: ws.totalOutstanding ?? 0, color: '#d97706' },
+              { label: 'Active Buyers', value: ws.activeBuyers ?? 0, color: 'var(--text-secondary)', raw: true },
+            ].map(({ label, value, color, raw }) => (
+              <div key={label} className="rounded-lg border border-[var(--border)] p-3">
+                <p className="text-xs text-[var(--text-muted)] mb-1">{label}</p>
+                <p className="text-lg font-bold tabular-nums" style={{ color }}>{raw ? value : `৳${formatCurrency(value as number)}`}</p>
+              </div>
+            ))}
+          </div>
+          <div className="mt-3 flex gap-3">
+            <Link href="/wholesale/challans" className="text-xs text-[var(--accent)] hover:underline">Challans →</Link>
+            <Link href="/wholesale/collections" className="text-xs text-[var(--accent)] hover:underline">Collections →</Link>
+          </div>
+        </div>
+
+        <div className="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-semibold text-[var(--text-primary)]">Transfers</h2>
+            <Link href="/transfers/incoming" className="text-xs text-[var(--accent)] hover:underline">View →</Link>
+          </div>
+          <div className="space-y-3">
+            <div className="rounded-lg border border-[var(--border)] p-4 flex items-center justify-between">
+              <div>
+                <p className="text-xs text-[var(--text-muted)] mb-1">Pending Incoming</p>
+                <p className="text-2xl font-bold tabular-nums" style={{ color: pendingTransfersCount > 0 ? 'var(--warning)' : 'var(--success)' }}>
+                  {pendingTransfersCount}
+                </p>
+              </div>
+              {pendingTransfersCount > 0 && (
+                <Link href="/transfers/incoming" className="text-xs font-semibold text-[var(--accent)] hover:underline">Acknowledge →</Link>
+              )}
+            </div>
+          </div>
+          <div className="mt-3 flex gap-3">
+            <Link href="/transfers/incoming" className="text-xs text-[var(--accent)] hover:underline">Incoming →</Link>
+            <Link href="/transfers/history" className="text-xs text-[var(--accent)] hover:underline">History →</Link>
+          </div>
         </div>
       </div>
     </div>

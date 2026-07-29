@@ -113,13 +113,14 @@ export async function proxy(req: NextRequest) {
     }
 
     if (role === 'AUDITOR' || role === 'AREA_MANAGER' || role === 'ACCOUNTS') {
+      const perms = (token as any).permissions ?? {}
+      const categoriesBlocked = (pathname.startsWith('/categories') || pathname.startsWith('/api/categories')) && !perms['admin.categories']
       if (
         pathname.startsWith('/admin/users') ||
         pathname.startsWith('/admin/settings') ||
         pathname.startsWith('/branches') ||
         pathname.startsWith('/import') ||
-        pathname.startsWith('/categories') ||
-        pathname.startsWith('/api/categories')
+        categoriesBlocked
       ) {
         if (pathname.startsWith('/api/')) {
           return new NextResponse(

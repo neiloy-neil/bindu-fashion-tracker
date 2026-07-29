@@ -99,8 +99,7 @@ export async function proxy(req: NextRequest) {
         pathname.startsWith('/parties') ||
         pathname.startsWith('/categories') ||
         pathname.startsWith('/api/admin') ||
-        pathname.startsWith('/api/parties') ||
-        pathname.startsWith('/api/categories')
+        pathname.startsWith('/api/parties')
       ) {
         if (pathname.startsWith('/api/')) {
           return new NextResponse(
@@ -114,7 +113,7 @@ export async function proxy(req: NextRequest) {
 
     if (role === 'AUDITOR' || role === 'AREA_MANAGER' || role === 'ACCOUNTS') {
       const perms = (token as any).permissions ?? {}
-      const categoriesBlocked = (pathname.startsWith('/categories') || pathname.startsWith('/api/categories')) && !perms['admin.categories']
+      const categoriesBlocked = pathname.startsWith('/categories') && !pathname.startsWith('/api/') && !perms['admin.categories']
       if (
         pathname.startsWith('/admin/users') ||
         pathname.startsWith('/admin/settings') ||

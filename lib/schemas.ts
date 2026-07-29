@@ -139,7 +139,7 @@ export const newEntryFormSchema = z.object({
     note: z.string().optional()
   })),
   globalNotes: z.string().optional(),
-  actualPhysicalCash: z.union([z.string(), z.number()]).refine(v => v !== '' && Number(v) >= 0, 'Physical cash is required'),
+  actualPhysicalCash: z.union([z.string(), z.number()]).refine(v => v !== '' && !isNaN(Number(v)), 'Physical cash is required'),
   cashDifferenceNote: z.string().optional(),
   pettyCashOpening: z.union([z.string(), z.number()]).default(0),
   pettyCashUsed: z.union([z.string(), z.number()]).default(0),

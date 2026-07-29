@@ -585,11 +585,16 @@ export function NewEntryForm({ initialData, userId }: Props) {
                 {...form.register('actualPhysicalCash')}
               />
               <p className="mt-1 text-[11px] text-[var(--text-muted)]">Main drawer only — do not include the petty cash fund</p>
+              {actualPhysicalCash !== '' && Number(actualPhysicalCash) < 0 && (
+                <div className="mt-2 flex items-center gap-1.5 rounded-md bg-amber-500/10 border border-amber-500/30 px-2.5 py-1.5">
+                  <span className="text-[11px] font-medium text-amber-600 dark:text-amber-400">Manager Advance: {formatCurrency(Math.abs(Number(actualPhysicalCash)))}</span>
+                </div>
+              )}
               <ErrorMsg error={errors.actualPhysicalCash} />
             </div>
           </div>
-          
-          {Number(actualPhysicalCash) > 0 && Math.abs(totals.netBalance - Number(actualPhysicalCash)) > 0 && (
+
+          {actualPhysicalCash !== '' && Number(actualPhysicalCash) >= 0 && Math.abs(totals.netBalance - Number(actualPhysicalCash)) > 0 && (
             <div className="mt-4 p-4 bg-destructive/10 border border-destructive/30 rounded-lg">
               <div className="flex justify-between items-center mb-2">
                 <span className="text-sm font-semibold text-destructive">Discrepancy Detected</span>

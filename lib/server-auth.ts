@@ -24,8 +24,8 @@ export async function requireAuth(feature?: Feature): Promise<SessionUser> {
   const user = session.user as any
   let permissions: Record<Feature, boolean> = user.permissions ?? {}
 
-  // JWT may predate the permissions field — re-derive from DB in that case
-  if (!user.permissions) {
+  // JWT may predate the permissions field, or permissions may be empty — re-derive from DB
+  if (!user.permissions || Object.keys(user.permissions).length === 0) {
     permissions = await resolveUserPermissions(parseInt(user.id), user.role)
   }
 

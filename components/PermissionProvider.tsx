@@ -37,7 +37,6 @@ export function PermissionProvider({ children }: { children: ReactNode }) {
         const changed = !sessionPerms || JSON.stringify(data) !== JSON.stringify(sessionPerms)
         if (changed) {
           await update()
-          router.refresh()
         }
       })
       .finally(() => setLoading(false))

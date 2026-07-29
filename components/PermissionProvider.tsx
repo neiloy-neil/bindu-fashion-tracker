@@ -29,16 +29,19 @@ export function PermissionProvider({ children }: { children: ReactNode }) {
     fetch('/api/me/permissions')
       .then(r => r.ok ? r.json() : null)
       .then(async (data) => {
-        if (data) {
-          setPermissions(data)
-          // Sync fresh permissions into the JWT so proxy.ts sees them on the next request.
+        if (!data) return
+        setPermissions(data)
+
+        // Only sync JWT if permissions in session differ from DB
+        const sessionPerms = (session?.user as any)?.permissions
+        const changed = !sessionPerms || JSON.stringify(data) !== JSON.stringify(sessionPerms)
+        if (changed) {
           await update()
-          // Force a router refresh so any pending navigation uses the new JWT.
           router.refresh()
         }
       })
       .finally(() => setLoading(false))
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   function hasPermission(feature: Feature): boolean {
     if (!permissions) return false

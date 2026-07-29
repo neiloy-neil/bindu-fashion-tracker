@@ -52,7 +52,7 @@ const FEATURE_SECTIONS: { label: string; features: Feature[] }[] = [
   },
   {
     label: 'Parties & Payments',
-    features: ['parties.view', 'parties.write'],
+    features: ['parties.view', 'parties.write', 'parties.approve'],
   },
   {
     label: 'Admin',
@@ -85,7 +85,8 @@ const FEATURE_LABELS: Partial<Record<Feature, string>> = {
   'wholesale.view': 'View Wholesale',
   'wholesale.write': 'Create Challans / Record Collections',
   'parties.view': 'View Parties',
-  'parties.write': 'Edit Parties / Approve Payments / Cheques',
+  'parties.write': 'Edit / Create Parties',
+  'parties.approve': 'Approve / Reject Payments & Cheques',
   'admin.users': 'Manage Users',
   'admin.branches': 'Manage Branches',
   'admin.categories': 'Manage Categories',

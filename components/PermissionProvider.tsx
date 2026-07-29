@@ -1,6 +1,7 @@
 'use client'
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
+import { useSession } from 'next-auth/react'
 import type { Feature } from '@/lib/permission-types'
 
 type PermissionMap = Record<Feature, boolean>
@@ -20,11 +21,19 @@ const PermissionContext = createContext<PermissionContextValue>({
 export function PermissionProvider({ children }: { children: ReactNode }) {
   const [permissions, setPermissions] = useState<PermissionMap | null>(null)
   const [loading, setLoading] = useState(true)
+  const { update } = useSession()
 
   useEffect(() => {
     fetch('/api/me/permissions')
       .then(r => r.ok ? r.json() : null)
-      .then(data => { if (data) setPermissions(data) })
+      .then(data => {
+        if (data) {
+          setPermissions(data)
+          // Sync fresh permissions into the JWT so server components
+          // and middleware see the latest overrides without a re-login.
+          void update()
+        }
+      })
       .finally(() => setLoading(false))
   }, [])
 

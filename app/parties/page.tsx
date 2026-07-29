@@ -1,15 +1,9 @@
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { prisma } from '@/lib/prisma'
-import { redirect } from 'next/navigation'
+import { requireAuth } from '@/lib/server-auth'
 import PartyListClient from './PartyListClient'
 
 export default async function PartiesPage() {
-  const session = await getServerSession(authOptions)
-  if (!session) redirect('/login')
-  if (!['ADMIN', 'SUPER_ADMIN', 'ACCOUNTS', 'AUDITOR', 'AREA_MANAGER'].includes(session.user.role)) {
-    redirect('/entries')
-  }
+  await requireAuth('parties.view')
 
   const parties = await prisma.party.findMany({
     orderBy: { name: 'asc' },

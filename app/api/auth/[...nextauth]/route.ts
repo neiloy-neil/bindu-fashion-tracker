@@ -3,6 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials"
 import { PrismaAdapter } from "@next-auth/prisma-adapter"
 import { prisma } from "@/lib/prisma"
 import * as bcrypt from "bcryptjs"
+import { resolveUserPermissions } from "@/lib/permissions"
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -60,7 +61,7 @@ export const authOptions: NextAuthOptions = {
     })
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
       if (user) {
         token.id = user.id;
         token.username = (user as any).username;
@@ -69,6 +70,14 @@ export const authOptions: NextAuthOptions = {
         token.branchType = (user as any).branchType;
         token.managedBranchIds = (user as any).managedBranchIds;
         token.employeeId = (user as any).employeeId;
+      }
+      // Resolve permissions on sign-in or whenever the session is explicitly refreshed
+      // (admin calls update() after saving permission overrides for this user)
+      if ((user || trigger === 'update') && token.id) {
+        token.permissions = await resolveUserPermissions(
+          parseInt(String(token.id)),
+          String(token.role)
+        )
       }
       return token;
     },
@@ -83,6 +92,7 @@ export const authOptions: NextAuthOptions = {
           branchType: token.branchType,
           managedBranchIds: token.managedBranchIds,
           employeeId: token.employeeId,
+          permissions: token.permissions ?? {},
         };
       }
       return session;

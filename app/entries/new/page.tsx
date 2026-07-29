@@ -1,20 +1,16 @@
 import { prisma } from '@/lib/prisma'
 import { NewEntryForm } from '@/components/entries/NewEntryForm'
-import { getServerSession } from 'next-auth'
-import { redirect } from 'next/navigation'
-import { authOptions } from '@/app/api/auth/[...nextauth]/route'
+import { requireAuth } from '@/lib/server-auth'
 import type { Category } from '@/lib/types'
 
 export const dynamic = 'force-dynamic'
 
 export default async function NewEntryPage() {
-  const session = await getServerSession(authOptions)
-  if (!session?.user) redirect('/login')
-  if (!['ADMIN', 'SUPER_ADMIN', 'BRANCH'].includes(session.user.role)) redirect('/entries')
+  const user = await requireAuth('entries.create')
 
   const [branches, allBranches, categories, accounts, parties, expenseCategories, employees] = await Promise.all([
     prisma.branch.findMany({
-      where: { isActive: true, ...(session.user.role === 'BRANCH' ? { id: session.user.branchId ?? -1 } : {}) },
+      where: { isActive: true, ...(user.role === 'BRANCH' ? { id: user.branchId ?? -1 } : {}) },
       orderBy: { name: 'asc' },
     }),
     prisma.branch.findMany({
@@ -28,7 +24,7 @@ export default async function NewEntryPage() {
     prisma.employee.findMany({
       where: {
         isActive: true,
-        ...(session.user.role === 'BRANCH' && session.user.branchId ? { branchId: session.user.branchId } : {}),
+        ...(user.role === 'BRANCH' && user.branchId ? { branchId: user.branchId } : {}),
       },
       orderBy: { name: 'asc' },
     }),
@@ -37,7 +33,7 @@ export default async function NewEntryPage() {
   return (
     <NewEntryForm
       initialData={{ branches, allBranches, categories, accounts, parties, expenseCategories, employees }}
-      userId={session.user.id}
+      userId={user.id}
     />
   )
 }

@@ -63,6 +63,7 @@ export function ChequesClient() {
   const [paymentActionLoading, setPaymentActionLoading] = useState<number | null>(null)
 
   const [receiptUrl, setReceiptUrl] = useState<string | null>(null)
+  const [confirmAction, setConfirmAction] = useState<{ id: number; type: 'cheque' | 'payment'; action: 'approve' | 'reject' } | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -84,33 +85,35 @@ export function ChequesClient() {
     return () => { cancelled = true }
   }, [paymentFilter])
 
-  const handleChequeAction = async (id: number, action: 'approve' | 'reject') => {
-    if (!window.confirm(action === 'approve' ? 'Clear this cheque and decrement party balance?' : 'Reject/Bounce this cheque?')) return
-    setChequeActionLoading(id)
-    try {
-      const res = await fetch(`/api/cheques/${id}/${action}`, { method: 'POST' })
-      if (!res.ok) { const d = await res.json(); throw new Error(d.error || `Failed to ${action}`) }
-      toast.success(`Cheque ${action === 'approve' ? 'cleared' : 'rejected'}`)
-      setCheques(prev => prev.filter(c => c.id !== id))
-    } catch (e: unknown) {
-      toast.error(getErrorMessage(e, `Failed to ${action} cheque`))
-    } finally {
-      setChequeActionLoading(null)
-    }
-  }
+  const executeAction = async () => {
+    if (!confirmAction) return
+    const { id, type, action } = confirmAction
+    setConfirmAction(null)
 
-  const handlePaymentAction = async (id: number, action: 'approve' | 'reject') => {
-    if (!window.confirm(action === 'approve' ? 'Approve this party payment? Party balance will be decremented.' : 'Reject this party payment?')) return
-    setPaymentActionLoading(id)
-    try {
-      const res = await fetch(`/api/payments/${id}/${action}`, { method: 'POST' })
-      if (!res.ok) { const d = await res.json(); throw new Error(d.error || `Failed to ${action}`) }
-      toast.success(`Payment ${action === 'approve' ? 'approved' : 'rejected'}`)
-      setPayments(prev => prev.filter(p => p.id !== id))
-    } catch (e: unknown) {
-      toast.error(getErrorMessage(e, `Failed to ${action} payment`))
-    } finally {
-      setPaymentActionLoading(null)
+    if (type === 'cheque') {
+      setChequeActionLoading(id)
+      try {
+        const res = await fetch(`/api/cheques/${id}/${action}`, { method: 'POST' })
+        if (!res.ok) { const d = await res.json(); throw new Error(d.error || `Failed to ${action}`) }
+        toast.success(`Cheque ${action === 'approve' ? 'cleared' : 'rejected'}`)
+        setCheques(prev => prev.filter(c => c.id !== id))
+      } catch (e: unknown) {
+        toast.error(getErrorMessage(e, `Failed to ${action} cheque`))
+      } finally {
+        setChequeActionLoading(null)
+      }
+    } else {
+      setPaymentActionLoading(id)
+      try {
+        const res = await fetch(`/api/payments/${id}/${action}`, { method: 'POST' })
+        if (!res.ok) { const d = await res.json(); throw new Error(d.error || `Failed to ${action}`) }
+        toast.success(`Payment ${action === 'approve' ? 'approved' : 'rejected'}`)
+        setPayments(prev => prev.filter(p => p.id !== id))
+      } catch (e: unknown) {
+        toast.error(getErrorMessage(e, `Failed to ${action} payment`))
+      } finally {
+        setPaymentActionLoading(null)
+      }
     }
   }
 
@@ -222,9 +225,9 @@ export function ChequesClient() {
                     <TableCell className="text-right">
                       {chequeFilter === 'PENDING' ? (
                         <div className="flex items-center justify-end gap-2">
-                          <Button variant="ghost" onClick={() => handleChequeAction(c.id, 'reject')} disabled={chequeActionLoading === c.id}
+                          <Button variant="ghost" onClick={() => setConfirmAction({ id: c.id, type: 'cheque', action: 'reject' })} disabled={chequeActionLoading === c.id}
                             className="bg-[var(--danger-subtle)]/30 text-[var(--danger)] hover:bg-[var(--danger-subtle)]/50 text-xs px-3 h-8">Reject</Button>
-                          <Button onClick={() => handleChequeAction(c.id, 'approve')} disabled={chequeActionLoading === c.id}
+                          <Button onClick={() => setConfirmAction({ id: c.id, type: 'cheque', action: 'approve' })} disabled={chequeActionLoading === c.id}
                             className="text-xs px-3 h-8">{chequeActionLoading === c.id ? <BrandSpinner size={14} /> : 'Clear'}</Button>
                         </div>
                       ) : (
@@ -300,9 +303,9 @@ export function ChequesClient() {
                     <TableCell className="text-right">
                       {paymentFilter === 'PENDING' ? (
                         <div className="flex items-center justify-end gap-2">
-                          <Button variant="ghost" onClick={() => handlePaymentAction(p.id, 'reject')} disabled={paymentActionLoading === p.id}
+                          <Button variant="ghost" onClick={() => setConfirmAction({ id: p.id, type: 'payment', action: 'reject' })} disabled={paymentActionLoading === p.id}
                             className="bg-[var(--danger-subtle)]/30 text-[var(--danger)] hover:bg-[var(--danger-subtle)]/50 text-xs px-3 h-8">Reject</Button>
-                          <Button onClick={() => handlePaymentAction(p.id, 'approve')} disabled={paymentActionLoading === p.id}
+                          <Button onClick={() => setConfirmAction({ id: p.id, type: 'payment', action: 'approve' })} disabled={paymentActionLoading === p.id}
                             className="text-xs px-3 h-8">{paymentActionLoading === p.id ? <BrandSpinner size={14} /> : 'Approve'}</Button>
                         </div>
                       ) : (
@@ -320,6 +323,36 @@ export function ChequesClient() {
       )}
 
       {receiptUrl && <ViewReceiptModal url={receiptUrl} onClose={() => setReceiptUrl(null)} />}
+
+      {confirmAction && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-[var(--surface)] rounded-xl border border-[var(--border)] shadow-xl w-full max-w-sm p-6 space-y-4">
+            <h3 className="text-base font-semibold text-[var(--text-primary)]">
+              {confirmAction.action === 'approve'
+                ? confirmAction.type === 'cheque' ? 'Clear Cheque?' : 'Approve Payment?'
+                : confirmAction.type === 'cheque' ? 'Reject Cheque?' : 'Reject Payment?'}
+            </h3>
+            <p className="text-sm text-[var(--text-muted)]">
+              {confirmAction.action === 'approve'
+                ? confirmAction.type === 'cheque'
+                  ? 'This will mark the cheque as cleared and decrement the party balance.'
+                  : 'This will approve the payment and decrement the party balance.'
+                : 'This action will mark the item as rejected.'}
+            </p>
+            <div className="flex justify-end gap-3 pt-2">
+              <Button variant="outline" onClick={() => setConfirmAction(null)}>Cancel</Button>
+              <Button
+                onClick={executeAction}
+                className={confirmAction.action === 'reject' ? 'bg-[var(--danger)] hover:bg-[var(--danger)] text-white' : ''}
+              >
+                {confirmAction.action === 'approve'
+                  ? confirmAction.type === 'cheque' ? 'Clear' : 'Approve'
+                  : 'Reject'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
     </>
   )

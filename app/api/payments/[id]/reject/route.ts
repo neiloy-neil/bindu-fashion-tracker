@@ -11,7 +11,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const userId = parseInt(userIdStr, 10)
   const perms = await resolveUserPermissions(userId, userRole)
-  if (!perms['parties.approve']) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (!perms['parties.approve'] && !perms['parties.write']) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   const { id } = await params
   const paymentId = parseInt(id, 10)
   if (isNaN(paymentId)) return NextResponse.json({ error: 'Invalid payment ID' }, { status: 400 })

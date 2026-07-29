@@ -2,13 +2,16 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { logAudit } from '@/lib/audit'
 import { notifyBranchUsers } from '@/lib/notify'
+import { resolveUserPermissions } from '@/lib/permissions'
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const userRole = req.headers.get('x-user-role')
   const userIdStr = req.headers.get('x-user-id')
-  if (!['ADMIN', 'SUPER_ADMIN'].includes(userRole ?? '') || !userIdStr) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (!userRole || !userIdStr) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const userId = parseInt(userIdStr, 10)
+  const perms = await resolveUserPermissions(userId, userRole)
+  if (!perms['parties.approve']) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   const { id } = await params
   const paymentId = parseInt(id, 10)
   if (isNaN(paymentId)) return NextResponse.json({ error: 'Invalid payment ID' }, { status: 400 })

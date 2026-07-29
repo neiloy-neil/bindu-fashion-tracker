@@ -30,6 +30,7 @@ export const FEATURES = [
   // Parties & payments
   'parties.view',
   'parties.write',
+  'parties.approve',
   // Admin
   'admin.users',
   'admin.branches',
@@ -54,7 +55,7 @@ export const ROLE_DEFAULTS: Record<string, Feature[]> = {
     'payroll.slips.view', 'payroll.slips.approve', 'payroll.salary.process', 'payroll.salary.lock',
     'payroll.eid', 'payroll.advances',
     'wholesale.view', 'wholesale.write',
-    'parties.view', 'parties.write',
+    'parties.view', 'parties.write', 'parties.approve',
     'admin.users', 'admin.branches', 'admin.categories', 'admin.import', 'admin.audit', 'admin.lock_months',
   ],
   HR_ADMIN: [

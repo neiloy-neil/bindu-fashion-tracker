@@ -3,16 +3,20 @@ import { prisma } from '@/lib/prisma'
 import { logAudit } from '@/lib/audit'
 import { logger } from '@/lib/logger'
 import { notifyBranchUsers } from '@/lib/notify'
+import { resolveUserPermissions } from '@/lib/permissions'
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const userRole = req.headers.get('x-user-role')
   const userIdStr = req.headers.get('x-user-id')
-  
-  if (!userRole || !['ADMIN', 'SUPER_ADMIN'].includes(userRole) || !userIdStr) {
+
+  if (!userRole || !userIdStr) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
-
   const userId = parseInt(userIdStr, 10)
+  const perms = await resolveUserPermissions(userId, userRole)
+  if (!perms['parties.approve']) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
   const resolvedParams = await params
   const id = parseInt(resolvedParams.id, 10)
 

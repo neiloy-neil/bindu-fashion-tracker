@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-const numericStringOrNumber = z.union([z.string(), z.number()]).transform(val => typeof val === 'string' ? parseFloat(val) : val).refine(val => !isNaN(val) && val >= 0, { message: "Must be a non-negative number" }).optional()
+const numericStringOrNumber = z.union([z.string(), z.number()]).transform(val => typeof val === 'string' ? parseFloat(val) : val).refine(val => Number.isFinite(val), { message: "Must be a valid number" }).optional()
 const idSchema = z.union([z.string(), z.number()]).transform(val => typeof val === 'string' ? parseInt(val, 10) : val).refine(val => Number.isInteger(val) && val > 0, { message: 'Must be a valid id' })
 const nonNegativeNumberSchema = z.union([z.string(), z.number()]).transform(val => typeof val === 'string' ? parseFloat(val) : val).refine(val => Number.isFinite(val) && val >= 0, { message: 'Must be a non-negative number' })
 const positiveNumberSchema = z.union([z.string(), z.number()]).transform(val => typeof val === 'string' ? parseFloat(val) : val).refine(val => Number.isFinite(val) && val > 0, { message: 'Must be greater than zero' })
@@ -98,7 +98,7 @@ export const newEntryFormSchema = z.object({
   incomeItems: z.array(z.object({
     id: z.string(),
     categoryId: z.union([z.string(), z.number()]).refine(v => v !== '', { message: 'Required' }),
-    amount: z.union([z.string(), z.number()]).refine(v => Number(v) >= 0, 'Amount cannot be negative'),
+    amount: z.union([z.string(), z.number()]).refine(v => Number.isFinite(Number(v)), 'Must be a valid number'),
     detail: z.object({
       note: z.string().default(''),
       partyName: z.string().default(''),

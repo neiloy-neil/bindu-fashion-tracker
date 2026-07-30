@@ -38,7 +38,7 @@ export const newEntryPayloadSchema = z.object({
   openingTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
   closingTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
   notes: optionalText,
-  actualPhysicalCash: z.coerce.number().finite().nonnegative(),
+  actualPhysicalCash: z.coerce.number().finite(),
   cashDifferenceNote: optionalText,
   expectedNetBalance: z.coerce.number().finite(),
   pettyCashOpening: z.coerce.number().finite().nonnegative().default(0),
@@ -48,7 +48,7 @@ export const newEntryPayloadSchema = z.object({
   eodChecklist: checklistSchema,
   items: z.array(z.object({
     categoryId: z.coerce.number().int().positive(),
-    amount: positiveAmount,
+    amount: z.coerce.number().finite(),
     note: optionalText,
     partyName: optionalText,
     receiptKeys: z.array(storageReference).default([]),

@@ -82,15 +82,12 @@ export async function PATCH(
     const today = dateOnlyToUtc(dhakaDateString())
 
     const updated = await prisma.$transaction(async (tx) => {
-      // Only link to an existing entry — never auto-create a bare entry, which would
-      // block the receiving branch from submitting their own entry for the day.
-      const dailyEntry = await tx.dailyEntry.findUnique({
-        where: {
-          date_branchId: {
-            date: today,
-            branchId: transfer.account.branchId!
-          }
-        }
+      // Upsert a stub entry so multiple transfers on the same day all link to
+      // the same record. The branch's real submission will fill in the stub.
+      const dailyEntry = await tx.dailyEntry.upsert({
+        where: { date_branchId: { date: today, branchId: transfer.account.branchId! } },
+        update: {},
+        create: { date: today, branchId: transfer.account.branchId! }
       })
 
       const result = await tx.transfer.updateMany({
@@ -99,7 +96,7 @@ export async function PATCH(
           status: 'ACKNOWLEDGED',
           acknowledgedById: Number(userId),
           acknowledgedAt: new Date(),
-          receivingEntryId: dailyEntry?.id ?? null
+          receivingEntryId: dailyEntry.id
         }
       })
 
@@ -121,29 +118,25 @@ export async function PATCH(
         create: { name: 'Branch Transfer Sent', type: 'EXPENSE', isDefault: true, isActive: true, frequency: 'DAILY' }
       })
 
-      // 1. Auto-book income on the receiving branch only if their entry already exists
-      if (dailyEntry) {
-        const existingIncome = await tx.entryItem.findUnique({
-          where: {
-            entryId_categoryId: { entryId: dailyEntry.id, categoryId: incomeCategory.id }
+      // 1. Auto-book income on the receiving branch entry (upsert the item so
+      //    multiple transfers on the same day accumulate correctly)
+      const existingIncome = await tx.entryItem.findUnique({
+        where: { entryId_categoryId: { entryId: dailyEntry.id, categoryId: incomeCategory.id } }
+      })
+      if (existingIncome) {
+        await tx.entryItem.update({
+          where: { id: existingIncome.id },
+          data: { amount: { increment: transfer.amount } }
+        })
+      } else {
+        await tx.entryItem.create({
+          data: {
+            entryId: dailyEntry.id,
+            categoryId: incomeCategory.id,
+            amount: transfer.amount,
+            note: `Auto-booked transfer via ${transfer.account.name}`
           }
         })
-
-        if (existingIncome) {
-          await tx.entryItem.update({
-            where: { id: existingIncome.id },
-            data: { amount: { increment: transfer.amount } }
-          })
-        } else {
-          await tx.entryItem.create({
-            data: {
-              entryId: dailyEntry.id,
-              categoryId: incomeCategory.id,
-              amount: transfer.amount,
-              note: `Auto-booked transfer via ${transfer.account.name}`
-            }
-          })
-        }
       }
 
       // 2. Auto-book expense on the sending branch (original entry)

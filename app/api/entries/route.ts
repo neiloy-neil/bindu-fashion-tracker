@@ -110,7 +110,8 @@ export async function POST(req: NextRequest) {
           : Promise.resolve([]),
         tx.ledgerAccount.findMany({ where: { id: { in: body.transfers.map(transfer => transfer.accountId) } } }),
       ])
-      if (categories.length !== body.items.length) throw new Error('One or more income categories are invalid')
+      const uniqueCatIds = new Set(body.items.map(i => i.categoryId))
+      if (categories.length !== uniqueCatIds.size) throw new Error('One or more income categories are invalid')
       if (expenseCategories.length !== expenseCatIds.length) throw new Error('One or more expense categories are invalid')
 
       // Validate advance salary employees belong to the entry's branch (for BRANCH role)
@@ -194,40 +195,81 @@ export async function POST(req: NextRequest) {
         throw new Error('A cash discrepancy reason is required')
       }
 
-      const created = await tx.dailyEntry.create({
-        data: {
-          date: dateOnlyToUtc(body.date), branchId: finalBranchId,
-          openingTime: body.openingTime, closingTime: body.closingTime,
-          notes: body.notes || null, actualPhysicalCash: body.actualPhysicalCash,
-          expectedNetBalance: expectedNetBalance,
-          cashDifferenceNote: body.cashDifferenceNote || null, eodChecklist: body.eodChecklist,
-          pettyCashOpening: body.pettyCashOpening ?? 0,
-          pettyCashUsed: body.pettyCashUsed ?? 0,
-          pettyCashReplenished: body.pettyCashReplenished ?? 0,
-          pettyCashClosing: Math.max(0, (body.pettyCashOpening ?? 0) - (body.pettyCashUsed ?? 0) + (body.pettyCashReplenished ?? 0)),
-          items: { create: body.items.map(item => ({
-            categoryId: item.categoryId, amount: item.amount, note: item.note || null,
-            partyName: item.partyName || null, receiptUrls: item.receiptKeys,
-          })) },
-          transfers: { create: body.transfers.map(transfer => ({
-            ...transfer,
-            status: accounts.find(account => account.id === transfer.accountId)?.type === 'BRANCH' ? 'PENDING' : 'NOT_APPLICABLE',
-          })) },
-          expenseEntries: { create: body.expenseEntries.map(expense => {
-            const cat = expenseCategories.find((c: any) => c.id === expense.categoryId)
-            const needsApproval = userRole === 'BRANCH' && cat?.requiresApproval
-            return {
-              categoryId: expense.categoryId, amount: expense.amount, note: expense.note || null,
-              attachmentUrl: expense.attachmentKey || null,
-              approvalStatus: needsApproval ? 'PENDING' : 'APPROVED',
-            }
-          }) },
-          advanceSalaries: { create: body.advanceSalaries.map(advance => ({
-            employeeId: advance.employeeId, type: advance.type, amount: advance.amount,
-            productDescription: advance.productDescription || null, note: advance.note || null,
-          })) },
-        },
+      // A stub entry may already exist (created when a branch-to-branch transfer was
+      // acknowledged). Detect it by openingTime being null, then update instead of create.
+      const stubEntry = await tx.dailyEntry.findUnique({
+        where: { date_branchId: { date: dateOnlyToUtc(body.date), branchId: finalBranchId } },
+        select: { id: true, openingTime: true }
       })
+      if (stubEntry && stubEntry.openingTime !== null) {
+        throw new Error('REAL_ENTRY_EXISTS')
+      }
+
+      const entryData = {
+        openingTime: body.openingTime, closingTime: body.closingTime,
+        notes: body.notes || null, actualPhysicalCash: body.actualPhysicalCash,
+        expectedNetBalance: expectedNetBalance,
+        cashDifferenceNote: body.cashDifferenceNote || null, eodChecklist: body.eodChecklist,
+        pettyCashOpening: body.pettyCashOpening ?? 0,
+        pettyCashUsed: body.pettyCashUsed ?? 0,
+        pettyCashReplenished: body.pettyCashReplenished ?? 0,
+        pettyCashClosing: Math.max(0, (body.pettyCashOpening ?? 0) - (body.pettyCashUsed ?? 0) + (body.pettyCashReplenished ?? 0)),
+      }
+
+      const itemsData = body.items.map(item => ({
+        categoryId: item.categoryId, amount: item.amount, note: item.note || null,
+        partyName: item.partyName || null, receiptUrls: item.receiptKeys,
+      }))
+      const transfersData = body.transfers.map(transfer => ({
+        ...transfer,
+        status: accounts.find(account => account.id === transfer.accountId)?.type === 'BRANCH' ? 'PENDING' : 'NOT_APPLICABLE',
+      }))
+      const expensesData = body.expenseEntries.map(expense => {
+        const cat = expenseCategories.find((c: any) => c.id === expense.categoryId)
+        const needsApproval = userRole === 'BRANCH' && cat?.requiresApproval
+        return {
+          categoryId: expense.categoryId, amount: expense.amount, note: expense.note || null,
+          attachmentUrl: expense.attachmentKey || null,
+          approvalStatus: needsApproval ? 'PENDING' : 'APPROVED',
+        }
+      })
+      const advancesData = body.advanceSalaries.map(advance => ({
+        employeeId: advance.employeeId, type: advance.type, amount: advance.amount,
+        productDescription: advance.productDescription || null, note: advance.note || null,
+      }))
+
+      let created: { id: number }
+      if (stubEntry) {
+        // Fill in the stub entry created by transfer acknowledgement.
+        // The auto-booked "Branch Transfer Received" item already exists — skip it from items.
+        const [btReceivedCat] = await tx.category.findMany({
+          where: { name: 'Branch Transfer Received' }, select: { id: true }
+        })
+        const newItems = btReceivedCat
+          ? itemsData.filter(i => i.categoryId !== btReceivedCat.id)
+          : itemsData
+        created = await tx.dailyEntry.update({
+          where: { id: stubEntry.id },
+          data: {
+            ...entryData,
+            items: { create: newItems },
+            transfers: { create: transfersData },
+            expenseEntries: { create: expensesData },
+            advanceSalaries: { create: advancesData },
+          }
+        })
+      } else {
+        created = await tx.dailyEntry.create({
+          data: {
+            date: dateOnlyToUtc(body.date), branchId: finalBranchId,
+            ...entryData,
+            items: { create: itemsData },
+            transfers: { create: transfersData },
+            expenseEntries: { create: expensesData },
+            advanceSalaries: { create: advancesData },
+          }
+        })
+      }
 
       const branchPaymentNeedsApproval = userRole === 'BRANCH'
       for (const payment of body.payments) {
@@ -398,6 +440,9 @@ export async function POST(req: NextRequest) {
       branchId: finalBranchId,
       userRole,
     })
+    if (error instanceof Error && error.message === 'REAL_ENTRY_EXISTS') {
+      return NextResponse.json({ error: 'DUPLICATE_ENTRY', message: 'An entry already exists for this branch and date' }, { status: 409 })
+    }
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
       return NextResponse.json({ error: 'DUPLICATE_ENTRY', message: 'An entry already exists for this branch and date' }, { status: 409 })
     }

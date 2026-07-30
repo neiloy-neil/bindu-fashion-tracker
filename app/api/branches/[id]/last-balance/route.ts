@@ -46,13 +46,26 @@ export async function GET(
       select: { pettyCashTarget: true, openingBalance: true },
     })
 
-    // If no prior entry exists, fall back to the branch's configured opening balance
     const openingBalance = lastEntry
       ? (lastEntry.actualPhysicalCash ?? 0)
       : (branch?.openingBalance ?? 0)
     const pettyCashOpening = lastEntry?.pettyCashClosing ?? null
 
-    return NextResponse.json({ openingBalance, pettyCashOpening, pettyCashTarget: branch?.pettyCashTarget ?? 0, isFirstEntry: !lastEntry })
+    // Check if today already has a stub entry with auto-booked incoming transfers
+    const todayStub = await prisma.dailyEntry.findUnique({
+      where: { date_branchId: { date: dateOnlyToUtc(dateParam), branchId } },
+      select: {
+        openingTime: true,
+        items: { select: { amount: true, category: { select: { name: true } } } }
+      }
+    })
+    const pendingTransferIncome = todayStub && todayStub.openingTime === null
+      ? todayStub.items
+          .filter(i => i.category.name === 'Branch Transfer Received')
+          .reduce((s, i) => s + i.amount, 0)
+      : 0
+
+    return NextResponse.json({ openingBalance, pettyCashOpening, pettyCashTarget: branch?.pettyCashTarget ?? 0, isFirstEntry: !lastEntry, pendingTransferIncome })
   } catch (error: any) {
     logger.error('Error fetching last balance:', error)
     return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 })

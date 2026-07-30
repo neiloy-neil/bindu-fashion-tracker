@@ -184,25 +184,35 @@ export async function POST(req: NextRequest) {
         }
       }
 
+      // Check for existing stub entry (created when an incoming transfer was acknowledged)
+      const stubEntry = await tx.dailyEntry.findUnique({
+        where: { date_branchId: { date: dateOnlyToUtc(body.date), branchId: finalBranchId } },
+        select: {
+          id: true, openingTime: true,
+          items: { select: { amount: true, category: { select: { name: true } } } }
+        }
+      })
+      if (stubEntry && stubEntry.openingTime !== null) {
+        throw new Error('REAL_ENTRY_EXISTS')
+      }
+
+      // Sum auto-booked incoming transfer income already in the stub (5k + 3k + 3k = 11k)
+      const stubTransferIncome = stubEntry
+        ? stubEntry.items
+            .filter(i => i.category.name === 'Branch Transfer Received')
+            .reduce((s, i) => s + i.amount, 0)
+        : 0
+
       const income = body.items.reduce((sum, item) => sum + item.amount, 0)
       const expenses = body.expenseEntries.reduce((sum, item) => sum + item.amount, 0)
       const transfers = body.transfers.reduce((sum, item) => sum + item.amount, 0)
       const payments = body.payments.filter(payment => payment.method !== 'CHEQUE').reduce((sum, item) => sum + item.amount, 0)
       const advances = body.advanceSalaries.filter(advance => advance.type === 'CASH').reduce((sum, item) => sum + item.amount, 0)
       const pettyCashReplenished = body.pettyCashReplenished ?? 0
-      const expectedNetBalance = income - expenses - transfers - payments - advances - pettyCashReplenished
+      // Include auto-booked stub income so the check matches what the branch sees in the form
+      const expectedNetBalance = income + stubTransferIncome - expenses - transfers - payments - advances - pettyCashReplenished
       if (body.actualPhysicalCash !== expectedNetBalance && !body.cashDifferenceNote) {
         throw new Error('A cash discrepancy reason is required')
-      }
-
-      // A stub entry may already exist (created when a branch-to-branch transfer was
-      // acknowledged). Detect it by openingTime being null, then update instead of create.
-      const stubEntry = await tx.dailyEntry.findUnique({
-        where: { date_branchId: { date: dateOnlyToUtc(body.date), branchId: finalBranchId } },
-        select: { id: true, openingTime: true }
-      })
-      if (stubEntry && stubEntry.openingTime !== null) {
-        throw new Error('REAL_ENTRY_EXISTS')
       }
 
       const entryData = {

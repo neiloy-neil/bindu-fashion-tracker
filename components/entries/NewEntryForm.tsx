@@ -115,6 +115,7 @@ export function NewEntryForm({ initialData, userId }: Props) {
   const [showIncome, setShowIncome] = useState(true)
   const [showExpense, setShowExpense] = useState(true)
   const [isFirstEntry, setIsFirstEntry] = useState(false)
+  const [pendingTransferIncome, setPendingTransferIncome] = useState(0)
 
   const today = dhakaDateString()
   const draftKey = `newEntryDraft:v2:${userId}`
@@ -176,8 +177,10 @@ export function NewEntryForm({ initialData, userId }: Props) {
       advanceSalaries: (advanceSalariesWatch || []).map(a => ({ amount: Number(a.amount), type: a.type })),
       pettyCashReplenished: Number(pettyCashReplenishedWatch) || 0,
     }
-    return computeTotals(fakeEntry)
-  }, [incomeItemsWatch, expenseEntriesWatch, transfersWatch, paymentsWatch, advanceSalariesWatch, pettyCashReplenishedWatch, categories])
+    const base = computeTotals(fakeEntry)
+    // Add auto-booked incoming transfer income (from stub entry) to net balance
+    return { ...base, netBalance: base.netBalance + pendingTransferIncome }
+  }, [incomeItemsWatch, expenseEntriesWatch, transfersWatch, paymentsWatch, advanceSalariesWatch, pettyCashReplenishedWatch, categories, pendingTransferIncome])
 
   const selectedBranchObj = useMemo(() => branches.find(b => String(b.id) === branchId), [branches, branchId])
   const isFactory = selectedBranchObj?.type === 'FACTORY'
@@ -251,6 +254,7 @@ export function NewEntryForm({ initialData, userId }: Props) {
         .then(data => {
           if (!data.error) {
             setIsFirstEntry(!!data.isFirstEntry)
+            setPendingTransferIncome(data.pendingTransferIncome ?? 0)
             const openingCat = categories.find(c => c.name === 'Opening Balance')
             if (openingCat) {
               const currentIncome = form.getValues('incomeItems')
@@ -558,6 +562,17 @@ export function NewEntryForm({ initialData, userId }: Props) {
             target={pettyCashTarget}
             watch={form.watch}
           />
+        )}
+
+        {pendingTransferIncome > 0 && (
+          <div className="flex items-center gap-3 rounded-xl border border-blue-400/30 bg-blue-500/10 px-4 py-3">
+            <span className="text-blue-500 text-lg">↙</span>
+            <div className="flex-1 text-sm">
+              <span className="font-semibold text-blue-600 dark:text-blue-400">Incoming Branch Transfers: </span>
+              <span className="font-mono font-bold text-blue-700 dark:text-blue-300">{formatCurrency(pendingTransferIncome)}</span>
+              <span className="ml-2 text-[11px] text-[var(--text-muted)]">auto-booked — already included in net balance</span>
+            </div>
+          </div>
         )}
 
         {/* Net Balance & Physical Cash */}

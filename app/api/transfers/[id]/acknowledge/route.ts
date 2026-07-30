@@ -80,19 +80,16 @@ export async function PATCH(
     }
 
     const today = dateOnlyToUtc(dhakaDateString())
-    
+
     const updated = await prisma.$transaction(async (tx) => {
-      const dailyEntry = await tx.dailyEntry.upsert({
+      // Only link to an existing entry — never auto-create a bare entry, which would
+      // block the receiving branch from submitting their own entry for the day.
+      const dailyEntry = await tx.dailyEntry.findUnique({
         where: {
           date_branchId: {
             date: today,
             branchId: transfer.account.branchId!
           }
-        },
-        update: {},
-        create: {
-          date: today,
-          branchId: transfer.account.branchId!
         }
       })
 
@@ -102,7 +99,7 @@ export async function PATCH(
           status: 'ACKNOWLEDGED',
           acknowledgedById: Number(userId),
           acknowledgedAt: new Date(),
-          receivingEntryId: dailyEntry.id
+          receivingEntryId: dailyEntry?.id ?? null
         }
       })
 
@@ -124,27 +121,29 @@ export async function PATCH(
         create: { name: 'Branch Transfer Sent', type: 'EXPENSE', isDefault: true, isActive: true, frequency: 'DAILY' }
       })
 
-      // 1. Auto-book income on the receiving branch (today's entry)
-      const existingIncome = await tx.entryItem.findUnique({
-        where: {
-          entryId_categoryId: { entryId: dailyEntry.id, categoryId: incomeCategory.id }
-        }
-      })
-
-      if (existingIncome) {
-        await tx.entryItem.update({
-          where: { id: existingIncome.id },
-          data: { amount: { increment: transfer.amount } }
-        })
-      } else {
-        await tx.entryItem.create({
-          data: {
-            entryId: dailyEntry.id,
-            categoryId: incomeCategory.id,
-            amount: transfer.amount,
-            note: `Auto-booked transfer from via ${transfer.account.name}`
+      // 1. Auto-book income on the receiving branch only if their entry already exists
+      if (dailyEntry) {
+        const existingIncome = await tx.entryItem.findUnique({
+          where: {
+            entryId_categoryId: { entryId: dailyEntry.id, categoryId: incomeCategory.id }
           }
         })
+
+        if (existingIncome) {
+          await tx.entryItem.update({
+            where: { id: existingIncome.id },
+            data: { amount: { increment: transfer.amount } }
+          })
+        } else {
+          await tx.entryItem.create({
+            data: {
+              entryId: dailyEntry.id,
+              categoryId: incomeCategory.id,
+              amount: transfer.amount,
+              note: `Auto-booked transfer via ${transfer.account.name}`
+            }
+          })
+        }
       }
 
       // 2. Auto-book expense on the sending branch (original entry)

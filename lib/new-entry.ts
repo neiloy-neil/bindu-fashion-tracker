@@ -73,9 +73,6 @@ export const newEntryPayloadSchema = z.object({
     note: optionalText,
   })),
 }).superRefine((entry, context) => {
-  if (new Set(entry.items.map(item => item.categoryId)).size !== entry.items.length) {
-    context.addIssue({ code: 'custom', path: ['items'], message: 'Income categories cannot be duplicated' })
-  }
   if (entry.actualPhysicalCash !== entry.expectedNetBalance && !entry.cashDifferenceNote) {
     context.addIssue({ code: 'custom', path: ['cashDifferenceNote'], message: 'A discrepancy reason is required' })
   }

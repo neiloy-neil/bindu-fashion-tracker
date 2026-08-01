@@ -24,6 +24,7 @@ model Branch {
   gracePeriodMins Int                @default(15)
   pettyCashTarget Float              @default(0)
   openingBalance  Float              @default(0)
+  offDays         Int[]              // 0=Sun 1=Mon 2=Tue 3=Wed 4=Thu 5=Fri 6=Sat
   createdAt       DateTime           @default(now())
   entries         DailyEntry[]
   attendances     Attendance[]

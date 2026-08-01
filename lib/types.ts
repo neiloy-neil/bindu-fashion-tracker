@@ -8,6 +8,7 @@ export interface Branch {
   phoneNumber: string | null
   isActive: boolean
   shiftStartTime?: string | null
+  offDays?: number[]
 }
 
 export interface Category {

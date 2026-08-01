@@ -17,6 +17,8 @@ const TYPE_LABELS: Record<string, string> = {
   FACTORY: 'Factory',
 }
 
+const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+
 const emptyForm = {
   name: '',
   code: '',
@@ -26,6 +28,7 @@ const emptyForm = {
   phoneNumber: '',
   isActive: true,
   pettyCashTarget: 0,
+  offDays: [] as number[],
 }
 
 function amount(n: number) {
@@ -111,6 +114,7 @@ export default function BranchDetailPage() {
       phoneNumber: branch.phoneNumber ?? '',
       isActive: branch.isActive ?? true,
       pettyCashTarget: branch.pettyCashTarget ?? 0,
+      offDays: branch.offDays ?? [],
     })
     setEditOpen(true)
   }
@@ -281,6 +285,30 @@ export default function BranchDetailPage() {
           </div>
         )}
 
+        {/* Weekly Off Days */}
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-semibold text-[var(--text-primary)]">Weekly Off Days</h2>
+            {(branch.offDays?.length ?? 0) === 0 && (
+              <span className="text-xs text-[var(--text-muted)]">None configured</span>
+            )}
+          </div>
+          <div className="flex gap-2 flex-wrap">
+            {DAYS.map((day, i) => {
+              const isOff = (branch.offDays ?? []).includes(i)
+              return (
+                <span key={i} className={`px-3 py-1.5 rounded-lg text-xs font-semibold border ${isOff ? 'bg-[var(--danger-subtle)] text-[var(--danger)] border-[var(--danger)]/30' : 'bg-[var(--surface-raised)] text-[var(--text-muted)] border-[var(--border)]'}`}>
+                  {day}
+                  {isOff && ' ✕'}
+                </span>
+              )
+            })}
+          </div>
+          {(branch.offDays?.length ?? 0) > 0 && (
+            <p className="mt-3 text-xs text-[var(--text-muted)]">Branch is closed on {(branch.offDays ?? []).map((d: number) => DAYS[d]).join(', ')} every week.</p>
+          )}
+        </div>
+
         {/* Holidays */}
         <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] overflow-hidden">
           <div className="px-5 py-4 border-b border-[var(--border)] flex items-center justify-between">
@@ -437,6 +465,22 @@ export default function BranchDetailPage() {
                 placeholder="e.g. 5000"
               />
               <p className="text-xs text-[var(--text-muted)]">Fixed float amount each branch must maintain daily. Set 0 to disable petty cash tracking.</p>
+            </div>
+            <div className="col-span-2 space-y-2">
+              <Label>Weekly Off Days</Label>
+              <div className="flex gap-2 flex-wrap">
+                {DAYS.map((day, i) => {
+                  const isOff = form.offDays.includes(i)
+                  return (
+                    <button key={i} type="button"
+                      onClick={() => set('offDays', isOff ? form.offDays.filter(d => d !== i) : [...form.offDays, i])}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${isOff ? 'bg-[var(--danger-subtle)] text-[var(--danger)] border-[var(--danger)]/30' : 'bg-[var(--surface-raised)] text-[var(--text-muted)] border-[var(--border)] hover:border-[var(--border-strong)]'}`}>
+                      {day}
+                    </button>
+                  )
+                })}
+              </div>
+              <p className="text-xs text-[var(--text-muted)]">Click days to toggle. Selected days = branch is closed.</p>
             </div>
             <div className="col-span-2 flex items-center justify-between rounded-lg border border-[var(--border)] px-4 py-3">
               <div>

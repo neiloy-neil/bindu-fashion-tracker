@@ -187,6 +187,13 @@ export function NewEntryForm({ initialData, userId }: Props) {
   const isHeadOffice = selectedBranchObj?.type === 'HEAD_OFFICE'
   const hideIncome = isFactory || isHeadOffice
 
+  const isOffDay = useMemo(() => {
+    const offDays = selectedBranchObj?.offDays ?? []
+    if (!offDays.length || !date) return false
+    const dow = new Date(date + 'T00:00:00').getDay()
+    return offDays.includes(dow)
+  }, [selectedBranchObj, date])
+
   const branchType = selectedBranchObj?.type ?? ''
   const filterByBranchType = <T extends { applicableTo?: string[] }>(cats: T[]): T[] => {
     if (!branchType) return cats
@@ -455,6 +462,9 @@ export function NewEntryForm({ initialData, userId }: Props) {
             <div>
               <Label className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">Date</Label>
               <Input type="date" className="h-10 w-full text-sm" {...form.register('formMeta.date')} />
+              {isOffDay && (
+                <p className="mt-1 text-[11px] font-medium text-amber-600 dark:text-amber-400">⚠ This is a scheduled off day for this branch</p>
+              )}
               <ErrorMsg error={errors.formMeta?.date} />
             </div>
             <div>

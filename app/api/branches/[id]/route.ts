@@ -70,7 +70,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
   const resolvedParams = await params
   const branchId = parseInt(resolvedParams.id)
-  const { name, code, isActive, type, address, contactPerson, phoneNumber, pettyCashTarget, openingBalance, shiftStartTime, shiftEndTime, gracePeriodMins } = await req.json()
+  const { name, code, isActive, type, address, contactPerson, phoneNumber, pettyCashTarget, openingBalance, shiftStartTime, shiftEndTime, gracePeriodMins, offDays } = await req.json()
 
   const dataToUpdate: any = {}
   if (name !== undefined) dataToUpdate.name = name
@@ -85,6 +85,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   if (shiftStartTime !== undefined) dataToUpdate.shiftStartTime = shiftStartTime
   if (shiftEndTime !== undefined) dataToUpdate.shiftEndTime = shiftEndTime
   if (gracePeriodMins !== undefined) dataToUpdate.gracePeriodMins = parseInt(gracePeriodMins) || 15
+  if (offDays !== undefined) dataToUpdate.offDays = Array.isArray(offDays) ? offDays.map(Number).filter(d => d >= 0 && d <= 6) : []
 
   try {
     const branch = await prisma.branch.update({

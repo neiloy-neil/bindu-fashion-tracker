@@ -5,11 +5,9 @@ import { useParams, useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { ArrowLeft, MapPin, Phone, User, Building2, Pencil, TrendingUp, TrendingDown, CalendarDays, Plus, Trash2, PartyPopper } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
+import { BranchFormModal } from '@/components/BranchFormModal'
 
 const TYPE_LABELS: Record<string, string> = {
   RETAIL: 'Retail',
@@ -18,18 +16,6 @@ const TYPE_LABELS: Record<string, string> = {
 }
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-
-const emptyForm = {
-  name: '',
-  code: '',
-  type: 'RETAIL',
-  address: '',
-  contactPerson: '',
-  phoneNumber: '',
-  isActive: true,
-  pettyCashTarget: 0,
-  offDays: [] as number[],
-}
 
 function amount(n: number) {
   return '৳' + n.toLocaleString('en-BD')
@@ -46,8 +32,6 @@ export default function BranchDetailPage() {
   const [reloadNonce, setReloadNonce] = useState(0)
 
   const [editOpen, setEditOpen] = useState(false)
-  const [form, setForm] = useState(emptyForm)
-  const [saving, setSaving] = useState(false)
 
   // Holidays
   const [holidays, setHolidays] = useState<any[]>([])
@@ -104,42 +88,6 @@ export default function BranchDetailPage() {
       .catch(() => { toast.error('Branch not found'); router.push('/branches') })
   }, [id, reloadNonce])
 
-  const openEdit = () => {
-    setForm({
-      name: branch.name ?? '',
-      code: branch.code ?? '',
-      type: branch.type ?? 'RETAIL',
-      address: branch.address ?? '',
-      contactPerson: branch.contactPerson ?? '',
-      phoneNumber: branch.phoneNumber ?? '',
-      isActive: branch.isActive ?? true,
-      pettyCashTarget: branch.pettyCashTarget ?? 0,
-      offDays: branch.offDays ?? [],
-    })
-    setEditOpen(true)
-  }
-
-  const set = (field: string, value: any) => setForm(f => ({ ...f, [field]: value }))
-
-  const handleSave = async () => {
-    if (!form.name.trim()) { toast.error('Branch name is required'); return }
-    setSaving(true)
-    try {
-      const res = await fetch(`/api/branches/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
-      })
-      if (!res.ok) throw new Error((await res.json()).error || 'Failed to save')
-      toast.success('Branch updated')
-      setEditOpen(false)
-      setReloadNonce(n => n + 1)
-    } catch (e: any) {
-      toast.error(e.message)
-    } finally {
-      setSaving(false)
-    }
-  }
 
   if (loading) {
     return (
@@ -183,7 +131,7 @@ export default function BranchDetailPage() {
           <p className="text-sm text-[var(--text-muted)] mt-0.5">{TYPE_LABELS[branch.type] ?? branch.type}</p>
         </div>
         {isAdmin && (
-          <Button variant="outline" size="sm" className="gap-2 shrink-0" onClick={openEdit}>
+          <Button variant="outline" size="sm" className="gap-2 shrink-0" onClick={() => setEditOpen(true)}>
             <Pencil size={13} /> Edit
           </Button>
         )}
@@ -419,87 +367,12 @@ export default function BranchDetailPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Edit modal */}
-      <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="sm:max-w-[480px]">
-          <DialogHeader>
-            <DialogTitle>Edit Branch</DialogTitle>
-          </DialogHeader>
-          <div className="grid grid-cols-2 gap-4 py-2">
-            <div className="col-span-2 space-y-1.5">
-              <Label>Branch Name *</Label>
-              <Input value={form.name} onChange={e => set('name', e.target.value)} placeholder="e.g. Uttara Branch" />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Code *</Label>
-              <Input value={form.code} onChange={e => set('code', e.target.value.toUpperCase())} maxLength={10} />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Type</Label>
-              <select value={form.type} onChange={e => set('type', e.target.value)}
-                className="flex h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1 text-sm text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]">
-                <option value="RETAIL">Retail</option>
-                <option value="WHOLESALE">Wholesale</option>
-                <option value="FACTORY">Factory</option>
-              </select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Contact Person</Label>
-              <Input value={form.contactPerson} onChange={e => set('contactPerson', e.target.value)} placeholder="Manager name" />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Phone Number</Label>
-              <Input value={form.phoneNumber} onChange={e => set('phoneNumber', e.target.value)} placeholder="01XXXXXXXXX" />
-            </div>
-            <div className="col-span-2 space-y-1.5">
-              <Label>Address</Label>
-              <Input value={form.address} onChange={e => set('address', e.target.value)} placeholder="Full address" />
-            </div>
-            <div className="col-span-2 space-y-1.5">
-              <Label>Petty Cash Target (৳)</Label>
-              <Input
-                type="number"
-                min={0}
-                value={form.pettyCashTarget}
-                onChange={e => set('pettyCashTarget', parseFloat(e.target.value) || 0)}
-                placeholder="e.g. 5000"
-              />
-              <p className="text-xs text-[var(--text-muted)]">Fixed float amount each branch must maintain daily. Set 0 to disable petty cash tracking.</p>
-            </div>
-            <div className="col-span-2 space-y-2">
-              <Label>Weekly Off Days</Label>
-              <div className="flex gap-2 flex-wrap">
-                {DAYS.map((day, i) => {
-                  const isOff = form.offDays.includes(i)
-                  return (
-                    <button key={i} type="button"
-                      onClick={() => set('offDays', isOff ? form.offDays.filter(d => d !== i) : [...form.offDays, i])}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${isOff ? 'bg-[var(--danger-subtle)] text-[var(--danger)] border-[var(--danger)]/30' : 'bg-[var(--surface-raised)] text-[var(--text-muted)] border-[var(--border)] hover:border-[var(--border-strong)]'}`}>
-                      {day}
-                    </button>
-                  )
-                })}
-              </div>
-              <p className="text-xs text-[var(--text-muted)]">Click days to toggle. Selected days = branch is closed.</p>
-            </div>
-            <div className="col-span-2 flex items-center justify-between rounded-lg border border-[var(--border)] px-4 py-3">
-              <div>
-                <p className="text-sm font-medium text-[var(--text-primary)]">Active</p>
-                <p className="text-xs text-[var(--text-muted)]">Inactive branches are hidden from daily entry</p>
-              </div>
-              <button type="button" role="switch" aria-checked={form.isActive}
-                onClick={() => set('isActive', !form.isActive)}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${form.isActive ? 'bg-[var(--accent)]' : 'bg-[var(--border-strong)]'}`}>
-                <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${form.isActive ? 'translate-x-6' : 'translate-x-1'}`} />
-              </button>
-            </div>
-          </div>
-          <div className="flex justify-end gap-3 pt-2 border-t border-[var(--border)]">
-            <Button variant="outline" onClick={() => setEditOpen(false)} disabled={saving}>Cancel</Button>
-            <Button onClick={handleSave} disabled={saving}>{saving ? 'Saving…' : 'Save Changes'}</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <BranchFormModal
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        branch={branch}
+        onSaved={() => setReloadNonce(n => n + 1)}
+      />
     </>
   )
 }

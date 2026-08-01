@@ -156,7 +156,7 @@ export function BranchFormModal({ open, onOpenChange, branch, onSaved }: Props) 
             <Label>Opening Balance (৳)</Label>
             <Input type="number" min="0" step="0.01" value={form.openingBalance}
               onChange={e => set('openingBalance', e.target.value)} placeholder="0" />
-            <p className="text-xs text-[var(--text-muted)]">Starting cash on first entry.</p>
+            <p className="text-xs text-[var(--text-muted)]">Only used on the very first daily entry. Once entries exist, the previous day's closing cash carries forward automatically.</p>
           </div>
           <div className="space-y-1.5">
             <Label>Petty Cash Target (৳)</Label>

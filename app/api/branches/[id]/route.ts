@@ -80,8 +80,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   if (address !== undefined) dataToUpdate.address = address
   if (contactPerson !== undefined) dataToUpdate.contactPerson = contactPerson
   if (phoneNumber !== undefined) dataToUpdate.phoneNumber = phoneNumber
-  if (pettyCashTarget !== undefined) dataToUpdate.pettyCashTarget = parseFloat(pettyCashTarget) || 0
-  if (openingBalance !== undefined) dataToUpdate.openingBalance = parseFloat(openingBalance) || 0
+  if (pettyCashTarget !== undefined && pettyCashTarget !== '') dataToUpdate.pettyCashTarget = parseFloat(pettyCashTarget) ?? 0
+  if (openingBalance !== undefined && openingBalance !== '') dataToUpdate.openingBalance = parseFloat(openingBalance) ?? 0
   if (shiftStartTime !== undefined) dataToUpdate.shiftStartTime = shiftStartTime
   if (shiftEndTime !== undefined) dataToUpdate.shiftEndTime = shiftEndTime
   if (gracePeriodMins !== undefined) dataToUpdate.gracePeriodMins = parseInt(gracePeriodMins) || 15

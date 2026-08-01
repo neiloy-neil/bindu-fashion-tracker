@@ -133,6 +133,7 @@ model Category {
   requiresAttachment Boolean    @default(true)
   requiresApproval   Boolean    @default(false) // if true, BRANCH-submitted expenses need admin approval
   applicableTo       String[]   @default([]) // empty = all branch types; otherwise e.g. ["RETAIL","WHOLESALE"]
+  description        String?    @db.Text // guideline shown to branch managers when selecting this category
 }
 
 model EntryItem {

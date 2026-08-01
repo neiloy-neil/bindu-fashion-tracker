@@ -1,7 +1,7 @@
 'use client'
 
 import { useFieldArray, Control, UseFormRegister, UseFormSetValue, useWatch, FieldErrors, Controller } from 'react-hook-form'
-import { Plus, X, Paperclip, ChevronDown, ChevronRight } from 'lucide-react'
+import { Plus, X, Paperclip, ChevronDown, ChevronRight, Info } from 'lucide-react'
 import { useState } from 'react'
 import { Category } from '@/lib/types'
 import { NewEntryFormValues } from '@/lib/schemas'
@@ -24,6 +24,35 @@ const freqBadge: Record<string, string> = {
   MONTHLY:   'Monthly',
   WEEKLY:    'Weekly',
   AS_NEEDED: 'As Needed',
+}
+
+// ─── Inline guideline panel shown when a category with a description is selected ───
+function CategoryGuideline({ description }: { description: string }) {
+  const [open, setOpen] = useState(false)
+  // Split on double newlines to get sections; first line is the "use for" text
+  const lines = description.split('\n').map(l => l.trim()).filter(Boolean)
+  const preview = lines[0]?.slice(0, 80) + (lines[0]?.length > 80 ? '…' : '')
+
+  return (
+    <div className="mt-1.5">
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        className="flex items-center gap-1 text-[10px] text-[var(--info)] hover:text-[var(--info)]/80 transition-colors"
+      >
+        <Info size={11} />
+        {open ? 'Hide guideline' : 'Show guideline'}
+      </button>
+      {open && (
+        <div className="mt-1.5 p-2.5 rounded-lg bg-[var(--info-subtle)] border border-[var(--info)]/20 text-[11px] text-[var(--text-primary)] leading-relaxed whitespace-pre-wrap">
+          {description}
+        </div>
+      )}
+      {!open && (
+        <p className="text-[10px] text-[var(--text-muted)] mt-0.5 italic line-clamp-1">{preview}</p>
+      )}
+    </div>
+  )
 }
 
 // ─── ExpenseRow is a TOP-LEVEL component to prevent remounting on every render ───
@@ -83,6 +112,9 @@ function ExpenseRow({
           />
           {errors.expenseEntries?.[idx]?.categoryId?.message && (
             <span className="text-xs text-destructive mt-1 block">{errors.expenseEntries[idx].categoryId.message}</span>
+          )}
+          {cat?.description && (
+            <CategoryGuideline description={cat.description} />
           )}
         </div>
         <div>

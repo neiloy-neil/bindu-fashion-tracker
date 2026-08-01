@@ -110,6 +110,7 @@ function SlipsContent() {
               gracePeriodMins: 15,
               pettyCashTarget: 0,
               openingBalance: 0,
+              offDays: [],
             })
           }
           

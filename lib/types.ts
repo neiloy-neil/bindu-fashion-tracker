@@ -21,6 +21,7 @@ export interface Category {
   frequency?: string | null // DAILY | WEEKLY | MONTHLY | AS_NEEDED — only set for EXPENSE type
   requiresAttachment: boolean
   applicableTo: string[] // empty = all branch types; e.g. ["RETAIL","FACTORY"]
+  description?: string | null // guideline text shown in the entry form
 }
 
 export interface EntryItem {

@@ -8,6 +8,9 @@ import { Button } from '@/components/ui/button'
 import { ArrowLeft, MapPin, Phone, User, Building2, Pencil, TrendingUp, TrendingDown, CalendarDays, Plus, Trash2, PartyPopper } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 import { BranchFormModal } from '@/components/BranchFormModal'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 
 const TYPE_LABELS: Record<string, string> = {
   RETAIL: 'Retail',

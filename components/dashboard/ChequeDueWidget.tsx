@@ -39,44 +39,44 @@ export default function ChequeDueWidget() {
       })
   }, [])
 
-  if (cheques.length === 0) return null
-
   return (
     <div className="rounded-xl border border-[var(--border)] border-l-4 border-l-amber-500 bg-[var(--surface)] overflow-hidden">
       <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border)]">
         <div className="flex items-center gap-2">
           <FileText size={16} className="text-amber-500" />
           <span className="font-semibold text-sm text-[var(--text-primary)]">Cheques Due</span>
-          <span className="ml-1 text-xs bg-amber-500/15 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded-full font-medium">{cheques.length}</span>
+          {cheques.length > 0 && (
+            <span className="ml-1 text-xs bg-amber-500/15 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded-full font-medium">{cheques.length}</span>
+          )}
         </div>
         <Link href="/admin/cheques" className="text-xs text-[var(--accent)] hover:underline">View all</Link>
       </div>
-      <ul className="divide-y divide-[var(--border)]">
-        {cheques.map(c => {
-          const diff = daysDiff(c.withdrawDate)
-          const isOverdue = diff < 0
-          const isSoon = diff >= 0 && diff <= 3
-          const dateColor = isOverdue ? 'text-[var(--danger)]' : isSoon ? 'text-amber-500' : 'text-[var(--text-muted)]'
-          return (
-            <li key={c.id} className="flex items-center justify-between px-5 py-3 gap-3 hover:bg-[var(--surface-raised)]/50 transition-colors">
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-[var(--text-primary)] truncate">{c.payment.party.name}</p>
-                <p className="text-xs text-[var(--text-muted)] truncate">{c.payment.dailyEntry?.branch.name ?? 'Unknown branch'}</p>
-              </div>
-              <div className="text-right shrink-0">
-                <p className="text-sm font-mono font-semibold text-[var(--text-primary)]">৳{formatCurrency(c.payment.amount)}</p>
-                <p className={`text-xs font-medium ${dateColor}`}>
-                  {isOverdue
-                    ? `${Math.abs(diff)}d overdue`
-                    : diff === 0
-                    ? 'Due today'
-                    : `Due in ${diff}d`}
-                </p>
-              </div>
-            </li>
-          )
-        })}
-      </ul>
+      {cheques.length === 0 ? (
+        <p className="px-5 py-4 text-sm text-[var(--text-muted)]">No pending cheques</p>
+      ) : (
+        <ul className="divide-y divide-[var(--border)]">
+          {cheques.map(c => {
+            const diff = daysDiff(c.withdrawDate)
+            const isOverdue = diff < 0
+            const isSoon = diff >= 0 && diff <= 3
+            const dateColor = isOverdue ? 'text-[var(--danger)]' : isSoon ? 'text-amber-500' : 'text-[var(--text-muted)]'
+            return (
+              <li key={c.id} className="flex items-center justify-between px-5 py-3 gap-3 hover:bg-[var(--surface-raised)]/50 transition-colors">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-[var(--text-primary)] truncate">{c.payment.party.name}</p>
+                  <p className="text-xs text-[var(--text-muted)] truncate">{c.payment.dailyEntry?.branch.name ?? 'Unknown branch'}</p>
+                </div>
+                <div className="text-right shrink-0">
+                  <p className="text-sm font-mono font-semibold text-[var(--text-primary)]">৳{formatCurrency(c.payment.amount)}</p>
+                  <p className={`text-xs font-medium ${dateColor}`}>
+                    {isOverdue ? `${Math.abs(diff)}d overdue` : diff === 0 ? 'Due today' : `Due in ${diff}d`}
+                  </p>
+                </div>
+              </li>
+            )
+          })}
+        </ul>
+      )}
     </div>
   )
 }

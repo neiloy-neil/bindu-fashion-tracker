@@ -456,12 +456,12 @@ export async function POST(req: NextRequest) {
           where: { branchId_month_year: { branchId: finalBranchId, month, year } },
         })
 
-        const EXCLUDED_FROM_COMMISSION = new Set([
-          'Opening Balance', 'Branch Transfer Received',
-          'A/C Bindu', 'Due Received', 'Condition Rec.',
+        const SALE_CATEGORIES = new Set([
+          'Cash Sale', 'Bkash', 'Nagad', 'Rocket Income',
+          'POS Brac', 'POS City', 'POS DBBL', 'POS Pubali',
         ])
         const dailySale = entry.items
-          .filter(i => i.category?.type === 'INCOME' && !EXCLUDED_FROM_COMMISSION.has(i.category.name))
+          .filter(i => i.category?.type === 'INCOME' && SALE_CATEGORIES.has(i.category.name))
           .reduce((s, i) => s + i.amount, 0)
 
         const effectiveDailyTarget = target

@@ -60,17 +60,19 @@ export async function GET(req: NextRequest) {
     }),
   ])
 
+  const SALE_CATEGORIES = new Set([
+    'Cash Sale', 'Bkash', 'Nagad', 'Rocket Income',
+    'POS Brac', 'POS City', 'POS DBBL', 'POS Pubali',
+  ])
+
   function calcSale(entries: typeof todayEntries, branchId: number) {
     return entries
       .filter(e => e.branchId === branchId)
       .reduce((sum, e) => {
         const items = e.items
-          .filter(i => i.category?.type === 'INCOME' && i.category.name !== 'Opening Balance' && i.category.name !== 'Branch Transfer Received')
+          .filter(i => i.category?.type === 'INCOME' && SALE_CATEGORIES.has(i.category.name))
           .reduce((s, i) => s + i.amount, 0)
-        const transfers = e.receivedTransfers
-          .filter(t => t.status === 'ACKNOWLEDGED')
-          .reduce((s, t) => s + t.amount, 0)
-        return sum + items + transfers
+        return sum + items
       }, 0)
   }
 

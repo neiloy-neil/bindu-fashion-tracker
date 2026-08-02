@@ -44,54 +44,55 @@ export default function WhatsAppReportCard({ entryData, branchName, selectedDate
   const discrepancy = physicalCash != null ? physicalCash - expectedNet : null
 
   const Row = ({ label, value, accent }: { label: string; value: string; accent?: boolean }) => (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-      <span style={{ fontSize: 13, color: '#94a3b8' }}>{label}</span>
-      <span style={{ fontSize: 14, fontWeight: 700, fontFamily: 'monospace', color: accent ? '#4ade80' : '#e2e8f0' }}>{value}</span>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 0', borderBottom: '1px solid #f1f5f9' }}>
+      <span style={{ fontSize: 13, color: '#64748b' }}>{label}</span>
+      <span style={{ fontSize: 14, fontWeight: 700, fontFamily: 'monospace', color: accent ? '#15803d' : '#1e293b' }}>{value}</span>
     </div>
   )
 
   return (
     <div style={{
       width: 420,
-      background: 'linear-gradient(160deg, #0f172a 0%, #1e293b 100%)',
+      background: '#ffffff',
       borderRadius: 20,
       padding: '28px 28px 24px',
       fontFamily: 'system-ui, -apple-system, sans-serif',
-      color: '#e2e8f0',
+      color: '#1e293b',
       boxSizing: 'border-box',
+      border: '1px solid #e2e8f0',
     }}>
       {/* Header */}
-      <div style={{ marginBottom: 20 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.15em', color: '#64748b', textTransform: 'uppercase', marginBottom: 4 }}>
+      <div style={{ marginBottom: 18 }}>
+        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.15em', color: '#94a3b8', textTransform: 'uppercase', marginBottom: 4 }}>
           Daily Report
         </div>
-        <div style={{ fontSize: 22, fontWeight: 800, color: '#f1f5f9', lineHeight: 1.2, marginBottom: 4 }}>
+        <div style={{ fontSize: 22, fontWeight: 800, color: '#0f172a', lineHeight: 1.2, marginBottom: 3 }}>
           {branchName}
         </div>
-        <div style={{ fontSize: 12, color: '#64748b' }}>{formatDate(selectedDate)}</div>
+        <div style={{ fontSize: 12, color: '#94a3b8' }}>{formatDate(selectedDate)}</div>
       </div>
 
       {/* Divider */}
-      <div style={{ height: 1, background: 'linear-gradient(90deg, #334155, transparent)', marginBottom: 20 }} />
+      <div style={{ height: 1, background: '#e2e8f0', marginBottom: 18 }} />
 
       {/* Big 3 stat pills */}
-      <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
-        <div style={{ flex: 1, background: 'rgba(74,222,128,0.10)', border: '1px solid rgba(74,222,128,0.25)', borderRadius: 12, padding: '12px 10px', textAlign: 'center' }}>
-          <div style={{ fontSize: 10, color: '#4ade80', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4, fontWeight: 600 }}>Total Sale</div>
-          <div style={{ fontSize: 17, fontWeight: 800, fontFamily: 'monospace', color: '#4ade80' }}>{fmt(totalSale)}</div>
+      <div style={{ display: 'flex', gap: 10, marginBottom: 18 }}>
+        <div style={{ flex: 1, background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 12, padding: '12px 10px', textAlign: 'center' }}>
+          <div style={{ fontSize: 10, color: '#16a34a', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4, fontWeight: 600 }}>Total Sale</div>
+          <div style={{ fontSize: 17, fontWeight: 800, fontFamily: 'monospace', color: '#15803d' }}>{fmt(totalSale)}</div>
         </div>
-        <div style={{ flex: 1, background: 'rgba(248,113,113,0.10)', border: '1px solid rgba(248,113,113,0.25)', borderRadius: 12, padding: '12px 10px', textAlign: 'center' }}>
-          <div style={{ fontSize: 10, color: '#f87171', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4, fontWeight: 600 }}>Total Expense</div>
-          <div style={{ fontSize: 17, fontWeight: 800, fontFamily: 'monospace', color: '#f87171' }}>{fmt(grandOutflow)}</div>
+        <div style={{ flex: 1, background: '#fff1f2', border: '1px solid #fecdd3', borderRadius: 12, padding: '12px 10px', textAlign: 'center' }}>
+          <div style={{ fontSize: 10, color: '#dc2626', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4, fontWeight: 600 }}>Total Expense</div>
+          <div style={{ fontSize: 17, fontWeight: 800, fontFamily: 'monospace', color: '#b91c1c' }}>{fmt(grandOutflow)}</div>
         </div>
-        <div style={{ flex: 1, background: cashInHand >= 0 ? 'rgba(96,165,250,0.10)' : 'rgba(248,113,113,0.10)', border: `1px solid ${cashInHand >= 0 ? 'rgba(96,165,250,0.25)' : 'rgba(248,113,113,0.25)'}`, borderRadius: 12, padding: '12px 10px', textAlign: 'center' }}>
-          <div style={{ fontSize: 10, color: cashInHand >= 0 ? '#60a5fa' : '#f87171', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4, fontWeight: 600 }}>Cash in Hand</div>
-          <div style={{ fontSize: 17, fontWeight: 800, fontFamily: 'monospace', color: cashInHand >= 0 ? '#60a5fa' : '#f87171' }}>{fmt(cashInHand)}</div>
+        <div style={{ flex: 1, background: cashInHand >= 0 ? '#eff6ff' : '#fff1f2', border: `1px solid ${cashInHand >= 0 ? '#bfdbfe' : '#fecdd3'}`, borderRadius: 12, padding: '12px 10px', textAlign: 'center' }}>
+          <div style={{ fontSize: 10, color: cashInHand >= 0 ? '#2563eb' : '#dc2626', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4, fontWeight: 600 }}>Cash in Hand</div>
+          <div style={{ fontSize: 17, fontWeight: 800, fontFamily: 'monospace', color: cashInHand >= 0 ? '#1d4ed8' : '#b91c1c' }}>{fmt(cashInHand)}</div>
         </div>
       </div>
 
       {/* Detail rows */}
-      <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: '4px 14px 2px' }}>
+      <div style={{ background: '#f8fafc', borderRadius: 12, padding: '4px 14px 2px', border: '1px solid #e2e8f0' }}>
         <Row label="Opening Balance" value={fmt(openingBalance)} />
         <Row label="Total Sale (excl. opening)" value={fmt(totalSale)} accent />
         {receivedTransfers.length > 0 && (
@@ -106,9 +107,9 @@ export default function WhatsAppReportCard({ entryData, branchName, selectedDate
           <Row label="Physical Cash (counted)" value={fmt(physicalCash)} />
         )}
         {discrepancy != null && Math.abs(discrepancy) > 0 && (
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0' }}>
-            <span style={{ fontSize: 13, color: '#94a3b8' }}>Discrepancy</span>
-            <span style={{ fontSize: 14, fontWeight: 700, fontFamily: 'monospace', color: discrepancy >= 0 ? '#4ade80' : '#f87171' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 0' }}>
+            <span style={{ fontSize: 13, color: '#64748b' }}>Discrepancy</span>
+            <span style={{ fontSize: 14, fontWeight: 700, fontFamily: 'monospace', color: discrepancy >= 0 ? '#15803d' : '#b91c1c' }}>
               {discrepancy >= 0 ? '+' : ''}{fmt(discrepancy)}
             </span>
           </div>
@@ -116,7 +117,7 @@ export default function WhatsAppReportCard({ entryData, branchName, selectedDate
       </div>
 
       {/* Footer */}
-      <div style={{ marginTop: 18, fontSize: 10, color: '#334155', textAlign: 'center', letterSpacing: '0.05em' }}>
+      <div style={{ marginTop: 16, fontSize: 10, color: '#cbd5e1', textAlign: 'center', letterSpacing: '0.05em' }}>
         Bindu Premium Fashion · Generated {new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
       </div>
     </div>

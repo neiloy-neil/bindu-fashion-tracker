@@ -895,8 +895,8 @@ function Dashboard() {
   )
 
   const wholesaleUrl = (() => {
-    const canSeeWholesale = ['ADMIN', 'SUPER_ADMIN', 'ACCOUNTS', 'AUDITOR', 'AREA_MANAGER'].includes(userRole)
-      || (userRole === 'BRANCH' && branchType === 'WHOLESALE')
+    // Wholesale system commented out — only fetch for WHOLESALE branch type
+    const canSeeWholesale = userRole === 'BRANCH' && branchType === 'WHOLESALE'
     if (!canSeeWholesale) return null
     let u = '/api/dashboard/wholesale?'
     if (viewMode === 'custom') u += `startDate=${startDate}&endDate=${endDate}`
@@ -1031,18 +1031,22 @@ function Dashboard() {
                     <StatCard label="Physical Cash"    value={`৳${formatCurrency(data.branchStats.reduce((s,b)=>s+(b.physicalCash||0),0))}`} context="In branch drawers" valueClass="text-[var(--warning)]" accent="var(--warning)" />
                   </div>
 
-                  {/* Row 2: Target vs Sale (left, 2/3) + Payable + Pending Actions (right, 1/3) */}
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-                    <div className="lg:col-span-2 space-y-3">
-                      <BranchTargetWidget />
-                      <PendingItems
-                        payroll={payrollData}
-                        transfersCount={transfersCountData?.count || 0}
-                        chequesCount={chequesCountData?.length || 0}
-                      />
-                    </div>
+                  {/* Row 2: Target vs Sale */}
+                  <BranchTargetWidget />
+
+                  {/* Row 3: Pending Actions | Pending Requests — side by side */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                    <PendingItems
+                      payroll={payrollData}
+                      transfersCount={transfersCountData?.count || 0}
+                      chequesCount={chequesCountData?.length || 0}
+                    />
+                    <AdminSupportRequests />
+                  </div>
+
+                  {/* Row 4: Financial actions — Payable/Cheque/Payments | Expense/Payment/Edit approvals */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                     <div className="space-y-3">
-                      {/* Payable tile */}
                       <div className="rounded-xl bg-[var(--surface)] p-5 flex flex-col gap-1" style={{boxShadow:'0 1px 3px rgba(0,0,0,0.07)',borderTop:'3px solid var(--warning)'}}>
                         <p className="text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-wide">Total Payable</p>
                         <p className="text-3xl font-bold tabular-nums text-[var(--warning)]">৳{formatCurrency(data.totalPayable||0)}</p>
@@ -1051,11 +1055,6 @@ function Dashboard() {
                       <ChequeDueWidget />
                       <PendingPaymentsWidget />
                     </div>
-                  </div>
-
-                  {/* Row 3: Action cards — approvals + support */}
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                    <AdminSupportRequests />
                     <div className="space-y-3">
                       <AdminExpenseApprovals />
                       <AdminPaymentApprovals />

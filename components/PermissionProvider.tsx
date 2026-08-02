@@ -19,6 +19,8 @@ const PermissionContext = createContext<PermissionContextValue>({
   loading: true,
 })
 
+const PERM_CACHE_KEY = 'perms_v1'
+
 export function PermissionProvider({ children }: { children: ReactNode }) {
   const [permissions, setPermissions] = useState<PermissionMap | null>(null)
   const [loading, setLoading] = useState(true)
@@ -26,10 +28,20 @@ export function PermissionProvider({ children }: { children: ReactNode }) {
   const router = useRouter()
 
   useEffect(() => {
+    // Serve cached permissions instantly, then re-validate in the background
+    const cached = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem(PERM_CACHE_KEY) : null
+    if (cached) {
+      try {
+        setPermissions(JSON.parse(cached))
+        setLoading(false)
+      } catch { /* invalid cache — will be overwritten below */ }
+    }
+
     fetch('/api/me/permissions')
       .then(r => r.ok ? r.json() : null)
       .then(async (data) => {
         if (!data) return
+        sessionStorage.setItem(PERM_CACHE_KEY, JSON.stringify(data))
         setPermissions(data)
 
         // Only sync JWT if permissions in session differ from DB

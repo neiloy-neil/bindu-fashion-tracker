@@ -11,6 +11,11 @@ import { ROLE_DEFAULTS, type Feature } from '@/lib/permission-types'
 
 type Role = 'ADMIN' | 'SUPER_ADMIN' | 'ACCOUNTS' | 'BRANCH' | 'AUDITOR' | 'AREA_MANAGER' | 'HR_ADMIN' | null
 
+// Module-level cache: session identity is stable for the lifetime of the tab
+let _cachedRole: Role = null
+let _cachedBranchType: string | null = null
+let _sessionFetched = false
+
 type SectionKey = 'main' | 'cashflow' | 'hr' | 'payroll' | 'parties' | 'wholesale' | 'manage' | 'system'
 
 const SECTION_PATHS: Record<SectionKey, string[]> = {
@@ -65,24 +70,30 @@ export function Sidebar({ isOpen, setIsOpen }: { isOpen?: boolean; setIsOpen?: (
         document.documentElement.classList.toggle('light', lightMode)
         if (!cancelled) setIsLightMode(lightMode)
 
-        // Two calls instead of four: session for identity, status for all counts
-        const [sessionRes, statusRes] = await Promise.all([
-          fetch('/api/auth/session'),
-          fetch('/api/me/status'),
-        ])
-        const session = await sessionRes.json()
-        const status = statusRes.ok ? await statusRes.json() : null
-
-        if (!cancelled) {
+        // Session is stable for the tab lifetime — fetch once, reuse on every nav
+        if (!_sessionFetched) {
+          const sessionRes = await fetch('/api/auth/session')
+          const session = await sessionRes.json()
           if (session?.user) {
-            setRole(session.user.role)
-            setBranchType(session.user.branchType ?? null)
+            _cachedRole = session.user.role
+            _cachedBranchType = session.user.branchType ?? null
           }
-          if (status) {
-            setPendingTransfers(status.transferCount ?? 0)
-            setPendingCheques(status.chequeCount ?? 0)
-            setPendingRequests(status.requestCount ?? 0)
-          }
+          _sessionFetched = true
+        }
+        if (!cancelled) {
+          setRole(_cachedRole)
+          setBranchType(_cachedBranchType)
+        }
+
+        // BRANCH users log in once to submit — don't poll counts
+        if (_cachedRole === 'BRANCH') return
+
+        const statusRes = await fetch('/api/me/status')
+        const status = statusRes.ok ? await statusRes.json() : null
+        if (!cancelled && status) {
+          setPendingTransfers(status.transferCount ?? 0)
+          setPendingCheques(status.chequeCount ?? 0)
+          setPendingRequests(status.requestCount ?? 0)
         }
       } catch (e) { console.error(e) }
     }

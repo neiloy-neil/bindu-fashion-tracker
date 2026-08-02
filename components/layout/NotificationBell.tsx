@@ -39,13 +39,14 @@ export function NotificationBell() {
   const [acknowledging, setAcknowledging] = useState<number | null>(null)
   const panelRef = useRef<HTMLDivElement>(null)
 
-  const fetchCount = async () => {
+  const fetchCount = async (): Promise<string | null> => {
     try {
       const res = await fetch('/api/me/status')
-      if (!res.ok) return
+      if (!res.ok) return null
       const data = await res.json()
       setUnreadCount(data.notifCount ?? 0)
-    } catch { /* silent */ }
+      return data.role ?? null
+    } catch { return null }
   }
 
   const fetchNotifications = async () => {
@@ -59,10 +60,17 @@ export function NotificationBell() {
   }
 
   useEffect(() => {
-    // Poll only the lightweight count every 120s; fetch full list only when opened
-    setTimeout(() => fetchCount(), 0)
-    const interval = setInterval(fetchCount, 120_000)
-    return () => clearInterval(interval)
+    // BRANCH users log in once to submit — skip polling, just get the initial count
+    let interval: ReturnType<typeof setInterval> | null = null
+    const init = async () => {
+      const role = await fetchCount()
+      // BRANCH users log in once to submit — no need to keep polling
+      if (role !== 'BRANCH') {
+        interval = setInterval(fetchCount, 120_000)
+      }
+    }
+    void init()
+    return () => { if (interval) clearInterval(interval) }
   }, [])
 
   // Close on outside click

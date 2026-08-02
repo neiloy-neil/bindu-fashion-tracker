@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
   ])
 
   return NextResponse.json(
-    { notifCount, transferCount, chequeCount, requestCount },
+    { notifCount, transferCount, chequeCount, requestCount, role },
     { headers: { 'Cache-Control': 'private, no-store' } },
   )
 }

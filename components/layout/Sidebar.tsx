@@ -210,7 +210,7 @@ export function Sidebar({ isOpen, setIsOpen }: { isOpen?: boolean; setIsOpen?: (
 
           {/* Cash Flow — hidden for WHOLESALE branch users */}
           {!(role === 'BRANCH' && branchType === 'WHOLESALE') &&
-           (can('entries.create') || can('entries.view') || can('transfers.view') || can('reports.daily') || can('reports.monthly') || can('reports.petty_cash')) && (<>
+           (can('entries.create') || can('entries.view') || can('transfers.view') || can('reports.daily') || can('reports.monthly') || can('reports.petty_cash') || can('reports.category')) && (<>
             {section('cashflow', 'Cash Flow')}
             {items('cashflow', <>
               {can('entries.create') && item('/entries/new', 'Daily Entry', <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>)}
@@ -220,6 +220,7 @@ export function Sidebar({ isOpen, setIsOpen }: { isOpen?: boolean; setIsOpen?: (
               {can('reports.daily') && item('/reports/daily', 'Daily Report', <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>)}
               {can('reports.monthly') && item('/reports/monthly', 'Monthly Report', <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>)}
               {can('reports.petty_cash') && item('/reports/petty-cash', 'Petty Cash Report', <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M6 12h.01M18 12h.01"/></svg>)}
+              {can('reports.category') && item('/reports/category', 'Category Report', <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z"/></svg>)}
             </>)}
           </>)}
 

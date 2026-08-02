@@ -984,28 +984,25 @@ function Dashboard() {
       </div>
 
       {/* Body */}
-      <div className="flex-1 p-6 space-y-5 min-h-0">
-
-        {(userRole === 'ADMIN' || userRole === 'SUPER_ADMIN' || userRole === 'BRANCH') && (
-          <PendingItems
-            payroll={['ADMIN', 'SUPER_ADMIN'].includes(userRole) ? payrollData : null}
-            transfersCount={transfersCountData?.count || 0}
-            chequesCount={['ADMIN', 'SUPER_ADMIN'].includes(userRole) ? (chequesCountData?.length || 0) : 0}
-          />
-        )}
+      <div className="flex-1 p-4 sm:p-6 min-h-0">
 
         {userRole === 'HR_ADMIN' && payrollData && (
           <PayrollSummary data={payrollData} />
         )}
 
         {userRole === 'BRANCH' && (
-          <>
+          <div className="space-y-4">
+            <PendingItems
+              payroll={null}
+              transfersCount={transfersCountData?.count || 0}
+              chequesCount={0}
+            />
             <MorningCheckInWidget branchId={parseInt(branchId === 'all' && branches.length > 0 ? String(branches[0].id) : branchId)} />
             <BranchSlipStatus month={month} year={year} />
-          </>
+          </div>
         )}
 
-        {userRole !== 'HR_ADMIN' && (
+        {userRole !== 'HR_ADMIN' && userRole !== 'BRANCH' && (
           loading ? (
             <div className="flex items-center justify-center h-64 gap-3">
               <div className="w-5 h-5 rounded-full border-2 border-[var(--border-strong)] border-t-[var(--accent)] animate-spin" />
@@ -1019,151 +1016,144 @@ function Dashboard() {
               <p className="text-sm font-medium text-[var(--text-muted)]">No data for this period</p>
             </div>
           ) : (
-            <>
-              {(userRole === 'ADMIN' || userRole === 'SUPER_ADMIN') && (
-                <div className="space-y-4">
-                  <BranchTargetWidget />
-                  <ChequeDueWidget />
-                  <PendingPaymentsWidget />
-                  <AdminSupportRequests />
-                  <AdminExpenseApprovals />
-                  <AdminPaymentApprovals />
-                  <AdminEditRequests />
-                </div>
-              )}
+            <div className="space-y-4">
 
-              {/* Stat cards */}
-              <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-                <StatCard
-                  label="Total Sales"
-                  value={`৳${formatCurrency(data.totalSales)}`}
-                  context={`${MONTHS[month - 1]} ${year}`}
-                  valueClass="text-[var(--success)]"
-                  accent="var(--success)"
-                />
-                <StatCard
-                  label="Total Expenses"
-                  value={`৳${formatCurrency(data.totalExpenses)}`}
-                  context={`${MONTHS[month - 1]} ${year}`}
-                  accent="var(--danger)"
-                />
-                <StatCard
-                  label="Net Balance"
-                  value={`৳${formatCurrency(Math.abs(data.netBalance))}`}
-                  context={data.netBalance >= 0 ? 'Profit' : 'Loss'}
-                  valueClass={data.netBalance >= 0 ? 'text-[var(--success)]' : 'text-[var(--danger)]'}
-                  accent={data.netBalance >= 0 ? 'var(--success)' : 'var(--danger)'}
-                />
-                {(userRole === 'ADMIN' || userRole === 'SUPER_ADMIN') && (
-                  <StatCard
-                    label="Active Branches"
-                    value={data.branchStats.length}
-                    context="With activity this period"
-                    accent="var(--accent)"
-                  />
-                )}
-                {(userRole === 'ADMIN' || userRole === 'SUPER_ADMIN') && (
-                  <>
-                    <StatCard
-                      label="Petty Cash"
-                      value={`৳${formatCurrency(data.pettyCash || 0)}`}
-                      context="Closing float across branches"
-                      valueClass="text-[var(--info)]"
-                      accent="var(--info)"
-                    />
-                    <StatCard
-                      label="Total Payable"
-                      value={`৳${formatCurrency(data.totalPayable || 0)}`}
-                      context="Owed to parties"
-                      valueClass="text-[var(--warning)]"
-                      accent="var(--warning)"
-                    />
-                  </>
-                )}
-                <StatCard
-                  label="Total Physical Cash"
-                  value={`৳${formatCurrency(data.branchStats.reduce((sum, b) => sum + (b.physicalCash || 0), 0))}`}
-                  context="In branch drawers"
-                  valueClass="text-[var(--warning)]"
-                  accent="var(--warning)"
-                />
-              </div>
-
-              {/* Wholesale summary */}
-              {wholesaleData && (
-                <div className="rounded-xl bg-[var(--surface)] p-5" style={{boxShadow:'0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04)'}}>
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-semibold text-[var(--text-primary)]">Wholesale</h3>
-                    <Link href="/wholesale/challans" className="text-xs font-medium text-[var(--accent)] hover:underline">
-                      View challans →
-                    </Link>
-                  </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-                    <div className="rounded-lg border border-[var(--border)] p-3 space-y-1">
-                      <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wide">Challans</p>
-                      <p className="text-xl font-bold tabular-nums text-[var(--text-primary)]">{wholesaleData.totalChallans}</p>
-                      <p className="text-[10px] text-[var(--text-muted)]">This period</p>
-                    </div>
-                    <div className="rounded-lg border border-[var(--border)] p-3 space-y-1" style={{borderTopColor:'var(--success)', borderTopWidth:3}}>
-                      <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wide">Invoiced</p>
-                      <p className="text-xl font-bold tabular-nums text-[var(--success)]">৳{formatCurrency(wholesaleData.totalNetAmount)}</p>
-                      <p className="text-[10px] text-[var(--text-muted)]">Net amount</p>
-                    </div>
-                    <div className="rounded-lg border border-[var(--border)] p-3 space-y-1" style={{borderTopColor:'var(--info)', borderTopWidth:3}}>
-                      <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wide">Collected</p>
-                      <p className="text-xl font-bold tabular-nums text-[var(--info)]">৳{formatCurrency(wholesaleData.totalCollected)}</p>
-                      <p className="text-[10px] text-[var(--text-muted)]">Payments received</p>
-                    </div>
-                    <div className="rounded-lg border border-[var(--border)] p-3 space-y-1" style={{borderTopColor: wholesaleData.totalOutstanding > 0 ? 'var(--warning)' : 'var(--success)', borderTopWidth:3}}>
-                      <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wide">Outstanding</p>
-                      <p className={`text-xl font-bold tabular-nums ${wholesaleData.totalOutstanding > 0 ? 'text-[var(--warning)]' : 'text-[var(--success)]'}`}>
-                        ৳{formatCurrency(wholesaleData.totalOutstanding)}
-                      </p>
-                      <p className="text-[10px] text-[var(--text-muted)]">All buyers · all-time</p>
-                    </div>
-                    <div className="rounded-lg border border-[var(--border)] p-3 space-y-1">
-                      <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wide">Buyers</p>
-                      <p className="text-xl font-bold tabular-nums text-[var(--text-primary)]">{wholesaleData.activeBuyers}</p>
-                      <p className="text-[10px] text-[var(--text-muted)]">Active</p>
-                    </div>
-                    <div className="rounded-lg border border-[var(--border)] p-3 space-y-1" style={{borderTopColor: wholesaleData.pendingChallans > 0 ? 'var(--danger)' : 'var(--success)', borderTopWidth:3}}>
-                      <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wide">Unpaid</p>
-                      <p className={`text-xl font-bold tabular-nums ${wholesaleData.pendingChallans > 0 ? 'text-[var(--danger)]' : 'text-[var(--success)]'}`}>
-                        {wholesaleData.pendingChallans}
-                      </p>
-                      <p className="text-[10px] text-[var(--text-muted)]">Open challans</p>
-                    </div>
-                  </div>
-                  {Object.keys(wholesaleData.methodBreakdown || {}).length > 0 && (
-                    <div className="mt-3 pt-3 border-t border-[var(--border)] flex flex-wrap gap-2">
-                      {Object.entries(wholesaleData.methodBreakdown as Record<string,number>).map(([method, amount]) => (
-                        <span key={method} className="text-[10px] font-semibold px-2 py-1 rounded-full bg-[var(--surface-raised)] text-[var(--text-secondary)]">
-                          {method.replace('_',' ')}: ৳{formatCurrency(amount)}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Charts — lazy loaded to keep recharts out of the initial bundle */}
-              <DashboardCharts
-                dailyTrend={data.dailyTrend}
-                incomeBreakdown={data.incomeBreakdown}
-                expenseBreakdown={data.expenseBreakdown}
-                branchStats={data.branchStats}
-                totalExpenses={data.totalExpenses}
-                userRole={userRole}
-              />
-
-              {/* Branch section — hidden for BRANCH role */}
-              {userRole !== 'BRANCH' && (
+              {/* ── Bento grid (ADMIN / SUPER_ADMIN) ── */}
+              {(userRole === 'ADMIN' || userRole === 'SUPER_ADMIN') ? (
                 <>
+                  {/* Row 1: KPI strip — 6 equal tiles */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                    <StatCard label="Total Sales"      value={`৳${formatCurrency(data.totalSales)}`}      context={`${MONTHS[month-1]} ${year}`} valueClass="text-[var(--success)]" accent="var(--success)" />
+                    <StatCard label="Total Expenses"   value={`৳${formatCurrency(data.totalExpenses)}`}   context={`${MONTHS[month-1]} ${year}`} accent="var(--danger)" />
+                    <StatCard label="Net Balance"      value={`৳${formatCurrency(Math.abs(data.netBalance))}`} context={data.netBalance >= 0 ? 'Profit' : 'Loss'} valueClass={data.netBalance >= 0 ? 'text-[var(--success)]' : 'text-[var(--danger)]'} accent={data.netBalance >= 0 ? 'var(--success)' : 'var(--danger)'} />
+                    <StatCard label="Active Branches"  value={data.branchStats.length}                    context="With activity this period" accent="var(--accent)" />
+                    <StatCard label="Petty Cash"       value={`৳${formatCurrency(data.pettyCash || 0)}`} context="Closing float" valueClass="text-[var(--info)]" accent="var(--info)" />
+                    <StatCard label="Physical Cash"    value={`৳${formatCurrency(data.branchStats.reduce((s,b)=>s+(b.physicalCash||0),0))}`} context="In branch drawers" valueClass="text-[var(--warning)]" accent="var(--warning)" />
+                  </div>
 
-                  {/* Payroll summary (admin) */}
-                  {(userRole === 'ADMIN' || userRole === 'SUPER_ADMIN') && payrollData && (
-                    <PayrollSummary data={payrollData} />
+                  {/* Row 2: Target vs Sale (left, 2/3) + Payable + Pending Actions (right, 1/3) */}
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+                    <div className="lg:col-span-2 space-y-3">
+                      <BranchTargetWidget />
+                      <PendingItems
+                        payroll={payrollData}
+                        transfersCount={transfersCountData?.count || 0}
+                        chequesCount={chequesCountData?.length || 0}
+                      />
+                    </div>
+                    <div className="space-y-3">
+                      {/* Payable tile */}
+                      <div className="rounded-xl bg-[var(--surface)] p-5 flex flex-col gap-1" style={{boxShadow:'0 1px 3px rgba(0,0,0,0.07)',borderTop:'3px solid var(--warning)'}}>
+                        <p className="text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-wide">Total Payable</p>
+                        <p className="text-3xl font-bold tabular-nums text-[var(--warning)]">৳{formatCurrency(data.totalPayable||0)}</p>
+                        <p className="text-[11px] text-[var(--text-muted)]">Owed to parties</p>
+                      </div>
+                      <ChequeDueWidget />
+                      <PendingPaymentsWidget />
+                    </div>
+                  </div>
+
+                  {/* Row 3: Action cards — approvals + support */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                    <AdminSupportRequests />
+                    <div className="space-y-3">
+                      <AdminExpenseApprovals />
+                      <AdminPaymentApprovals />
+                      <AdminEditRequests />
+                    </div>
+                  </div>
+
+                  {/* Row 4: Charts side by side */}
+                  <DashboardCharts
+                    dailyTrend={data.dailyTrend}
+                    incomeBreakdown={data.incomeBreakdown}
+                    expenseBreakdown={data.expenseBreakdown}
+                    branchStats={data.branchStats}
+                    totalExpenses={data.totalExpenses}
+                    userRole={userRole}
+                  />
+
+                  {/* Row 5: Wholesale (if any) */}
+                  {wholesaleData && (
+                    <div className="rounded-xl bg-[var(--surface)] p-5" style={{boxShadow:'0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04)'}}>
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-sm font-semibold text-[var(--text-primary)]">Wholesale</h3>
+                        <Link href="/wholesale/challans" className="text-xs font-medium text-[var(--accent)] hover:underline">View challans →</Link>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                        <div className="rounded-lg border border-[var(--border)] p-3 space-y-1"><p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wide">Challans</p><p className="text-xl font-bold tabular-nums">{wholesaleData.totalChallans}</p><p className="text-[10px] text-[var(--text-muted)]">This period</p></div>
+                        <div className="rounded-lg border border-[var(--border)] p-3 space-y-1" style={{borderTopColor:'var(--success)',borderTopWidth:3}}><p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wide">Invoiced</p><p className="text-xl font-bold tabular-nums text-[var(--success)]">৳{formatCurrency(wholesaleData.totalNetAmount)}</p><p className="text-[10px] text-[var(--text-muted)]">Net amount</p></div>
+                        <div className="rounded-lg border border-[var(--border)] p-3 space-y-1" style={{borderTopColor:'var(--info)',borderTopWidth:3}}><p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wide">Collected</p><p className="text-xl font-bold tabular-nums text-[var(--info)]">৳{formatCurrency(wholesaleData.totalCollected)}</p><p className="text-[10px] text-[var(--text-muted)]">Payments received</p></div>
+                        <div className="rounded-lg border border-[var(--border)] p-3 space-y-1" style={{borderTopColor:wholesaleData.totalOutstanding>0?'var(--warning)':'var(--success)',borderTopWidth:3}}><p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wide">Outstanding</p><p className={`text-xl font-bold tabular-nums ${wholesaleData.totalOutstanding>0?'text-[var(--warning)]':'text-[var(--success)]'}`}>৳{formatCurrency(wholesaleData.totalOutstanding)}</p><p className="text-[10px] text-[var(--text-muted)]">All buyers · all-time</p></div>
+                        <div className="rounded-lg border border-[var(--border)] p-3 space-y-1"><p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wide">Buyers</p><p className="text-xl font-bold tabular-nums">{wholesaleData.activeBuyers}</p><p className="text-[10px] text-[var(--text-muted)]">Active</p></div>
+                        <div className="rounded-lg border border-[var(--border)] p-3 space-y-1" style={{borderTopColor:wholesaleData.pendingChallans>0?'var(--danger)':'var(--success)',borderTopWidth:3}}><p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wide">Unpaid</p><p className={`text-xl font-bold tabular-nums ${wholesaleData.pendingChallans>0?'text-[var(--danger)]':'text-[var(--success)]'}`}>{wholesaleData.pendingChallans}</p><p className="text-[10px] text-[var(--text-muted)]">Open challans</p></div>
+                      </div>
+                      {Object.keys(wholesaleData.methodBreakdown||{}).length>0&&(<div className="mt-3 pt-3 border-t border-[var(--border)] flex flex-wrap gap-2">{Object.entries(wholesaleData.methodBreakdown as Record<string,number>).map(([m,a])=>(<span key={m} className="text-[10px] font-semibold px-2 py-1 rounded-full bg-[var(--surface-raised)] text-[var(--text-secondary)]">{m.replace('_',' ')}: ৳{formatCurrency(a)}</span>))}</div>)}
+                    </div>
                   )}
+
+                  {/* Row 6: Payroll + Branch Summary */}
+                  {payrollData && <PayrollSummary data={payrollData} />}
+
+                  <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] overflow-hidden">
+                    <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border)]">
+                      <h3 className="text-sm font-semibold text-[var(--text-primary)]">Branch Summary</h3>
+                    </div>
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="hover:bg-transparent border-[var(--border)]">
+                          <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide">Branch</TableHead>
+                          <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-right">Total Sales</TableHead>
+                          <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-right">Total Expenses</TableHead>
+                          <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-right">Net Balance</TableHead>
+                          <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-right">Physical Cash</TableHead>
+                          <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-right">Status</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {[...data.branchStats].sort((a,b)=>b.totalSale-a.totalSale).map(b=>(
+                          <TableRow key={b.branchName} className="border-[var(--border)] hover:bg-[var(--surface-raised)] transition-colors">
+                            <TableCell className="font-medium text-[var(--text-primary)]">{b.branchName}</TableCell>
+                            <TableCell className="text-right tabular-nums text-[var(--text-secondary)]">৳{formatCurrency(b.totalSale)}</TableCell>
+                            <TableCell className="text-right tabular-nums text-[var(--text-secondary)]">৳{formatCurrency(b.totalExpense)}</TableCell>
+                            <TableCell className={cn('text-right tabular-nums font-semibold',b.netBalance>=0?'text-[var(--success)]':'text-[var(--danger)]')}>৳{formatCurrency(Math.abs(b.netBalance))}</TableCell>
+                            <TableCell className={cn('text-right tabular-nums font-semibold',b.physicalCash==null?'text-[var(--text-muted)]':b.physicalCash>=0?'text-[var(--warning)]':'text-[var(--danger)]')}>{b.physicalCash==null?'—':`৳${formatCurrency(b.physicalCash)}`}</TableCell>
+                            <TableCell className="text-right"><span className={cn('inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold',b.netBalance>=0?'bg-[var(--success-subtle)] text-[var(--success)]':'bg-[var(--danger-subtle)] text-[var(--danger)]')}>{b.netBalance>=0?'▲':'▼'} {b.netBalance>=0?'Profit':'Loss'}</span></TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+
+                  {/* Row 7: Recent activity */}
+                  <RecentActivity />
+                </>
+              ) : (
+                /* ── Non-admin layout (AREA_MANAGER, ACCOUNTS, AUDITOR) ── */
+                <>
+                  {/* Stat cards */}
+                  <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+                    <StatCard label="Total Sales"    value={`৳${formatCurrency(data.totalSales)}`}    context={`${MONTHS[month-1]} ${year}`} valueClass="text-[var(--success)]" accent="var(--success)" />
+                    <StatCard label="Total Expenses" value={`৳${formatCurrency(data.totalExpenses)}`} context={`${MONTHS[month-1]} ${year}`} accent="var(--danger)" />
+                    <StatCard label="Net Balance"    value={`৳${formatCurrency(Math.abs(data.netBalance))}`} context={data.netBalance>=0?'Profit':'Loss'} valueClass={data.netBalance>=0?'text-[var(--success)]':'text-[var(--danger)]'} accent={data.netBalance>=0?'var(--success)':'var(--danger)'} />
+                    <StatCard label="Active Branches" value={data.branchStats.length} context="With activity this period" accent="var(--accent)" />
+                    <StatCard label="Petty Cash" value={`৳${formatCurrency(data.pettyCash||0)}`} context="Closing float across branches" valueClass="text-[var(--info)]" accent="var(--info)" />
+                    <StatCard label="Total Physical Cash" value={`৳${formatCurrency(data.branchStats.reduce((s,b)=>s+(b.physicalCash||0),0))}`} context="In branch drawers" valueClass="text-[var(--warning)]" accent="var(--warning)"
+                    />
+                  </div>
+
+                  {/* Wholesale — commented out
+                  {wholesaleData && ( ... )}
+                  */}
+
+                  <DashboardCharts
+                    dailyTrend={data.dailyTrend}
+                    incomeBreakdown={data.incomeBreakdown}
+                    expenseBreakdown={data.expenseBreakdown}
+                    branchStats={data.branchStats}
+                    totalExpenses={data.totalExpenses}
+                    userRole={userRole}
+                  />
 
                   {/* Branch summary table */}
                   <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] overflow-hidden">
@@ -1173,77 +1163,33 @@ function Dashboard() {
                     <Table>
                       <TableHeader>
                         <TableRow className="hover:bg-transparent border-[var(--border)]">
-                          <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide">
-                            Branch
-                          </TableHead>
-                          <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-right">
-                            Total Sales
-                          </TableHead>
-                          <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-right">
-                            Total Expenses
-                          </TableHead>
-                          <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-right">
-                            Net Balance
-                          </TableHead>
-                          <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-right">
-                            Physical Cash
-                          </TableHead>
-                          <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-right">
-                            Status
-                          </TableHead>
+                          <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide">Branch</TableHead>
+                          <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-right">Total Sales</TableHead>
+                          <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-right">Total Expenses</TableHead>
+                          <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-right">Net Balance</TableHead>
+                          <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-right">Physical Cash</TableHead>
+                          <TableHead className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide text-right">Status</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {[...data.branchStats]
-                          .sort((a, b) => b.totalSale - a.totalSale)
-                          .map((b) => (
-                            <TableRow
-                              key={b.branchName}
-                              className="border-[var(--border)] hover:bg-[var(--surface-raised)] transition-colors"
-                            >
-                              <TableCell className="font-medium text-[var(--text-primary)]">
-                                {b.branchName}
-                              </TableCell>
-                              <TableCell className="text-right tabular-nums text-[var(--text-secondary)]">
-                                ৳{formatCurrency(b.totalSale)}
-                              </TableCell>
-                              <TableCell className="text-right tabular-nums text-[var(--text-secondary)]">
-                                ৳{formatCurrency(b.totalExpense)}
-                              </TableCell>
-                              <TableCell className={cn(
-                                'text-right tabular-nums font-semibold',
-                                b.netBalance >= 0 ? 'text-[var(--success)]' : 'text-[var(--danger)]'
-                              )}>
-                                ৳{formatCurrency(Math.abs(b.netBalance))}
-                              </TableCell>
-                              <TableCell className={cn('text-right tabular-nums font-semibold', b.physicalCash == null ? 'text-[var(--text-muted)]' : b.physicalCash >= 0 ? 'text-[var(--warning)]' : 'text-[var(--danger)]')}>
-                                {b.physicalCash == null ? '—' : `৳${formatCurrency(b.physicalCash)}`}
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <span className={cn(
-                                  'inline-flex items-center gap-1 px-2 py-0.5 rounded-full',
-                                  'text-[11px] font-semibold tabular-nums',
-                                  b.netBalance >= 0
-                                    ? 'bg-[var(--success-subtle)] text-[var(--success)]'
-                                    : 'bg-[var(--danger-subtle)] text-[var(--danger)]'
-                                )}>
-                                  {b.netBalance >= 0 ? '▲' : '▼'} {b.netBalance >= 0 ? 'Profit' : 'Loss'}
-                                </span>
-                              </TableCell>
-                            </TableRow>
-                          ))}
+                        {[...data.branchStats].sort((a,b)=>b.totalSale-a.totalSale).map(b=>(
+                          <TableRow key={b.branchName} className="border-[var(--border)] hover:bg-[var(--surface-raised)] transition-colors">
+                            <TableCell className="font-medium text-[var(--text-primary)]">{b.branchName}</TableCell>
+                            <TableCell className="text-right tabular-nums text-[var(--text-secondary)]">৳{formatCurrency(b.totalSale)}</TableCell>
+                            <TableCell className="text-right tabular-nums text-[var(--text-secondary)]">৳{formatCurrency(b.totalExpense)}</TableCell>
+                            <TableCell className={cn('text-right tabular-nums font-semibold',b.netBalance>=0?'text-[var(--success)]':'text-[var(--danger)]')}>৳{formatCurrency(Math.abs(b.netBalance))}</TableCell>
+                            <TableCell className={cn('text-right tabular-nums font-semibold',b.physicalCash==null?'text-[var(--text-muted)]':b.physicalCash>=0?'text-[var(--warning)]':'text-[var(--danger)]')}>{b.physicalCash==null?'—':`৳${formatCurrency(b.physicalCash)}`}</TableCell>
+                            <TableCell className="text-right"><span className={cn('inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold',b.netBalance>=0?'bg-[var(--success-subtle)] text-[var(--success)]':'bg-[var(--danger-subtle)] text-[var(--danger)]')}>{b.netBalance>=0?'▲':'▼'} {b.netBalance>=0?'Profit':'Loss'}</span></TableCell>
+                          </TableRow>
+                        ))}
                       </TableBody>
                     </Table>
                   </div>
 
-                  {(userRole === 'ADMIN' || userRole === 'SUPER_ADMIN') && (
-                    <div>
-                      <RecentActivity />
-                    </div>
-                  )}
+                  <RecentActivity />
                 </>
               )}
-            </>
+            </div>
           )
         )}
       </div>

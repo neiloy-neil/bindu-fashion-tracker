@@ -7,6 +7,7 @@ import { formatCurrency } from '@/lib/utils'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { AddPartyModal } from '@/components/parties/AddPartyModal'
 import { ImportPartyModal } from '@/components/parties/ImportPartyModal'
+import { PartiesDashboard } from '@/components/parties/PartiesDashboard'
 import { Button } from '@/components/ui/button'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
@@ -142,27 +143,10 @@ export default function PartyListClient({ initialParties }: { initialParties: an
           </Button>
         </div>
       </div>
-      <div className="flex-1 p-3 sm:p-6 space-y-6 min-h-0 flex flex-col overflow-auto">
+      {/* Parties dashboard — KPIs, top debtors, recent payments */}
+      <PartiesDashboard />
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-card border border-border rounded-xl p-4 shadow-sm flex flex-col justify-center">
-            <p className="text-sm text-muted-foreground font-medium mb-1">Total Parties</p>
-            <p className="text-2xl font-bold">{stats.totalParties}</p>
-          </div>
-          <div className="bg-card border border-border rounded-xl p-4 shadow-sm flex flex-col justify-center">
-            <p className="text-sm text-muted-foreground font-medium mb-1">With Due</p>
-            <p className="text-2xl font-bold text-destructive">{stats.withDue}</p>
-          </div>
-          <div className="bg-card border border-border rounded-xl p-4 shadow-sm flex flex-col justify-center">
-            <p className="text-sm text-muted-foreground font-medium mb-1">Cleared / Advanced</p>
-            <p className="text-2xl font-bold text-emerald-500">{stats.cleared}</p>
-          </div>
-          <div className="bg-card border border-border rounded-xl p-4 shadow-sm flex flex-col justify-center">
-            <p className="text-sm text-muted-foreground font-medium mb-1">Total Outstanding</p>
-            <p className="text-2xl font-bold font-mono text-destructive">৳{formatCurrency(stats.totalOutstanding)}</p>
-          </div>
-        </div>
+      <div className="flex-1 p-3 sm:p-6 space-y-6 min-h-0 flex flex-col overflow-auto">
 
         <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl shadow-lg overflow-hidden flex flex-col">
           {/* Header and Controls */}

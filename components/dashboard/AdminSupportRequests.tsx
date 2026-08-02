@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { toast } from 'react-hot-toast'
 import { MessageSquare, ExternalLink } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
@@ -24,8 +23,6 @@ const TYPE_LABELS: Record<string, string> = {
 export default function AdminSupportRequests() {
   const [requests, setRequests] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [actionLoadingId, setActionLoadingId] = useState<number | null>(null)
-
   useEffect(() => {
     let cancelled = false
     const load = async () => {
@@ -41,25 +38,6 @@ export default function AdminSupportRequests() {
     void load()
     return () => { cancelled = true }
   }, [])
-
-  const handleAction = async (requestId: number, status: 'IN_PROGRESS' | 'RESOLVED') => {
-    setActionLoadingId(requestId)
-    const t = toast.loading(status === 'RESOLVED' ? 'Marking resolved…' : 'Updating…')
-    try {
-      const res = await fetch('/api/branch-requests', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ requestId, status }),
-      })
-      if (!res.ok) throw new Error('Failed to update')
-      toast.success(status === 'RESOLVED' ? 'Marked as resolved' : 'Marked in progress', { id: t })
-      setRequests(prev => prev.filter(r => r.id !== requestId))
-    } catch (e: any) {
-      toast.error(e.message, { id: t })
-    } finally {
-      setActionLoadingId(null)
-    }
-  }
 
   if (loading || requests.length === 0) return null
 
@@ -95,25 +73,11 @@ export default function AdminSupportRequests() {
               </p>
             </div>
             <div className="flex gap-2 shrink-0">
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={actionLoadingId === req.id}
-                onClick={() => handleAction(req.id, 'IN_PROGRESS')}
-                className="text-xs h-7"
-              >
-                In Progress
-              </Button>
-              <Button
-                size="sm"
-                disabled={actionLoadingId === req.id}
-                onClick={() => handleAction(req.id, 'RESOLVED')}
-                className="text-xs h-7"
-              >
-                {actionLoadingId === req.id
-                  ? <span className="w-3 h-3 rounded-full border-2 border-white/40 border-t-white animate-spin" />
-                  : 'Resolve'}
-              </Button>
+              <Link href={`/admin/requests?id=${req.id}`}>
+                <Button size="sm" variant="outline" className="text-xs h-7">
+                  Manage
+                </Button>
+              </Link>
             </div>
           </div>
         ))}

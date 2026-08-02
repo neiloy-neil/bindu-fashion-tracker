@@ -506,7 +506,7 @@ export function NewEntryForm({ initialData, userId }: Props) {
               <h2 className="text-lg font-semibold flex flex-wrap items-center gap-2 min-w-0">
                 💰 Income & Collections
                 <span className="text-xs bg-[var(--success)]/20 text-[var(--success)] px-2 py-0.5 rounded ml-2 font-mono">
-                  {formatCurrency(totals.totalAmount)}
+                  {formatCurrency(totals.totalSale)}
                 </span>
               </h2>
               {showIncome ? <ChevronDown size={20} className="text-muted-foreground" /> : <ChevronRight size={20} className="text-muted-foreground" />}

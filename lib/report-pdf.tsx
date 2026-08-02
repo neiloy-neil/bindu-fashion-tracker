@@ -7,13 +7,14 @@ import { formatCurrency, formatDate } from '@/lib/utils'
 
 type DailyReportData = {
   branch?: { name?: string | null } | null
-  items?: Array<{ amount: number; note?: string | null; category?: { name?: string | null } | null }>
+  items?: Array<{ amount: number; note?: string | null; category?: { name?: string | null; type?: string | null } | null }>
   expenseEntries?: Array<{ amount: number; note?: string | null; category?: { name?: string | null } | null; isTransferEntry?: boolean }>
   transfers?: Array<{ amount: number; note?: string | null; account?: { name?: string | null } | null }>
   payments?: Array<{ amount: number; method: string; party?: { name?: string | null } | null; cheque?: { status?: string | null } | null }>
   advanceSalaries?: Array<{ amount?: number | null; type: string; productDescription?: string | null; employee?: { name?: string | null } | null }>
   openingTime?: string | null
   closingTime?: string | null
+  receivedTransfers?: Array<{ amount: number; note?: string | null }>
 }
 
 type WholesaleChallanRow = {
@@ -208,13 +209,17 @@ function DailyReportDocument({
   branchName: string
   selectedDate: string
 }) {
-  const incomeItems = entryData.items ?? []
+  const openingBalance = entryData.items?.find(item => item.category?.name === 'Opening Balance')?.amount ?? 0
+  const incomeItems = (entryData.items ?? []).filter(item => item.category?.type === 'INCOME' && item.category?.name !== 'Opening Balance' && item.category?.name !== 'Branch Transfer Received')
   const expenseItems = (entryData.expenseEntries ?? []).filter((e) => !e.isTransferEntry)
   const transfers = entryData.transfers ?? []
   const payments = entryData.payments ?? []
   const advances = entryData.advanceSalaries ?? []
+  const receivedTransfers = entryData.receivedTransfers ?? []
 
-  const totalIncome = incomeItems.reduce((sum, item) => sum + item.amount, 0)
+  const totalSale = incomeItems.reduce((sum, item) => sum + item.amount, 0)
+    + receivedTransfers.reduce((sum, t) => sum + t.amount, 0)
+  const totalIncome = openingBalance + totalSale
   const totalExpenses = expenseItems.reduce((sum, item) => sum + item.amount, 0)
   const totalTransfers = transfers.reduce((sum, item) => sum + item.amount, 0)
   const totalPayments = payments.reduce((sum, item) => sum + item.amount, 0)
@@ -238,7 +243,7 @@ function DailyReportDocument({
         <View style={styles.statRow}>
           <View style={styles.statCard}>
             <Text style={styles.statLabel}>Total Sale</Text>
-            <Text style={styles.statValue}>{amount(totalIncome)}</Text>
+            <Text style={styles.statValue}>{amount(totalSale)}</Text>
           </View>
           <View style={styles.statCard}>
             <Text style={styles.statLabel}>Total Outflow</Text>

@@ -7,6 +7,7 @@ import { toPng, toJpeg } from 'html-to-image'
 import toast from 'react-hot-toast'
 import { Download, Share2 } from 'lucide-react'
 import DailyReportTemplate from '@/components/reports/DailyReportTemplate'
+import WhatsAppReportCard from '@/components/reports/WhatsAppReportCard'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -27,6 +28,7 @@ export default function DailyReportPage() {
   const [hasSearched, setHasSearched] = useState(false)
 
   const reportRef = useRef<HTMLDivElement>(null)
+  const whatsappCardRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     fetch('/api/branches')
@@ -109,17 +111,15 @@ export default function DailyReportPage() {
   }
 
   const shareToWhatsApp = async () => {
-    if (!reportRef.current) return
-    const el = reportRef.current
-    const oldBg = el.style.background
-    el.style.background = 'var(--bg-card)'
-    
+    if (!whatsappCardRef.current) return
+    const el = whatsappCardRef.current
+
     const toastId = toast.loading('Preparing image for WhatsApp...')
-    
+
     try {
-      const dataUrl = await toJpeg(el, { quality: 0.8, backgroundColor: 'var(--bg-card)', pixelRatio: 1 })
+      const dataUrl = await toJpeg(el, { quality: 0.95, pixelRatio: 2 })
       const blob = await (await fetch(dataUrl)).blob()
-      
+
       const branchName = branches.find(b => b.id === parseInt(selectedBranchId))?.name || 'Branch'
       const fileName = `DailyReport_${branchName.replace(/\s+/g, '_')}_${selectedDate}.jpeg`
       const file = new File([blob], fileName, { type: 'image/jpeg' })
@@ -132,7 +132,6 @@ export default function DailyReportPage() {
         })
         toast.success('Shared successfully', { id: toastId })
       } else {
-        // Fallback: download image
         const link = document.createElement('a')
         link.download = fileName
         link.href = dataUrl
@@ -146,8 +145,6 @@ export default function DailyReportPage() {
       } else {
         toast.dismiss(toastId)
       }
-    } finally {
-      el.style.background = oldBg
     }
   }
 
@@ -224,9 +221,21 @@ export default function DailyReportPage() {
               </Button>
             </div>
 
-            {/* Rendered Report Area */}
-            <div 
-              ref={reportRef} 
+            {/* WhatsApp compact card — shown as preview and captured for sharing */}
+            <div className="mb-6">
+              <p className="text-xs text-[var(--text-muted)] mb-3 font-medium uppercase tracking-wider">WhatsApp Summary Card</p>
+              <div ref={whatsappCardRef} className="inline-block">
+                <WhatsAppReportCard
+                  entryData={entryData}
+                  branchName={branches.find(b => b.id === parseInt(selectedBranchId))?.name || 'Branch'}
+                  selectedDate={selectedDate}
+                />
+              </div>
+            </div>
+
+            {/* Full Detailed Report */}
+            <div
+              ref={reportRef}
               className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-8 text-[var(--text-primary)] shadow-xl"
             >
               <DailyReportTemplate entryData={entryData} />

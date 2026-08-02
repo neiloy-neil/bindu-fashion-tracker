@@ -89,6 +89,24 @@ export default function CategoryReportPage() {
     setTo(t)
   }
 
+  const exportPdf = async () => {
+    if (!data) return
+    const toastId = toast.loading('Generating PDF…')
+    try {
+      const { exportCategoryReportPdf } = await import('@/lib/report-pdf')
+      const displayBranches = selectedBranchId === 'all'
+        ? data.branches
+        : data.branches.filter(b => b.id === parseInt(selectedBranchId))
+      const branchLabel = selectedBranchId === 'all'
+        ? 'All Branches'
+        : (branches.find(b => String(b.id) === selectedBranchId)?.name ?? 'Branch')
+      await exportCategoryReportPdf(data.income, data.expenses, displayBranches, from, to, branchLabel)
+      toast.success('PDF downloaded', { id: toastId })
+    } catch {
+      toast.error('Failed to generate PDF', { id: toastId })
+    }
+  }
+
   const exportCsv = () => {
     if (!data) return
     const displayBranches = selectedBranchId === 'all' ? data.branches : data.branches.filter(b => b.id === parseInt(selectedBranchId))
@@ -151,9 +169,14 @@ export default function CategoryReportPage() {
           <p className="text-sm text-[var(--text-muted)] mt-1">Income &amp; expense breakdown by category</p>
         </div>
         {data && (
-          <Button variant="outline" size="sm" className="gap-2" onClick={exportCsv}>
-            <Download size={14} /> Export Excel (CSV)
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" className="gap-2" onClick={exportCsv}>
+              <Download size={14} /> Export CSV
+            </Button>
+            <Button variant="outline" size="sm" className="gap-2" onClick={exportPdf}>
+              <Download size={14} /> Export PDF
+            </Button>
+          </div>
         )}
       </div>
 

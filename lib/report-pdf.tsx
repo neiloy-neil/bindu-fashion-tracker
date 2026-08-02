@@ -848,3 +848,151 @@ export async function exportSummaryReportPdf(data: SummaryStats, month: number, 
     `Bindu_Summary_${branchName ? `${branchName.replace(/\s+/g, '_')}_` : ''}${monthLabel}_${year}.pdf`
   )
 }
+
+// ─── Category Report PDF ────────────────────────────────────────────────────
+
+type CategoryReportRow = {
+  categoryId: number
+  categoryName: string
+  frequency?: string | null
+  total: number
+  byBranch: Record<number, number>
+}
+
+type CategoryReportBranch = { id: number; name: string }
+
+function CategoryReportDocument({
+  income,
+  expenses,
+  branches,
+  from,
+  to,
+  branchLabel,
+}: {
+  income: CategoryReportRow[]
+  expenses: CategoryReportRow[]
+  branches: CategoryReportBranch[]
+  from: string
+  to: string
+  branchLabel: string
+}) {
+  const showBranchCols = branches.length > 1
+  const catColWidth = showBranchCols ? Math.max(20, 55 - branches.length * 8) : 55
+  const branchColWidth = showBranchCols ? Math.floor((100 - catColWidth - 15 - 10) / branches.length) : 0
+  const totalColWidth = 15
+  const shareColWidth = 10
+
+  const incomeTotal = income.reduce((s, r) => s + r.total, 0)
+  const expTotal = expenses.reduce((s, r) => s + r.total, 0)
+
+  function makeHeaders() {
+    const h = ['Category']
+    if (showBranchCols) branches.forEach(b => h.push(b.name))
+    h.push('Total', 'Share')
+    return h
+  }
+
+  function makeWidths() {
+    const w = [catColWidth]
+    if (showBranchCols) branches.forEach(() => w.push(branchColWidth))
+    w.push(totalColWidth, shareColWidth)
+    return w
+  }
+
+  function makeRow(row: CategoryReportRow, grandTotal: number): string[] {
+    const cells = [row.categoryName]
+    if (showBranchCols) branches.forEach(b => cells.push(row.byBranch[b.id] ? `Tk ${formatCurrency(row.byBranch[b.id])}` : '—'))
+    cells.push(`Tk ${formatCurrency(row.total)}`)
+    cells.push(grandTotal ? `${(row.total / grandTotal * 100).toFixed(1)}%` : '—')
+    return cells
+  }
+
+  function makeTotalRow(rows: CategoryReportRow[], grandTotal: number): string[] {
+    const cells = ['TOTAL']
+    if (showBranchCols) branches.forEach(b => cells.push(`Tk ${formatCurrency(rows.reduce((s, r) => s + (r.byBranch[b.id] ?? 0), 0))}`))
+    cells.push(`Tk ${formatCurrency(grandTotal)}`)
+    cells.push('100%')
+    return cells
+  }
+
+  const headers = makeHeaders()
+  const widths = makeWidths()
+
+  return (
+    <Document>
+      <Page size="A4" orientation={showBranchCols && branches.length > 3 ? 'landscape' : 'portrait'} style={styles.page}>
+        <View style={styles.logoWrap}>
+          {/* eslint-disable-next-line jsx-a11y/alt-text */}
+          <Image src={BINDU_LOGO} style={styles.logo} />
+        </View>
+        <Text style={styles.title}>Category Report</Text>
+        <Text style={styles.subtitle}>Branch: {branchLabel}</Text>
+        <Text style={styles.subtitle}>Period: {from} to {to}</Text>
+
+        <View style={[styles.statRow, { marginBottom: 14 }]}>
+          <View style={styles.statCard}>
+            <Text style={styles.statLabel}>Total Income</Text>
+            <Text style={[styles.statValue, { color: '#15803d' }]}>Tk {formatCurrency(incomeTotal)}</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statLabel}>Total Expenses</Text>
+            <Text style={[styles.statValue, { color: '#b91c1c' }]}>Tk {formatCurrency(expTotal)}</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statLabel}>Net</Text>
+            <Text style={[styles.statValue, { color: incomeTotal - expTotal >= 0 ? '#15803d' : '#b91c1c' }]}>
+              Tk {formatCurrency(incomeTotal - expTotal)}
+            </Text>
+          </View>
+        </View>
+
+        {/* Income table */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Income</Text>
+          <Table
+            headers={headers}
+            widths={widths}
+            rows={[
+              ...income.map(r => makeRow(r, incomeTotal)),
+              makeTotalRow(income, incomeTotal),
+            ]}
+          />
+        </View>
+
+        {/* Expense table */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Expenses</Text>
+          <Table
+            headers={headers}
+            widths={widths}
+            rows={[
+              ...expenses.map(r => makeRow(r, expTotal)),
+              makeTotalRow(expenses, expTotal),
+            ]}
+          />
+        </View>
+      </Page>
+    </Document>
+  )
+}
+
+export async function exportCategoryReportPdf(
+  income: CategoryReportRow[],
+  expenses: CategoryReportRow[],
+  branches: CategoryReportBranch[],
+  from: string,
+  to: string,
+  branchLabel: string,
+) {
+  await saveDocument(
+    <CategoryReportDocument
+      income={income}
+      expenses={expenses}
+      branches={branches}
+      from={from}
+      to={to}
+      branchLabel={branchLabel}
+    />,
+    `CategoryReport_${from}_${to}.pdf`
+  )
+}

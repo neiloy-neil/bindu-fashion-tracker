@@ -11,6 +11,9 @@ import AdminEditRequests from '@/components/dashboard/AdminEditRequests'
 import AdminExpenseApprovals from '@/components/dashboard/AdminExpenseApprovals'
 import AdminPaymentApprovals from '@/components/dashboard/AdminPaymentApprovals'
 import AdminSupportRequests from '@/components/dashboard/AdminSupportRequests'
+import BranchTargetWidget from '@/components/dashboard/BranchTargetWidget'
+import ChequeDueWidget from '@/components/dashboard/ChequeDueWidget'
+import PendingPaymentsWidget from '@/components/dashboard/PendingPaymentsWidget'
 import RecentActivity from '@/components/dashboard/RecentActivity'
 import { MorningCheckInWidget } from '@/components/hr/MorningCheckInWidget'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
@@ -1018,7 +1021,10 @@ function Dashboard() {
           ) : (
             <>
               {(userRole === 'ADMIN' || userRole === 'SUPER_ADMIN') && (
-                <div>
+                <div className="space-y-4">
+                  <BranchTargetWidget />
+                  <ChequeDueWidget />
+                  <PendingPaymentsWidget />
                   <AdminSupportRequests />
                   <AdminExpenseApprovals />
                   <AdminPaymentApprovals />

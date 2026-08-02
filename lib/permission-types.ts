@@ -11,6 +11,8 @@ export const FEATURES = [
   'reports.monthly',
   'reports.petty_cash',
   'reports.category',
+  'targets.view',
+  'targets.write',
   // HR
   'hr.employees.view',
   'hr.employees.write',
@@ -51,6 +53,7 @@ export const ROLE_DEFAULTS: Record<string, Feature[]> = {
   ADMIN: [
     'entries.create', 'entries.view', 'entries.delete', 'entries.approve_expense',
     'transfers.view', 'reports.daily', 'reports.monthly', 'reports.petty_cash', 'reports.category',
+    'targets.view', 'targets.write',
     'hr.employees.view', 'hr.employees.write', 'hr.attendance.view', 'hr.attendance.record',
     'hr.leaves.view', 'hr.leaves.approve',
     'payroll.slips.view', 'payroll.slips.approve', 'payroll.salary.process', 'payroll.salary.lock',
@@ -68,19 +71,22 @@ export const ROLE_DEFAULTS: Record<string, Feature[]> = {
   ],
   AUDITOR: [
     'entries.view', 'transfers.view', 'reports.daily', 'reports.monthly', 'reports.petty_cash', 'reports.category',
+    'targets.view',
     'hr.employees.view', 'wholesale.view', 'parties.view', 'admin.audit',
   ],
   AREA_MANAGER: [
     'entries.view', 'transfers.view', 'reports.daily', 'reports.monthly', 'reports.petty_cash', 'reports.category',
+    'targets.view', 'targets.write',
     'wholesale.view', 'parties.view',
   ],
   ACCOUNTS: [
     'entries.view', 'transfers.view', 'reports.daily', 'reports.monthly', 'reports.petty_cash', 'reports.category',
+    'targets.view',
     'wholesale.view', 'wholesale.write', 'parties.view', 'parties.write',
   ],
   BRANCH: [
     'entries.create', 'entries.view', 'entries.delete',
-    'transfers.view', 'reports.petty_cash',
+    'transfers.view', 'reports.petty_cash', 'targets.view',
     'hr.employees.view', 'hr.attendance.view', 'hr.attendance.record',
     'hr.leaves.view', 'payroll.slips.view', 'payroll.advances',
   ],

@@ -861,6 +861,9 @@ type CategoryReportRow = {
 
 type CategoryReportBranch = { id: number; name: string }
 
+// Max branches we can show as columns before dropping to totals-only
+const MAX_BRANCH_COLS = 6
+
 function CategoryReportDocument({
   income,
   expenses,
@@ -876,32 +879,46 @@ function CategoryReportDocument({
   to: string
   branchLabel: string
 }) {
-  const showBranchCols = branches.length > 1
-  const catColWidth = showBranchCols ? Math.max(20, 55 - branches.length * 8) : 55
-  const branchColWidth = showBranchCols ? Math.floor((100 - catColWidth - 15 - 10) / branches.length) : 0
-  const totalColWidth = 15
-  const shareColWidth = 10
+  // Only include branches that actually have data in this period
+  const activeBranchIds = new Set<number>()
+  for (const row of [...income, ...expenses]) {
+    Object.keys(row.byBranch).forEach(id => activeBranchIds.add(Number(id)))
+  }
+  const activeBranches = branches.filter(b => activeBranchIds.has(b.id))
+
+  // If too many branches, drop per-branch columns — show totals only
+  const showBranchCols = activeBranches.length > 1 && activeBranches.length <= MAX_BRANCH_COLS
+  const isLandscape = showBranchCols && activeBranches.length > 3
+  const tooManyBranches = activeBranches.length > MAX_BRANCH_COLS
+
+  // Column widths
+  const catW = showBranchCols ? 28 : 60
+  const totalW = showBranchCols ? 14 : 28
+  const shareW = showBranchCols ? 10 : 12
+  const branchW = showBranchCols ? Math.floor((100 - catW - totalW - shareW) / activeBranches.length) : 0
 
   const incomeTotal = income.reduce((s, r) => s + r.total, 0)
   const expTotal = expenses.reduce((s, r) => s + r.total, 0)
 
+  const cellStyle = { fontSize: 8 }
+
   function makeHeaders() {
     const h = ['Category']
-    if (showBranchCols) branches.forEach(b => h.push(b.name))
+    if (showBranchCols) activeBranches.forEach(b => h.push(b.name))
     h.push('Total', 'Share')
     return h
   }
 
   function makeWidths() {
-    const w = [catColWidth]
-    if (showBranchCols) branches.forEach(() => w.push(branchColWidth))
-    w.push(totalColWidth, shareColWidth)
+    const w = [catW]
+    if (showBranchCols) activeBranches.forEach(() => w.push(branchW))
+    w.push(totalW, shareW)
     return w
   }
 
   function makeRow(row: CategoryReportRow, grandTotal: number): string[] {
     const cells = [row.categoryName]
-    if (showBranchCols) branches.forEach(b => cells.push(row.byBranch[b.id] ? `Tk ${formatCurrency(row.byBranch[b.id])}` : '—'))
+    if (showBranchCols) activeBranches.forEach(b => cells.push(row.byBranch[b.id] ? `Tk ${formatCurrency(row.byBranch[b.id])}` : '—'))
     cells.push(`Tk ${formatCurrency(row.total)}`)
     cells.push(grandTotal ? `${(row.total / grandTotal * 100).toFixed(1)}%` : '—')
     return cells
@@ -909,7 +926,7 @@ function CategoryReportDocument({
 
   function makeTotalRow(rows: CategoryReportRow[], grandTotal: number): string[] {
     const cells = ['TOTAL']
-    if (showBranchCols) branches.forEach(b => cells.push(`Tk ${formatCurrency(rows.reduce((s, r) => s + (r.byBranch[b.id] ?? 0), 0))}`))
+    if (showBranchCols) activeBranches.forEach(b => cells.push(`Tk ${formatCurrency(rows.reduce((s, r) => s + (r.byBranch[b.id] ?? 0), 0))}`))
     cells.push(`Tk ${formatCurrency(grandTotal)}`)
     cells.push('100%')
     return cells
@@ -920,7 +937,11 @@ function CategoryReportDocument({
 
   return (
     <Document>
-      <Page size="A4" orientation={showBranchCols && branches.length > 3 ? 'landscape' : 'portrait'} style={styles.page}>
+      <Page
+        size="A4"
+        orientation={isLandscape ? 'landscape' : 'portrait'}
+        style={{ ...styles.page, fontSize: 9 }}
+      >
         <View style={styles.logoWrap}>
           {/* eslint-disable-next-line jsx-a11y/alt-text */}
           <Image src={BINDU_LOGO} style={styles.logo} />
@@ -928,6 +949,11 @@ function CategoryReportDocument({
         <Text style={styles.title}>Category Report</Text>
         <Text style={styles.subtitle}>Branch: {branchLabel}</Text>
         <Text style={styles.subtitle}>Period: {from} to {to}</Text>
+        {tooManyBranches && (
+          <Text style={{ fontSize: 8, color: '#6B7280', marginTop: 2, marginBottom: 4 }}>
+            Branch breakdown omitted ({activeBranches.length} branches with data — use CSV export for full breakdown)
+          </Text>
+        )}
 
         <View style={[styles.statRow, { marginBottom: 14 }]}>
           <View style={styles.statCard}>
@@ -949,27 +975,67 @@ function CategoryReportDocument({
         {/* Income table */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Income</Text>
-          <Table
-            headers={headers}
-            widths={widths}
-            rows={[
-              ...income.map(r => makeRow(r, incomeTotal)),
-              makeTotalRow(income, incomeTotal),
-            ]}
-          />
+          <View style={{ ...styles.table, fontSize: 8 }}>
+            {/* Header */}
+            <View style={[styles.tableRow, styles.headerRow]}>
+              {headers.map((h, i) => (
+                <Text key={i} style={[styles.cell, styles.headerCell, cellStyle, { width: `${widths[i]}%` }, i === headers.length - 1 ? { borderRightWidth: 0, textAlign: 'right' } : i > 0 ? { textAlign: 'right' } : {}]}>{h}</Text>
+              ))}
+            </View>
+            {income.map((row, ri) => {
+              const cells = makeRow(row, incomeTotal)
+              return (
+                <View key={ri} style={[styles.tableRow, ri === income.length - 1 ? { borderBottomWidth: 0 } : {}]}>
+                  {cells.map((c, ci) => (
+                    <Text key={ci} style={[styles.cell, cellStyle, { width: `${widths[ci]}%` }, ci === cells.length - 1 ? { borderRightWidth: 0, textAlign: 'right' } : ci > 0 ? { textAlign: 'right' } : {}]}>{c}</Text>
+                  ))}
+                </View>
+              )
+            })}
+            {/* Total row */}
+            {(() => {
+              const cells = makeTotalRow(income, incomeTotal)
+              return (
+                <View style={[styles.tableRow, styles.totalRow, { borderTopWidth: 1, borderTopColor: '#9CA3AF', borderBottomWidth: 0 }]}>
+                  {cells.map((c, ci) => (
+                    <Text key={ci} style={[styles.cell, cellStyle, { width: `${widths[ci]}%`, fontFamily: 'Helvetica-Bold' }, ci === cells.length - 1 ? { borderRightWidth: 0, textAlign: 'right' } : ci > 0 ? { textAlign: 'right' } : {}]}>{c}</Text>
+                  ))}
+                </View>
+              )
+            })()}
+          </View>
         </View>
 
         {/* Expense table */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Expenses</Text>
-          <Table
-            headers={headers}
-            widths={widths}
-            rows={[
-              ...expenses.map(r => makeRow(r, expTotal)),
-              makeTotalRow(expenses, expTotal),
-            ]}
-          />
+          <View style={{ ...styles.table, fontSize: 8 }}>
+            <View style={[styles.tableRow, styles.headerRow]}>
+              {headers.map((h, i) => (
+                <Text key={i} style={[styles.cell, styles.headerCell, cellStyle, { width: `${widths[i]}%` }, i === headers.length - 1 ? { borderRightWidth: 0, textAlign: 'right' } : i > 0 ? { textAlign: 'right' } : {}]}>{h}</Text>
+              ))}
+            </View>
+            {expenses.map((row, ri) => {
+              const cells = makeRow(row, expTotal)
+              return (
+                <View key={ri} style={[styles.tableRow, ri === expenses.length - 1 ? { borderBottomWidth: 0 } : {}]}>
+                  {cells.map((c, ci) => (
+                    <Text key={ci} style={[styles.cell, cellStyle, { width: `${widths[ci]}%` }, ci === cells.length - 1 ? { borderRightWidth: 0, textAlign: 'right' } : ci > 0 ? { textAlign: 'right' } : {}]}>{c}</Text>
+                  ))}
+                </View>
+              )
+            })}
+            {(() => {
+              const cells = makeTotalRow(expenses, expTotal)
+              return (
+                <View style={[styles.tableRow, styles.totalRow, { borderTopWidth: 1, borderTopColor: '#9CA3AF', borderBottomWidth: 0 }]}>
+                  {cells.map((c, ci) => (
+                    <Text key={ci} style={[styles.cell, cellStyle, { width: `${widths[ci]}%`, fontFamily: 'Helvetica-Bold' }, ci === cells.length - 1 ? { borderRightWidth: 0, textAlign: 'right' } : ci > 0 ? { textAlign: 'right' } : {}]}>{c}</Text>
+                  ))}
+                </View>
+              )
+            })()}
+          </View>
         </View>
       </Page>
     </Document>
@@ -993,6 +1059,6 @@ export async function exportCategoryReportPdf(
       to={to}
       branchLabel={branchLabel}
     />,
-    `CategoryReport_${from}_${to}.pdf`
+    `CategoryReport_${from}_${to}_${Date.now()}.pdf`
   )
 }

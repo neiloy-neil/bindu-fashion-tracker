@@ -42,6 +42,8 @@ model Branch {
   wholesaleReturns  WholesaleReturn[]
   lockedMonths      LockedMonth[]
   holidays          BranchHoliday[]
+  salesTargets      BranchSalesTarget[]
+  dailySalesBonuses DailySalesBonus[]
 }
 
 model User {
@@ -70,6 +72,7 @@ model User {
   notifications           Notification[]
   lockedMonths            LockedMonth[]           @relation("LockedMonthsBy")
   branchRequestEvents     BranchRequestEvent[]    @relation("BranchRequestEventActor")
+  targetsSet              BranchSalesTarget[]     @relation("TargetsSet")
 
   phoneNumber String?
 
@@ -772,4 +775,40 @@ model WholesaleReturn {
 
   @@index([challanId])
   @@index([branchId])
+}
+
+model BranchSalesTarget {
+  id            Int      @id @default(autoincrement())
+  branchId      Int
+  month         Int      // 1–12
+  year          Int
+  monthlyTarget Float    @default(0)
+  dailyTarget   Float    @default(0) // 0 = auto (monthlyTarget / working days); else manual override
+  setByUserId   Int
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  branch  Branch @relation(fields: [branchId], references: [id])
+  setBy   User   @relation("TargetsSet", fields: [setByUserId], references: [id])
+
+  @@unique([branchId, month, year])
+  @@index([branchId])
+}
+
+model DailySalesBonus {
+  id          Int      @id @default(autoincrement())
+  branchId    Int
+  date        DateTime @db.Date
+  dailySale   Float
+  dailyTarget Float
+  achievedPct Float    // dailySale / dailyTarget * 100; 0 if no target set
+  bonusPct    Float    // 2.0 or 1.0
+  bonusAmount Float    // dailySale * bonusPct / 100
+  createdAt   DateTime @default(now())
+
+  branch Branch @relation(fields: [branchId], references: [id])
+
+  @@unique([branchId, date])
+  @@index([branchId])
+  @@index([date])
 }

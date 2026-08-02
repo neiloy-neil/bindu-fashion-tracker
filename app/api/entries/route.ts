@@ -444,6 +444,39 @@ export async function POST(req: NextRequest) {
       } catch { /* non-critical */ }
     })()
 
+    // Auto-calculate daily sales bonus (fire-and-forget)
+    void (async () => {
+      try {
+        const entryDate = new Date(body.date)
+        const month = entryDate.getMonth() + 1
+        const year = entryDate.getFullYear()
+        const daysInMonth = new Date(year, month, 0).getDate()
+
+        const target = await prisma.branchSalesTarget.findUnique({
+          where: { branchId_month_year: { branchId: finalBranchId, month, year } },
+        })
+
+        const dailySale = entry.items
+          .filter(i => i.category?.type === 'INCOME' && i.category.name !== 'Opening Balance' && i.category.name !== 'Branch Transfer Received')
+          .reduce((s, i) => s + i.amount, 0)
+
+        const effectiveDailyTarget = target
+          ? (target.dailyTarget > 0 ? target.dailyTarget : target.monthlyTarget / daysInMonth)
+          : 0
+
+        const achievedPct = effectiveDailyTarget > 0 ? (dailySale / effectiveDailyTarget * 100) : 0
+        const bonusPct = achievedPct >= 100 ? 2.0 : 1.0
+        const bonusAmount = dailySale * bonusPct / 100
+
+        const dateOnly = new Date(body.date + 'T00:00:00Z')
+        await prisma.dailySalesBonus.upsert({
+          where: { branchId_date: { branchId: finalBranchId, date: dateOnly } },
+          create: { branchId: finalBranchId, date: dateOnly, dailySale, dailyTarget: effectiveDailyTarget, achievedPct, bonusPct, bonusAmount },
+          update: { dailySale, dailyTarget: effectiveDailyTarget, achievedPct, bonusPct, bonusAmount },
+        })
+      } catch { /* non-critical */ }
+    })()
+
     return NextResponse.json(entry, { status: 201 })
   } catch (error) {
     logger.error('entry.create_failed', error, {

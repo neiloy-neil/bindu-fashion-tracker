@@ -14,6 +14,7 @@ import AdminSupportRequests from '@/components/dashboard/AdminSupportRequests'
 import BranchTargetWidget from '@/components/dashboard/BranchTargetWidget'
 import ChequeDueWidget from '@/components/dashboard/ChequeDueWidget'
 import PendingPaymentsWidget from '@/components/dashboard/PendingPaymentsWidget'
+import { PartiesSummaryWidget } from '@/components/dashboard/PartiesSummaryWidget'
 import RecentActivity from '@/components/dashboard/RecentActivity'
 import { MorningCheckInWidget } from '@/components/hr/MorningCheckInWidget'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
@@ -1044,14 +1045,10 @@ function Dashboard() {
                     <AdminSupportRequests />
                   </div>
 
-                  {/* Row 4: Financial actions — Payable/Cheque/Payments | Expense/Payment/Edit approvals */}
+                  {/* Row 4: Parties summary | Cheque/Payments + Approvals */}
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                     <div className="space-y-3">
-                      <div className="rounded-xl bg-[var(--surface)] p-5 flex flex-col gap-1" style={{boxShadow:'0 1px 3px rgba(0,0,0,0.07)',borderTop:'3px solid var(--warning)'}}>
-                        <p className="text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-wide">Total Payable</p>
-                        <p className="text-3xl font-bold tabular-nums text-[var(--warning)]">৳{formatCurrency(data.totalPayable||0)}</p>
-                        <p className="text-[11px] text-[var(--text-muted)]">Owed to parties</p>
-                      </div>
+                      <PartiesSummaryWidget />
                       <ChequeDueWidget />
                       <PendingPaymentsWidget />
                     </div>

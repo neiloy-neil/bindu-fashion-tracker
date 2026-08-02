@@ -12,7 +12,9 @@ export async function GET(req: NextRequest) {
     include: { _count: { select: { employees: true } } },
     orderBy: { name: 'asc' },
   })
-  return NextResponse.json(branches)
+  return NextResponse.json(branches, {
+    headers: { 'Cache-Control': 'private, max-age=60, stale-while-revalidate=300' },
+  })
 }
 
 export async function POST(req: NextRequest) {

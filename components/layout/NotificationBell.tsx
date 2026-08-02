@@ -39,6 +39,15 @@ export function NotificationBell() {
   const [acknowledging, setAcknowledging] = useState<number | null>(null)
   const panelRef = useRef<HTMLDivElement>(null)
 
+  const fetchCount = async () => {
+    try {
+      const res = await fetch('/api/me/status')
+      if (!res.ok) return
+      const data = await res.json()
+      setUnreadCount(data.notifCount ?? 0)
+    } catch { /* silent */ }
+  }
+
   const fetchNotifications = async () => {
     try {
       const res = await fetch('/api/notifications')
@@ -50,8 +59,9 @@ export function NotificationBell() {
   }
 
   useEffect(() => {
-    setTimeout(() => fetchNotifications(), 0)
-    const interval = setInterval(fetchNotifications, 60_000)
+    // Poll only the lightweight count every 120s; fetch full list only when opened
+    setTimeout(() => fetchCount(), 0)
+    const interval = setInterval(fetchCount, 120_000)
     return () => clearInterval(interval)
   }, [])
 
@@ -66,11 +76,15 @@ export function NotificationBell() {
   }, [open])
 
   const handleOpen = async () => {
-    setOpen(o => !o)
-    if (!open && unreadCount > 0) {
-      await fetch('/api/notifications', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: '{}' })
-      setUnreadCount(0)
-      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })))
+    const opening = !open
+    setOpen(opening)
+    if (opening) {
+      // Fetch full list when panel is opened
+      await fetchNotifications()
+      if (unreadCount > 0) {
+        fetch('/api/notifications', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: '{}' }).catch(() => {})
+        setUnreadCount(0)
+      }
     }
   }
 

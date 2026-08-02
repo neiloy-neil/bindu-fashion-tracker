@@ -63,29 +63,25 @@ export function Sidebar({ isOpen, setIsOpen }: { isOpen?: boolean; setIsOpen?: (
         const savedTheme = typeof window !== 'undefined' ? localStorage.getItem('theme') : null
         const lightMode = savedTheme !== 'dark'
         document.documentElement.classList.toggle('light', lightMode)
+        if (!cancelled) setIsLightMode(lightMode)
 
-        const [sessionRes, transferRes, chequeRes, requestsRes] = await Promise.all([
+        // Two calls instead of four: session for identity, status for all counts
+        const [sessionRes, statusRes] = await Promise.all([
           fetch('/api/auth/session'),
-          fetch('/api/transfers/pending-count'),
-          fetch('/api/cheques?status=PENDING'),
-          fetch('/api/branch-requests'),
+          fetch('/api/me/status'),
         ])
         const session = await sessionRes.json()
-        const transferData = await transferRes.json()
-        const chequeData: unknown = await chequeRes.json()
-        const requestsData: unknown = await requestsRes.json()
+        const status = statusRes.ok ? await statusRes.json() : null
 
         if (!cancelled) {
-          setIsLightMode(lightMode)
           if (session?.user) {
             setRole(session.user.role)
             setBranchType(session.user.branchType ?? null)
           }
-          if (transferData && typeof transferData.count === 'number') setPendingTransfers(transferData.count)
-          if (Array.isArray(chequeData)) setPendingCheques(chequeData.length)
-          if (requestsData && typeof requestsData === 'object' && 'requests' in requestsData && Array.isArray((requestsData as any).requests)) {
-            const pending = (requestsData as any).requests.filter((r: any) => r.status === 'PENDING').length
-            setPendingRequests(pending)
+          if (status) {
+            setPendingTransfers(status.transferCount ?? 0)
+            setPendingCheques(status.chequeCount ?? 0)
+            setPendingRequests(status.requestCount ?? 0)
           }
         }
       } catch (e) { console.error(e) }

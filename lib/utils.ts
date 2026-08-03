@@ -30,7 +30,8 @@ export function formatDate(date: Date | string): string {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function computeTotals(entry: any) {
-  let totalSale = 0
+  let totalSale = 0      // SALE_CATEGORIES only (for display as "Total Sale")
+  let otherIncome = 0    // non-sale income (Due Received, Condition Rec., etc.) — counts toward net balance
   let totalExpense = 0
   let openingBalance = 0
 
@@ -39,8 +40,12 @@ export function computeTotals(entry: any) {
       if (item.category) {
         if (item.category.name === 'Opening Balance') {
           openingBalance += item.amount || 0
-        } else if (item.category.type === 'INCOME' && SALE_CATEGORIES.has(item.category.name)) {
-          totalSale += item.amount || 0
+        } else if (item.category.type === 'INCOME') {
+          if (SALE_CATEGORIES.has(item.category.name)) {
+            totalSale += item.amount || 0
+          } else {
+            otherIncome += item.amount || 0
+          }
         } else if (item.category.type === 'EXPENSE') {
           totalExpense += item.amount || 0
         }
@@ -54,9 +59,8 @@ export function computeTotals(entry: any) {
     }
   }
   if (entry && entry.receivedTransfers && Array.isArray(entry.receivedTransfers)) {
-    // Received transfers count toward inflow but not toward sale target
     for (const t of entry.receivedTransfers) {
-      openingBalance += t.amount || 0
+      otherIncome += t.amount || 0
     }
   }
   if (entry && entry.payments && Array.isArray(entry.payments)) {
@@ -88,8 +92,8 @@ export function computeTotals(entry: any) {
   const pettyCashReplenished = typeof entry?.pettyCashReplenished === 'number' ? entry.pettyCashReplenished : 0
   totalExpense += pettyCashReplenished
 
-  const totalAmount = openingBalance + totalSale
+  const totalAmount = openingBalance + totalSale + otherIncome
   const netBalance = totalAmount - totalExpense
 
-  return { totalSale, totalAmount, totalExpense, netBalance, openingBalance }
+  return { totalSale, otherIncome, totalAmount, totalExpense, netBalance, openingBalance }
 }

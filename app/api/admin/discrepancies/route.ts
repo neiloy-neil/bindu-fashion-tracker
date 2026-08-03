@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
+import { getReqPerms, FORBIDDEN } from '@/lib/server-auth'
 
 export async function GET(req: NextRequest) {
+  const auth = await getReqPerms(req)
+  if (!auth || !auth.perms['admin.audit']) return FORBIDDEN()
   try {
-    const role = req.headers.get('x-user-role')
-    if (role !== 'ADMIN' && role !== 'SUPER_ADMIN' && role !== 'AUDITOR') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
 
     // Use raw query to compare columns directly so pagination (LIMIT) works correctly
     const flagged = await prisma.$queryRaw<any[]>`

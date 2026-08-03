@@ -1,16 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { logAudit } from '@/lib/audit'
-
-const ALLOWED_ROLES = ['ADMIN', 'SUPER_ADMIN', 'BRANCH', 'ACCOUNTS']
+import { getReqPerms, FORBIDDEN } from '@/lib/server-auth'
 
 export async function GET(req: NextRequest) {
-  const role = req.headers.get('x-user-role')
+  const auth = await getReqPerms(req)
+  if (!auth || !auth.perms['wholesale.view']) return FORBIDDEN()
+  const { role } = auth
   const userBranchId = req.headers.get('x-user-branch-id')
-
-  if (!role || !ALLOWED_ROLES.includes(role)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
 
   const { searchParams } = new URL(req.url)
   const buyerId = searchParams.get('buyerId')
@@ -47,13 +44,10 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const role = req.headers.get('x-user-role')
-  const userId = req.headers.get('x-user-id')
+  const auth = await getReqPerms(req)
+  if (!auth || !auth.perms['wholesale.write']) return FORBIDDEN()
+  const { role, userId } = auth
   const userBranchId = req.headers.get('x-user-branch-id')
-
-  if (!role || !ALLOWED_ROLES.includes(role)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
 
   try {
     const { buyerId, challanId, branchId: bodyBranchId, method, amount, transactionRef, note, attachmentUrl, buyerBankInfoId, collectedAt } = await req.json()
@@ -77,7 +71,7 @@ export async function POST(req: NextRequest) {
           note: note || null,
           attachmentUrl: attachmentUrl || null,
           buyerBankInfoId: buyerBankInfoId ? parseInt(buyerBankInfoId) : null,
-          collectedById: parseInt(userId!),
+          collectedById: userId,
           collectedAt: collectedAt ? new Date(collectedAt) : new Date(),
         },
       })
@@ -137,7 +131,7 @@ export async function POST(req: NextRequest) {
     })
 
     void logAudit({
-      userId: parseInt(userId!),
+      userId: userId,
       action: 'CREATE',
       entityType: 'WholesalePayment',
       entityId: payment.id,

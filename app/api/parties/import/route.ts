@@ -3,14 +3,12 @@ import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 import * as ExcelJS from 'exceljs'
 import { logAudit } from '@/lib/audit'
+import { getReqPerms, FORBIDDEN } from '@/lib/server-auth'
 
 export async function POST(req: NextRequest) {
-  const userRole = req.headers.get('x-user-role')
-  const userId = req.headers.get('x-user-id')
-  
-  if (userRole !== 'ADMIN' && userRole !== 'SUPER_ADMIN') {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
-  }
+  const auth = await getReqPerms(req)
+  if (!auth || !auth.perms['admin.import']) return FORBIDDEN()
+  const userId = String(auth.userId)
 
   try {
     const formData = await req.formData()

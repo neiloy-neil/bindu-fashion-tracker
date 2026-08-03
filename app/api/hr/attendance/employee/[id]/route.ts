@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { startOfMonth, endOfMonth, parseISO, startOfYear, endOfYear } from 'date-fns'
+import { getReqPerms, FORBIDDEN } from '@/lib/server-auth'
 
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const role = req.headers.get('x-user-role')
-  if (!role || !['ADMIN', 'SUPER_ADMIN', 'HR_ADMIN', 'BRANCH', 'AUDITOR', 'AREA_MANAGER'].includes(role)) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
-  }
+  const auth = await getReqPerms(req)
+  if (!auth || !auth.perms['hr.attendance.view']) return FORBIDDEN()
+  const { role } = auth
 
   const { id } = await params
   const employeeId = parseInt(id)

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
+import { getReqPerms, FORBIDDEN } from '@/lib/server-auth'
 
 const employeeCreateSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -23,11 +24,10 @@ const employeeCreateSchema = z.object({
 })
 
 export async function GET(req: NextRequest) {
-  const role = req.headers.get('x-user-role')
+  const auth = await getReqPerms(req)
+  if (!auth || !auth.perms['hr.employees.view']) return FORBIDDEN()
+  const { role } = auth
   const userBranchId = req.headers.get('x-user-branch-id')
-  if (!role || !['ADMIN', 'SUPER_ADMIN', 'HR_ADMIN', 'AUDITOR', 'BRANCH'].includes(role)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
 
   const { searchParams } = new URL(req.url)
   const reqBranchId = searchParams.get('branchId')
@@ -52,11 +52,10 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const role = req.headers.get('x-user-role')
+  const auth = await getReqPerms(req)
+  if (!auth || !auth.perms['hr.employees.write']) return FORBIDDEN()
+  const { role } = auth
   const userBranchId = req.headers.get('x-user-branch-id')
-  if (!role || !['ADMIN', 'SUPER_ADMIN', 'HR_ADMIN', 'BRANCH'].includes(role)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
 
   try {
     const parsed = employeeCreateSchema.safeParse(await req.json())

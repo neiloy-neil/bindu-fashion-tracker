@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
+import { getReqPerms, FORBIDDEN } from '@/lib/server-auth'
 
 const paymentMethodSchema = z.object({
   type: z.enum(['BANK', 'BKASH', 'NAGAD', 'OTHER']).default('BANK'),
@@ -22,10 +23,8 @@ const paymentMethodSchema = z.object({
 })
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const userRole = req.headers.get('x-user-role')
-  if (!['ADMIN', 'SUPER_ADMIN'].includes(userRole ?? '')) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
-  }
+  const auth = await getReqPerms(req)
+  if (!auth || !auth.perms['parties.write']) return FORBIDDEN()
 
   const resolvedParams = await params
   const partyId = parseInt(resolvedParams.id)

@@ -2,14 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 import { startOfMonth, endOfMonth, parseISO } from 'date-fns'
+import { getReqPerms, FORBIDDEN } from '@/lib/server-auth'
 
 export async function GET(req: NextRequest) {
-  const userRole = req.headers.get('x-user-role')
+  const auth = await getReqPerms(req)
+  if (!auth || !auth.perms['hr.attendance.view']) return FORBIDDEN()
+  const userRole = auth.role
   const userBranchId = req.headers.get('x-user-branch-id')
-  
-  if (!userRole || !['ADMIN', 'SUPER_ADMIN', 'HR_ADMIN', 'BRANCH', 'AREA_MANAGER'].includes(userRole)) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
-  }
 
   const { searchParams } = new URL(req.url)
   const monthStr = searchParams.get('month') // e.g. "2026-06"

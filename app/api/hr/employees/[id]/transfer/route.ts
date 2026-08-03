@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 import { z } from 'zod'
+import { getReqPerms, FORBIDDEN } from '@/lib/server-auth'
 
 const transferSchema = z.object({
   toBranchId: z.union([z.string(), z.number()]).transform(v => Number(v)),
@@ -9,16 +10,11 @@ const transferSchema = z.object({
 })
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const userRole = req.headers.get('x-user-role')
-  const userId = req.headers.get('x-user-id')
+  const auth = await getReqPerms(req)
+  if (!auth || !auth.perms['hr.employees.write']) return FORBIDDEN()
+  const userId = String(auth.userId)
+  const userRole = auth.role
 
-  if (!userRole || !['ADMIN', 'SUPER_ADMIN', 'HR_ADMIN'].includes(userRole)) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
-  }
-
-  if (!userId) {
-    return NextResponse.json({ error: 'User ID missing in headers' }, { status: 401 })
-  }
 
   try {
     const { id } = await params
@@ -53,7 +49,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           employeeId: employee.id,
           fromBranchId: employee.branchId!,
           toBranchId,
-          transferredById: parseInt(userId),
+          transferredById: auth.userId,
           reason
         }
       })

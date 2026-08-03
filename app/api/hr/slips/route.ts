@@ -1,14 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { calcSalary } from '@/lib/hr/calculations'
+import { getReqPerms, FORBIDDEN } from '@/lib/server-auth'
 
 export async function GET(req: NextRequest) {
-  const role = req.headers.get('x-user-role')
-  const userIdStr = req.headers.get('x-user-id')
-
-  if (!role || !userIdStr || !['ADMIN', 'SUPER_ADMIN', 'HR_ADMIN', 'AUDITOR', 'BRANCH'].includes(role)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
+  const auth = await getReqPerms(req)
+  if (!auth || !auth.perms['payroll.slips.view']) return FORBIDDEN()
+  const { role } = auth
 
   const { searchParams } = new URL(req.url)
   const month = searchParams.get('month')

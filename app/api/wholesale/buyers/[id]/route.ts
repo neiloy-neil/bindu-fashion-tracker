@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-
-const ALLOWED_ROLES = ['ADMIN', 'SUPER_ADMIN', 'BRANCH', 'ACCOUNTS', 'AREA_MANAGER', 'AUDITOR']
+import { getReqPerms, FORBIDDEN } from '@/lib/server-auth'
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const role = req.headers.get('x-user-role')
-  if (!role || !ALLOWED_ROLES.includes(role)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  const auth = await getReqPerms(req)
+  if (!auth || !auth.perms['wholesale.view']) return FORBIDDEN()
 
   const { id } = await params
   const buyer = await prisma.wholesaleBuyer.findUnique({
@@ -22,10 +21,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 }
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const role = req.headers.get('x-user-role')
-  if (!role || !['ADMIN', 'SUPER_ADMIN'].includes(role)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
+  const auth = await getReqPerms(req)
+  if (!auth || !auth.perms['wholesale.write']) return FORBIDDEN()
 
   const { id } = await params
   try {
@@ -51,10 +48,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const role = req.headers.get('x-user-role')
-  if (!role || !['ADMIN', 'SUPER_ADMIN'].includes(role)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
+  const auth = await getReqPerms(req)
+  if (!auth || !auth.perms['wholesale.write']) return FORBIDDEN()
 
   const { id } = await params
   try {

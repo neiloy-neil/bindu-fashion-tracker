@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
+import { getReqPerms, FORBIDDEN } from '@/lib/server-auth'
 
 const attendancePostSchema = z.object({
   branchId: z.union([z.string(), z.number()]).transform(v => Number(v)).optional(),
@@ -16,12 +17,10 @@ const attendancePostSchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
-    const userRole = req.headers.get('x-user-role')
+    const auth = await getReqPerms(req)
+    if (!auth || !auth.perms['hr.attendance.record']) return FORBIDDEN()
+    const userRole = auth.role
     const userBranchId = req.headers.get('x-user-branch-id')
-
-    if (!userRole || !['ADMIN', 'SUPER_ADMIN', 'BRANCH'].includes(userRole)) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
 
     const parsed = attendancePostSchema.safeParse(await req.json())
     if (!parsed.success) {
@@ -124,6 +123,9 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
+  const auth = await getReqPerms(req)
+  if (!auth || !auth.perms['hr.attendance.view']) return FORBIDDEN()
+
   const { searchParams } = new URL(req.url)
   const dateStr = searchParams.get('date')
   const branchId = searchParams.get('branchId')

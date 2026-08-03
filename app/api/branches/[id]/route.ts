@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getReqPerms, FORBIDDEN } from '@/lib/server-auth'
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -36,10 +37,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const role = req.headers.get('x-user-role')
-  if (role !== 'ADMIN' && role !== 'SUPER_ADMIN') {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
-  }
+  const auth = await getReqPerms(req)
+  if (!auth || !auth.perms['admin.branches']) return FORBIDDEN()
 
   const resolvedParams = await params
   const branchId = parseInt(resolvedParams.id)
@@ -63,10 +62,8 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
 }
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const role = req.headers.get('x-user-role')
-  if (role !== 'ADMIN' && role !== 'SUPER_ADMIN') {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
-  }
+  const auth = await getReqPerms(req)
+  if (!auth || !auth.perms['admin.branches']) return FORBIDDEN()
 
   const resolvedParams = await params
   const branchId = parseInt(resolvedParams.id)

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getReqPerms, FORBIDDEN } from '@/lib/server-auth'
 
 const employeeFullSelect = {
   id: true,
@@ -36,14 +37,13 @@ const employeeLimitedSelect = {
 } as const
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const auth = await getReqPerms(req)
+  if (!auth || !auth.perms['hr.employees.view']) return FORBIDDEN()
+  const { role } = auth
   const { id } = await params
   const employeeId = parseInt(id)
-  const role = req.headers.get('x-user-role')
   const userBranchId = req.headers.get('x-user-branch-id')
   const managedBranchIds = req.headers.get('x-user-managed-branches')
-  if (!role) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
-  }
   if (Number.isNaN(employeeId)) {
     return NextResponse.json({ error: 'Invalid employee id' }, { status: 400 })
   }
@@ -108,12 +108,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 }
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const auth = await getReqPerms(req)
+  if (!auth || !auth.perms['hr.employees.write']) return FORBIDDEN()
+  const { role } = auth
   const { id } = await params
-  const role = req.headers.get('x-user-role')
   const userBranchId = req.headers.get('x-user-branch-id')
-  if (!role || !['ADMIN', 'SUPER_ADMIN', 'HR_ADMIN', 'BRANCH'].includes(role)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
 
   try {
     const data = await req.json()
@@ -160,12 +159,11 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const auth = await getReqPerms(req)
+  if (!auth || !auth.perms['hr.employees.write']) return FORBIDDEN()
+  const { role } = auth
   const { id } = await params
-  const role = req.headers.get('x-user-role')
   const userBranchId = req.headers.get('x-user-branch-id')
-  if (!role || !['ADMIN', 'SUPER_ADMIN', 'HR_ADMIN', 'BRANCH'].includes(role)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
 
   try {
     const employeeId = parseInt(id)

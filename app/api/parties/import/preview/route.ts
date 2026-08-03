@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import * as ExcelJS from 'exceljs'
 import { logger } from '@/lib/logger'
+import { getReqPerms, FORBIDDEN } from '@/lib/server-auth'
 
 export async function POST(req: NextRequest) {
-  const userRole = req.headers.get('x-user-role')
-  
-  if (userRole !== 'ADMIN' && userRole !== 'SUPER_ADMIN') {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
-  }
+  const auth = await getReqPerms(req)
+  if (!auth || !auth.perms['admin.import']) return FORBIDDEN()
 
   try {
     const formData = await req.formData()

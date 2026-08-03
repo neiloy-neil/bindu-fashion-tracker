@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 import { logger } from '@/lib/logger'
+import { getReqPerms, FORBIDDEN } from '@/lib/server-auth'
 
 const excuseSchema = z.object({
   isExcused: z.boolean(),
@@ -10,12 +11,10 @@ const excuseSchema = z.object({
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const role = req.headers.get('x-user-role')
+    const auth = await getReqPerms(req)
+    if (!auth || !auth.perms['hr.attendance.record']) return FORBIDDEN()
+    const { role } = auth
     const userBranchId = req.headers.get('x-user-branch-id')
-
-    if (!role || !['ADMIN', 'SUPER_ADMIN', 'HR_ADMIN', 'BRANCH'].includes(role)) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
 
     const { id: paramId } = await params
     const id = parseInt(paramId)

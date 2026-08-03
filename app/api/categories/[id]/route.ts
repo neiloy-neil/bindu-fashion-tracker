@@ -1,12 +1,11 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getReqPerms, FORBIDDEN } from '@/lib/server-auth'
 
-export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const auth = await getReqPerms(request)
+  if (!auth || !auth.perms['admin.categories']) return FORBIDDEN()
   try {
-    const role = request.headers.get('x-user-role')
-    if (!role || !['ADMIN', 'SUPER_ADMIN'].includes(role)) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
 
     const { id } = await params
     const categoryId = parseInt(id)

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 import { logAudit } from '@/lib/audit'
+import { getReqPerms, FORBIDDEN } from '@/lib/server-auth'
 
 const lockSchema = z.object({
   branchId: z.number().int().positive(),
@@ -10,10 +11,8 @@ const lockSchema = z.object({
 })
 
 export async function GET(req: NextRequest) {
-  const userRole = req.headers.get('x-user-role')
-  if (!['ADMIN', 'SUPER_ADMIN', 'AUDITOR', 'AREA_MANAGER', 'ACCOUNTS'].includes(userRole ?? '')) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
+  const auth = await getReqPerms(req)
+  if (!auth || !auth.perms['admin.lock_months']) return FORBIDDEN()
 
   const { searchParams } = new URL(req.url)
   const branchId = searchParams.get('branchId')
@@ -28,11 +27,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const userRole = req.headers.get('x-user-role')
-  const userId = req.headers.get('x-user-id')
-  if (!['ADMIN', 'SUPER_ADMIN'].includes(userRole ?? '')) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
+  const auth = await getReqPerms(req)
+  if (!auth || !auth.perms['admin.lock_months']) return FORBIDDEN()
+  const { userId } = auth
 
   const parsed = lockSchema.safeParse(await req.json())
   if (!parsed.success) {
@@ -43,9 +40,9 @@ export async function POST(req: NextRequest) {
 
   try {
     const locked = await prisma.lockedMonth.create({
-      data: { branchId, year, month, lockedById: parseInt(userId!) },
+      data: { branchId, year, month, lockedById: userId },
     })
-    void logAudit({ userId: parseInt(userId!), action: 'CREATE', entityType: 'LockedMonth', entityId: locked.id, newValues: { branchId, year, month } })
+    void logAudit({ userId, action: 'CREATE', entityType: 'LockedMonth', entityId: locked.id, newValues: { branchId, year, month } })
     return NextResponse.json({ locked }, { status: 201 })
   } catch (e: any) {
     if (e.code === 'P2002') {
@@ -56,11 +53,9 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const userRole = req.headers.get('x-user-role')
-  const userId = req.headers.get('x-user-id')
-  if (!['ADMIN', 'SUPER_ADMIN'].includes(userRole ?? '')) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
+  const auth = await getReqPerms(req)
+  if (!auth || !auth.perms['admin.lock_months']) return FORBIDDEN()
+  const { userId } = auth
 
   const parsed = lockSchema.safeParse(await req.json())
   if (!parsed.success) {
@@ -74,6 +69,6 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: 'Lock not found' }, { status: 404 })
   }
 
-  void logAudit({ userId: parseInt(userId!), action: 'DELETE', entityType: 'LockedMonth', entityId: 0, newValues: { branchId, year, month } })
+  void logAudit({ userId, action: 'DELETE', entityType: 'LockedMonth', entityId: 0, newValues: { branchId, year, month } })
   return NextResponse.json({ success: true })
 }

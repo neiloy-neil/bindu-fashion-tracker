@@ -12,8 +12,6 @@ import AdminExpenseApprovals from '@/components/dashboard/AdminExpenseApprovals'
 import AdminPaymentApprovals from '@/components/dashboard/AdminPaymentApprovals'
 import AdminSupportRequests from '@/components/dashboard/AdminSupportRequests'
 import BranchTargetWidget from '@/components/dashboard/BranchTargetWidget'
-import ChequeDueWidget from '@/components/dashboard/ChequeDueWidget'
-import PendingPaymentsWidget from '@/components/dashboard/PendingPaymentsWidget'
 import { PartiesSummaryWidget } from '@/components/dashboard/PartiesSummaryWidget'
 import RecentActivity from '@/components/dashboard/RecentActivity'
 import { MorningCheckInWidget } from '@/components/hr/MorningCheckInWidget'
@@ -1047,10 +1045,8 @@ function Dashboard() {
 
                   {/* Row 4: Parties summary | Cheque/Payments + Approvals */}
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                    <div className="space-y-3">
+                    <div>
                       <PartiesSummaryWidget />
-                      <ChequeDueWidget />
-                      <PendingPaymentsWidget />
                     </div>
                     <div className="space-y-3">
                       <AdminExpenseApprovals />

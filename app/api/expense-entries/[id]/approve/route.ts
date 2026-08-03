@@ -2,18 +2,16 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { logAudit } from '@/lib/audit'
 import { notifyBranchUsers } from '@/lib/notify'
+import { getReqPerms, FORBIDDEN } from '@/lib/server-auth'
 
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params
-  const userRole = req.headers.get('x-user-role')
-  const userId = parseInt(req.headers.get('x-user-id') || '0')
-
-  if (userRole !== 'ADMIN' && userRole !== 'SUPER_ADMIN') {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
+  const auth = await getReqPerms(req)
+  if (!auth || !auth.perms['entries.approve_expense']) return FORBIDDEN()
+  const userId = auth.userId
 
   try {
     const expense = await prisma.expenseEntry.findUnique({

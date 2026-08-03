@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getReqPerms, FORBIDDEN } from '@/lib/server-auth'
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const userRole = req.headers.get('x-user-role')
-  if (!userRole) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const auth = await getReqPerms(req)
+  if (!auth || !auth.perms['parties.view']) return FORBIDDEN()
 
   const resolvedParams = await params
   const id = parseInt(resolvedParams.id)

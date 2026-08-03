@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { dailyEntrySchema } from '@/lib/schemas'
 import { logAudit } from '@/lib/audit'
 import { isMonthLocked } from '@/lib/locked-month'
+import { getReqPerms, FORBIDDEN } from '@/lib/server-auth'
 
 export async function PUT(
   req: NextRequest,
@@ -18,10 +19,9 @@ export async function PUT(
   // Add reason to body destructuring
   const { date, branchId, items, expenseEntries: expenseEntriesUpdate, reason, ...fields } = body as any
 
-  const userRole = req.headers.get('x-user-role')
-  if (userRole === 'AUDITOR' || userRole === 'AREA_MANAGER') {
-    return NextResponse.json({ error: 'Forbidden: Read-Only Role' }, { status: 403 })
-  }
+  const auth = await getReqPerms(req)
+  if (!auth || !auth.perms['entries.view']) return FORBIDDEN()
+  const userRole = auth.role
   const userBranchId = req.headers.get('x-user-branch-id')
 
   try {
@@ -183,10 +183,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params
-  const userRole = _req.headers.get('x-user-role')
-  if (userRole === 'AUDITOR' || userRole === 'AREA_MANAGER') {
-    return NextResponse.json({ error: 'Forbidden: Read-Only Role' }, { status: 403 })
-  }
+  const auth = await getReqPerms(_req)
+  if (!auth || !auth.perms['entries.delete']) return FORBIDDEN()
+  const userRole = auth.role
   const userBranchId = _req.headers.get('x-user-branch-id')
 
   try {

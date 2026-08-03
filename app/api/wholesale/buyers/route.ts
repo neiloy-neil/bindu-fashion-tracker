@@ -1,15 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-
-const ALLOWED_ROLES = ['ADMIN', 'SUPER_ADMIN', 'BRANCH', 'ACCOUNTS', 'AREA_MANAGER', 'AUDITOR']
+import { getReqPerms, FORBIDDEN } from '@/lib/server-auth'
 
 export async function GET(req: NextRequest) {
-  const role = req.headers.get('x-user-role')
+  const auth = await getReqPerms(req)
+  if (!auth || !auth.perms['wholesale.view']) return FORBIDDEN()
+  const { role } = auth
   const branchId = req.headers.get('x-user-branch-id')
-
-  if (!role || !ALLOWED_ROLES.includes(role)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
 
   const { searchParams } = new URL(req.url)
   const filterBranchId = searchParams.get('branchId')
@@ -43,10 +40,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const role = req.headers.get('x-user-role')
-  if (!role || !['ADMIN', 'SUPER_ADMIN'].includes(role)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
+  const auth = await getReqPerms(req)
+  if (!auth || !auth.perms['wholesale.write']) return FORBIDDEN()
 
   try {
     const { name, contactPerson, contactNumber, secondaryNumber, email, address, creditLimit, branchId, openingBalance } = await req.json()

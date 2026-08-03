@@ -1,15 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
-const ALLOWED = ['ADMIN', 'SUPER_ADMIN', 'AUDITOR', 'AREA_MANAGER', 'ACCOUNTS', 'BRANCH']
+import { getReqPerms, FORBIDDEN } from '@/lib/server-auth'
 
 export async function GET(req: NextRequest) {
-  const role = req.headers.get('x-user-role')
+  const auth = await getReqPerms(req)
+  if (!auth || !auth.perms['reports.petty_cash']) return FORBIDDEN()
+  const role = auth.role
   const userBranchId = req.headers.get('x-user-branch-id')
-
-  if (!role || !ALLOWED.includes(role)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
 
   const { searchParams } = new URL(req.url)
   const branchId = searchParams.get('branchId')

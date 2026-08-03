@@ -7,7 +7,9 @@ function dateOnly(str: string): Date {
   return d
 }
 
-export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const role = req.headers.get('x-user-role')
+  if (!role) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   const { id } = await params
   const holidays = await prisma.branchHoliday.findMany({
     where: { branchId: parseInt(id) },

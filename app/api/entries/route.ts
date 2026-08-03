@@ -6,6 +6,7 @@ import { logAudit } from '@/lib/audit'
 import { logger } from '@/lib/logger'
 import { signEntryAttachments } from '@/lib/storage'
 import { isMonthLocked } from '@/lib/locked-month'
+import { getReqPerms, FORBIDDEN } from '@/lib/server-auth'
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
@@ -15,12 +16,11 @@ export async function GET(req: NextRequest) {
   const page = parseInt(searchParams.get('page') || '1')
   const limit = parseInt(searchParams.get('limit') || '50')
 
-  const userRole = req.headers.get('x-user-role')
+  const auth = await getReqPerms(req)
+  if (!auth || !auth.perms['entries.view']) return FORBIDDEN()
+  const userRole = auth.role
   const userBranchId = req.headers.get('x-user-branch-id')
   const userManagedBranches = req.headers.get('x-user-managed-branches')
-
-  if (!userRole) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  if (userRole === 'HR_ADMIN') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const where: Record<string, unknown> = {}
 
@@ -84,13 +84,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'VALIDATION_ERROR', message: 'Please correct the highlighted fields', details: parsed.error.flatten() }, { status: 400 })
   }
   const body = parsed.data
-  const userRole = req.headers.get('x-user-role')
+  const auth = await getReqPerms(req)
+  if (!auth || !auth.perms['entries.create']) return NextResponse.json({ error: 'FORBIDDEN', message: 'This role cannot create entries' }, { status: 403 })
+  const userRole = auth.role
   const userBranchId = req.headers.get('x-user-branch-id')
-
-  if (!userRole) return NextResponse.json({ error: 'UNAUTHORIZED', message: 'Authentication is required' }, { status: 401 })
-  if (!['ADMIN', 'SUPER_ADMIN', 'BRANCH'].includes(userRole)) {
-    return NextResponse.json({ error: 'FORBIDDEN', message: 'This role cannot create entries' }, { status: 403 })
-  }
 
   if (userRole === 'BRANCH' && !userBranchId) return NextResponse.json({ error: 'FORBIDDEN', message: 'No branch is assigned' }, { status: 403 })
   const finalBranchId = userRole === 'BRANCH' ? Number(userBranchId) : body.branchId
@@ -213,6 +210,18 @@ export async function POST(req: NextRequest) {
       const expectedNetBalance = income + stubTransferIncome - expenses - transfers - payments - advances - pettyCashReplenished
       if (body.actualPhysicalCash !== expectedNetBalance && !body.cashDifferenceNote) {
         throw new Error('A cash discrepancy reason is required')
+      }
+
+      // Block counter-close if there are unacknowledged incoming transfers for this date
+      const pendingIncomingCount = await tx.transfer.count({
+        where: {
+          status: 'PENDING',
+          account: { type: 'BRANCH', branchId: finalBranchId },
+          dailyEntry: { date: dateOnlyToUtc(body.date) },
+        },
+      })
+      if (pendingIncomingCount > 0) {
+        throw new Error(`PENDING_TRANSFERS:${pendingIncomingCount}`)
       }
 
       const entryData = {
@@ -489,6 +498,14 @@ export async function POST(req: NextRequest) {
     })
     if (error instanceof Error && error.message === 'REAL_ENTRY_EXISTS') {
       return NextResponse.json({ error: 'DUPLICATE_ENTRY', message: 'An entry already exists for this branch and date' }, { status: 409 })
+    }
+    if (error instanceof Error && error.message.startsWith('PENDING_TRANSFERS:')) {
+      const count = error.message.split(':')[1]
+      return NextResponse.json({
+        error: 'PENDING_TRANSFERS',
+        message: `You have ${count} unacknowledged incoming transfer(s) for this date. Please acknowledge or reject them before closing the counter.`,
+        pendingTransfers: parseInt(count),
+      }, { status: 422 })
     }
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
       return NextResponse.json({ error: 'DUPLICATE_ENTRY', message: 'An entry already exists for this branch and date' }, { status: 409 })

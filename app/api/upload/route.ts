@@ -19,6 +19,10 @@ export async function POST(request: NextRequest) {
   if (!['private_receipts', 'receipts', 'employees'].includes(bucket)) {
     return NextResponse.json({ error: 'INVALID_BUCKET' }, { status: 400 })
   }
+  const role = session.user.role as string
+  if (bucket === 'employees' && !['ADMIN', 'SUPER_ADMIN', 'HR_ADMIN'].includes(role)) {
+    return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 })
+  }
 
   const extension = file.name.split('.').pop()?.replace(/[^a-zA-Z0-9]/g, '').toLowerCase() || 'bin'
   const key = `${session.user.id}/${new Date().getUTCFullYear()}/${randomUUID()}.${extension}`

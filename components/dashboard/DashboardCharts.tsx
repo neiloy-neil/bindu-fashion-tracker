@@ -87,15 +87,22 @@ export function MainDashboardCharts({
               exceed 30% of total expenses.
             </div>
           )}
-          <ResponsiveContainer width="100%" height={240}>
+          <ResponsiveContainer width="100%" height={180}>
             <PieChart>
-              <Pie data={expenseBreakdown} cx="50%" cy="50%" innerRadius={60} outerRadius={90} dataKey="amount" nameKey="category">
+              <Pie data={expenseBreakdown} cx="50%" cy="50%" innerRadius={50} outerRadius={75} dataKey="amount" nameKey="category">
                 {expenseBreakdown.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
               </Pie>
               <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: any) => [`৳${formatCurrency(v || 0)}`, undefined]} />
-              <Legend layout="vertical" align="right" verticalAlign="middle" className="text-[11px] text-[var(--text-secondary)]" />
             </PieChart>
           </ResponsiveContainer>
+          <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1">
+            {expenseBreakdown.map((entry: any, i: number) => (
+              <span key={i} className="flex items-center gap-1 text-[10px] text-[var(--text-secondary)]">
+                <span className="inline-block w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
+                {entry.category}
+              </span>
+            ))}
+          </div>
         </div>
       </div>
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 import { isMonthLocked } from '@/lib/locked-month'
+import { getReqPerms, FORBIDDEN } from '@/lib/server-auth'
 
 const schema = z.object({
   categoryId: z.number().int().positive(),
@@ -12,17 +13,13 @@ const schema = z.object({
 
 // GET: list expenses for the branch (recent 60)
 export async function GET(req: NextRequest) {
-  const userRole = req.headers.get('x-user-role')
+  const auth = await getReqPerms(req)
+  if (!auth || !auth.perms['wholesale.view']) return FORBIDDEN()
+  const { role: userRole } = auth
   const userBranchId = req.headers.get('x-user-branch-id')
   const branchType = req.headers.get('x-user-branch-type')
 
-  const isAdmin = ['ADMIN', 'SUPER_ADMIN'].includes(userRole ?? '')
   const isWholesaleBranch = userRole === 'BRANCH' && branchType === 'WHOLESALE'
-
-  if (!isAdmin && !isWholesaleBranch) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
-
   const branchId = isWholesaleBranch ? parseInt(userBranchId ?? '0') : undefined
 
   const expenses = await prisma.expenseEntry.findMany({
@@ -43,16 +40,14 @@ export async function GET(req: NextRequest) {
 
 // POST: submit a standalone expense for a wholesale branch
 export async function POST(req: NextRequest) {
-  const userRole = req.headers.get('x-user-role')
+  const auth = await getReqPerms(req)
+  if (!auth || !auth.perms['wholesale.write']) return FORBIDDEN()
+  const { role: userRole } = auth
   const userBranchId = req.headers.get('x-user-branch-id')
   const branchType = req.headers.get('x-user-branch-type')
 
-  const isAdmin = ['ADMIN', 'SUPER_ADMIN'].includes(userRole ?? '')
+  const isAdmin = ['ADMIN', 'SUPER_ADMIN'].includes(userRole)
   const isWholesaleBranch = userRole === 'BRANCH' && branchType === 'WHOLESALE'
-
-  if (!isAdmin && !isWholesaleBranch) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
 
   if (!userBranchId) {
     return NextResponse.json({ error: 'Branch ID missing' }, { status: 400 })

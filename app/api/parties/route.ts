@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getReqPerms, FORBIDDEN } from '@/lib/server-auth'
 
 export async function GET(req: NextRequest) {
-  const userRole = req.headers.get('x-user-role')
-  if (!['ADMIN', 'SUPER_ADMIN', 'ACCOUNTS', 'AUDITOR', 'AREA_MANAGER'].includes(userRole ?? '')) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
-  }
+  const auth = await getReqPerms(req)
+  if (!auth || !auth.perms['parties.view']) return FORBIDDEN()
 
   const { searchParams } = new URL(req.url)
   const includeInactive = searchParams.get('includeInactive') === 'true'
@@ -23,10 +22,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const userRole = req.headers.get('x-user-role')
-  if (!['ADMIN', 'SUPER_ADMIN'].includes(userRole ?? '')) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
-  }
+  const auth = await getReqPerms(req)
+  if (!auth || !auth.perms['parties.write']) return FORBIDDEN()
 
   try {
     const { name, isActive, contactPerson, contactNumber, secondaryNumber, email, address, openingDueAmount, openingDueDate, hasPaymentMethod, methodType, methodLabel, methodAccountNo, methodRoutingNo, methodBranchName } = await req.json()

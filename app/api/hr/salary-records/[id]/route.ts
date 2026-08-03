@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getReqPerms, FORBIDDEN } from '@/lib/server-auth'
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const auth = await getReqPerms(req)
+  if (!auth || !auth.perms['payroll.salary.process']) return FORBIDDEN()
   const { id } = await params;
-  const role = req.headers.get('x-user-role')
-  if (!role || (role !== 'ADMIN' && role !== 'SUPER_ADMIN' && role !== 'HR_ADMIN')) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
 
   try {
     const recordId = parseInt(id)
@@ -42,11 +41,9 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const auth = await getReqPerms(req)
+  if (!auth || !auth.perms['payroll.salary.process']) return FORBIDDEN()
   const { id } = await params;
-  const role = req.headers.get('x-user-role')
-  if (!role || (role !== 'ADMIN' && role !== 'SUPER_ADMIN')) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
 
   try {
     const recordId = parseInt(id)

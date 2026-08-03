@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { logAudit } from '@/lib/audit'
-
-const ALLOWED_ROLES = ['ADMIN', 'SUPER_ADMIN', 'BRANCH', 'ACCOUNTS', 'AREA_MANAGER', 'AUDITOR']
+import { getReqPerms, FORBIDDEN } from '@/lib/server-auth'
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const role = req.headers.get('x-user-role')
-  if (!role || !ALLOWED_ROLES.includes(role)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  const auth = await getReqPerms(req)
+  if (!auth || !auth.perms['wholesale.view']) return FORBIDDEN()
 
   const { id } = await params
   const challan = await prisma.wholesaleChallan.findUnique({
@@ -24,12 +23,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const role = req.headers.get('x-user-role')
-  const userId = req.headers.get('x-user-id')
-
-  if (!role || !['ADMIN', 'SUPER_ADMIN', 'BRANCH', 'ACCOUNTS'].includes(role)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
+  const auth = await getReqPerms(req)
+  if (!auth || !auth.perms['wholesale.write']) return FORBIDDEN()
+  const { role, userId } = auth
 
   const { id } = await params
   const challanId = parseInt(id)
@@ -65,7 +61,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       })
 
       void logAudit({
-        userId: parseInt(userId!),
+        userId: userId,
         action: 'UPDATE',
         entityType: 'WholesaleChallan',
         entityId: challanId,
@@ -89,7 +85,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     })
 
     void logAudit({
-      userId: parseInt(userId!),
+      userId: userId,
       action: 'UPDATE',
       entityType: 'WholesaleChallan',
       entityId: challan.id,
@@ -103,12 +99,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const role = req.headers.get('x-user-role')
-  const userId = req.headers.get('x-user-id')
-
-  if (!role || !['ADMIN', 'SUPER_ADMIN'].includes(role)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
+  const auth = await getReqPerms(req)
+  if (!auth || !auth.perms['wholesale.write']) return FORBIDDEN()
+  const { role, userId } = auth
 
   const { id } = await params
   try {
@@ -146,7 +139,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     })
 
     void logAudit({
-      userId: parseInt(userId!),
+      userId: userId,
       action: 'UPDATE',
       entityType: 'WholesaleChallan',
       entityId: parseInt(id),

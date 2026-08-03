@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { signEntryAttachments } from '@/lib/storage'
+import { getReqPerms, FORBIDDEN } from '@/lib/server-auth'
 
 export async function GET(req: NextRequest) {
-  const userRole = req.headers.get('x-user-role')
+  const auth = await getReqPerms(req)
+  if (!auth || !auth.perms['reports.daily']) return FORBIDDEN()
+  const { role: userRole } = auth
   const userBranchId = req.headers.get('x-user-branch-id')
-
-  if (!userRole) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
-  }
 
   const { searchParams } = new URL(req.url)
   const branchId = searchParams.get('branchId')

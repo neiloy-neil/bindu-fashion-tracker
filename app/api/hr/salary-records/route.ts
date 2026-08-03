@@ -3,12 +3,11 @@ import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 import { logAudit } from '@/lib/audit'
 import { logger } from '@/lib/logger'
+import { getReqPerms, FORBIDDEN } from '@/lib/server-auth'
 
 export async function GET(req: NextRequest) {
-  const role = req.headers.get('x-user-role')
-  if (!role || !['ADMIN', 'SUPER_ADMIN', 'HR_ADMIN', 'AUDITOR'].includes(role)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
+  const auth = await getReqPerms(req)
+  if (!auth || !auth.perms['payroll.salary.process']) return FORBIDDEN()
 
   const { searchParams } = new URL(req.url)
   const month = searchParams.get('month')
@@ -119,12 +118,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const role = req.headers.get('x-user-role')
-  const userId = req.headers.get('x-user-id')
-  
-  if (!role || !['ADMIN', 'SUPER_ADMIN', 'HR_ADMIN'].includes(role)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
+  const auth = await getReqPerms(req)
+  if (!auth || !auth.perms['payroll.salary.process']) return FORBIDDEN()
+  const userId = String(auth.userId)
 
   try {
     const rawBody = await req.json()

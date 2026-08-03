@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { partyUpdateSchema } from '@/lib/schemas'
+import { getReqPerms, FORBIDDEN } from '@/lib/server-auth'
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const userRole = req.headers.get('x-user-role')
-  if (!userRole) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const auth = await getReqPerms(req)
+  if (!auth || !auth.perms['parties.view']) return FORBIDDEN()
 
   const resolvedParams = await params
   const id = parseInt(resolvedParams.id)
@@ -22,14 +23,12 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 }
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const userRole = req.headers.get('x-user-role')
-  if (!['ADMIN', 'SUPER_ADMIN'].includes(userRole ?? '')) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
-  }
+  const auth = await getReqPerms(req)
+  if (!auth || !auth.perms['parties.write']) return FORBIDDEN()
 
   const resolvedParams = await params
   const id = parseInt(resolvedParams.id)
-  
+
   try {
     const parsed = partyUpdateSchema.partial().safeParse(await req.json())
     if (!parsed.success) {
@@ -37,7 +36,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     }
 
     const { name, isActive, contactPerson, contactNumber, secondaryNumber, email, address } = parsed.data
-    
+
     if (name) {
       const existing = await prisma.party.findFirst({ where: { name, id: { not: id } } })
       if (existing) {
@@ -64,10 +63,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const userRole = req.headers.get('x-user-role')
-  if (!['ADMIN', 'SUPER_ADMIN'].includes(userRole ?? '')) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
-  }
+  const auth = await getReqPerms(req)
+  if (!auth || !auth.perms['parties.write']) return FORBIDDEN()
 
   const resolvedParams = await params
   const id = parseInt(resolvedParams.id)

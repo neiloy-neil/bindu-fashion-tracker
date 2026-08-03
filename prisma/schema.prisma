@@ -73,6 +73,7 @@ model User {
   lockedMonths            LockedMonth[]           @relation("LockedMonthsBy")
   branchRequestEvents     BranchRequestEvent[]    @relation("BranchRequestEventActor")
   targetsSet              BranchSalesTarget[]     @relation("TargetsSet")
+  paymentReminders        PaymentReminder[]       @relation("PaymentReminderCommitter")
 
   phoneNumber String?
 
@@ -307,9 +308,27 @@ model Party {
   balance         Float    @default(0)
   createdAt       DateTime @default(now())
 
-  payments  Payment[]
-  bankInfo  PartyBankInfo[]
-  purchases Purchase[]
+  payments         Payment[]
+  bankInfo         PartyBankInfo[]
+  purchases        Purchase[]
+  paymentReminders PaymentReminder[]
+}
+
+model PaymentReminder {
+  id            Int      @id @default(autoincrement())
+  partyId       Int
+  committedDate DateTime
+  committedById Int
+  note          String?  @db.Text
+  status        String   @default("PENDING") // PENDING | DONE | CANCELLED
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  party       Party @relation(fields: [partyId], references: [id], onDelete: Cascade)
+  committedBy User  @relation("PaymentReminderCommitter", fields: [committedById], references: [id])
+
+  @@index([partyId])
+  @@index([status, committedDate])
 }
 
 model EmployeeTransfer {

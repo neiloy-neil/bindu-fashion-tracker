@@ -4,19 +4,17 @@ import { z } from 'zod'
 import { logAudit } from '@/lib/audit'
 import { logger } from '@/lib/logger'
 import { notifyBranchUsers } from '@/lib/notify'
+import { getReqPerms, FORBIDDEN } from '@/lib/server-auth'
 
 const statusSchema = z.object({
   status: z.enum(['APPROVED', 'REJECTED'])
 })
 
 export async function PATCH(req: NextRequest, context: { params: Promise<{ id: string }> }) {
-  const role = req.headers.get('x-user-role')
-  const userId = req.headers.get('x-user-id')
+  const auth = await getReqPerms(req)
+  if (!auth || !auth.perms['hr.leaves.approve']) return FORBIDDEN()
+  const { role, userId } = auth
   const userBranchId = req.headers.get('x-user-branch-id')
-
-  if (!role || !['ADMIN', 'SUPER_ADMIN', 'HR_ADMIN', 'BRANCH'].includes(role)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
 
   const { id: paramId } = await context.params
   const id = parseInt(paramId)
@@ -45,13 +43,13 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
       where: { id },
       data: {
         status: parsed.data.status,
-        approvedById: parseInt(userId || '0')
+        approvedById: userId
       }
     })
 
-    if (userId) {
+    {
       await logAudit({
-        userId: parseInt(userId),
+        userId,
         action: 'UPDATE',
         entityType: 'LeaveRecord',
         entityId: id,

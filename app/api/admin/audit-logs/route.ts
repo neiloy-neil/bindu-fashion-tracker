@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getReqPerms, FORBIDDEN } from '@/lib/server-auth'
 
 export async function GET(req: NextRequest) {
-  const userRole = req.headers.get('x-user-role')
-  
-  if (!['ADMIN', 'SUPER_ADMIN', 'AUDITOR'].includes(userRole ?? '')) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
-  }
+  const auth = await getReqPerms(req)
+  if (!auth || !auth.perms['admin.audit']) return FORBIDDEN()
+  const userRole = auth.role
 
   const { searchParams } = new URL(req.url)
   const page = parseInt(searchParams.get('page') || '1')

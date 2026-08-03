@@ -1,7 +1,11 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import * as ExcelJS from 'exceljs'
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const role = req.headers.get('x-user-role')
+  if (!role || !['ADMIN', 'SUPER_ADMIN', 'ACCOUNTS', 'AUDITOR', 'AREA_MANAGER'].includes(role)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
   try {
     const workbook = new ExcelJS.Workbook()
     const worksheet = workbook.addWorksheet('Parties Demo')

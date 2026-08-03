@@ -74,20 +74,39 @@ export async function PATCH(
       return NextResponse.json(updated)
     }
 
-    // Find or create today's DailyEntry for the receiving branch
+    // Find or create the receiving branch's DailyEntry for the transfer's original date
     if (!transfer.account.branchId) {
       return NextResponse.json({ error: 'Transfer account is not linked to a branch' }, { status: 400 })
     }
 
-    const today = dateOnlyToUtc(dhakaDateString())
+    // Use the sending entry's date, not today's date
+    const sendingEntry = await prisma.dailyEntry.findUnique({
+      where: { id: transfer.dailyEntryId },
+      select: { date: true }
+    })
+    if (!sendingEntry) {
+      return NextResponse.json({ error: 'Sending entry not found' }, { status: 400 })
+    }
+    const transferDate = sendingEntry.date
+
+    // Block acknowledgment if the receiving branch has already closed their counter for this date
+    const receivingEntry = await prisma.dailyEntry.findUnique({
+      where: { date_branchId: { date: transferDate, branchId: transfer.account.branchId! } },
+      select: { actualPhysicalCash: true },
+    })
+    if (receivingEntry?.actualPhysicalCash !== null && receivingEntry?.actualPhysicalCash !== undefined) {
+      return NextResponse.json({
+        error: 'Cannot acknowledge: the receiving branch has already closed their counter for this date. An admin must unlock or amend that entry first.',
+      }, { status: 409 })
+    }
 
     const updated = await prisma.$transaction(async (tx) => {
       // Upsert a stub entry so multiple transfers on the same day all link to
       // the same record. The branch's real submission will fill in the stub.
       const dailyEntry = await tx.dailyEntry.upsert({
-        where: { date_branchId: { date: today, branchId: transfer.account.branchId! } },
+        where: { date_branchId: { date: transferDate, branchId: transfer.account.branchId! } },
         update: {},
-        create: { date: today, branchId: transfer.account.branchId! }
+        create: { date: transferDate, branchId: transfer.account.branchId! }
       })
 
       const result = await tx.transfer.updateMany({

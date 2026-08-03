@@ -730,12 +730,13 @@ function AccountsDashboard({ wholesaleData, month, year, viewMode, startDate, en
   )
 }
 
-function AreaManagerDashboard({ month, year, viewMode, startDate, endDate }: {
+function AreaManagerDashboard({ month, year, viewMode, startDate, endDate, onFilterChange }: {
   month: number
   year: number
   viewMode: 'daily' | 'month' | 'custom'
   startDate: string
   endDate: string
+  onFilterChange: (m: number, y: number, sd: string, ed: string, mode: 'daily' | 'month' | 'custom') => void
 }) {
   const fetcher = (url: string) => fetch(url).then(r => r.json())
 
@@ -755,23 +756,34 @@ function AreaManagerDashboard({ month, year, viewMode, startDate, endDate }: {
     ? `${startDate} to ${endDate}`
     : `${MONTHS[month - 1]} ${year}`
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64 gap-3">
-        <div className="w-5 h-5 rounded-full border-2 border-[var(--border-strong)] border-t-[var(--accent)] animate-spin" />
-        <span className="text-sm text-[var(--text-muted)]">Loading…</span>
+  return (
+    <div className="flex flex-col h-full">
+      <div className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-3 px-4 md:px-6 py-4 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur">
+        <div>
+          <h1 className="text-lg font-semibold text-[var(--text-primary)] leading-none">Area Overview</h1>
+          <p className="text-sm text-[var(--text-muted)] mt-1">
+            {period}{branchStats ? ` · ${branchStats.length} branch${branchStats.length !== 1 ? 'es' : ''}` : ''}
+          </p>
+        </div>
+        <DateFilter
+          month={month} year={year} startDate={startDate} endDate={endDate} viewMode={viewMode}
+          onChange={onFilterChange}
+          branches={[]} branchId="all" onBranchChange={() => {}} userRole="AREA_MANAGER"
+        />
       </div>
-    )
-  }
 
-  if (!branchStats || branchStats.length === 0) {
-    return (
-      <div className="p-6 flex items-center justify-center h-64">
-        <p className="text-sm text-[var(--text-muted)]">No branches assigned to your account.</p>
-      </div>
-    )
-  }
+      <div className="p-6 space-y-6 max-w-5xl mx-auto w-full">
 
+  {isLoading ? (
+    <div className="flex items-center justify-center h-64 gap-3">
+      <div className="w-5 h-5 rounded-full border-2 border-[var(--border-strong)] border-t-[var(--accent)] animate-spin" />
+      <span className="text-sm text-[var(--text-muted)]">Loading…</span>
+    </div>
+  ) : !branchStats || branchStats.length === 0 ? (
+    <div className="flex items-center justify-center h-64">
+      <p className="text-sm text-[var(--text-muted)]">No branches assigned to your account.</p>
+    </div>
+  ) : (() => {
   const totalIncome = branchStats.reduce((s: number, r: any) => s + r.totalIncome, 0)
   const totalExpense = branchStats.reduce((s: number, r: any) => s + r.totalExpense, 0)
   const chartData = branchStats.map((r: any) => ({
@@ -782,11 +794,7 @@ function AreaManagerDashboard({ month, year, viewMode, startDate, endDate }: {
   }))
 
   return (
-    <div className="p-6 space-y-6 max-w-5xl mx-auto">
-      <div>
-        <h1 className="text-lg font-semibold text-[var(--text-primary)]">Area Overview</h1>
-        <p className="text-sm text-[var(--text-muted)] mt-0.5">{period} · {branchStats.length} branch{branchStats.length !== 1 ? 'es' : ''}</p>
-      </div>
+    <>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
@@ -831,6 +839,10 @@ function AreaManagerDashboard({ month, year, viewMode, startDate, endDate }: {
             </div>
           </div>
         ))}
+      </div>
+    </>
+  )
+  })()}
       </div>
     </div>
   )
@@ -919,7 +931,7 @@ function Dashboard() {
   }
 
   if (userRole === 'AREA_MANAGER') {
-    return <AreaManagerDashboard month={month} year={year} viewMode={viewMode} startDate={startDate} endDate={endDate} />
+    return <AreaManagerDashboard month={month} year={year} viewMode={viewMode} startDate={startDate} endDate={endDate} onFilterChange={(m, y, sd, ed, mode) => { setMonth(m); setYear(y); setStartDate(sd); setEndDate(ed); setViewMode(mode) }} />
   }
 
   if (userRole === 'BRANCH' && branchType === 'WHOLESALE') {

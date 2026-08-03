@@ -17,12 +17,18 @@ function formatDate(dateStr: string) {
   return d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 }
 
+const SALE_CATEGORIES = new Set([
+  'Cash Sale', 'Bkash', 'Nagad', 'Rocket Income',
+  'POS Brac', 'POS City', 'POS DBBL', 'POS Pubali',
+])
+
 export default function WhatsAppReportCard({ entryData, branchName, selectedDate }: Props) {
   const openingBalance = entryData.items?.find((i: any) => i.category?.name === 'Opening Balance')?.amount ?? 0
   const receivedTransfers = entryData.receivedTransfers ?? []
 
+  // Only actual cash/digital sales count toward Total Sale
   const incomeItems = (entryData.items ?? []).filter(
-    (i: any) => i.category?.type === 'INCOME' && i.category?.name !== 'Opening Balance' && i.category?.name !== 'Branch Transfer Received' && i.amount > 0
+    (i: any) => i.category?.type === 'INCOME' && SALE_CATEGORIES.has(i.category?.name) && i.amount > 0
   )
   const expenseEntries = (entryData.expenseEntries ?? []).filter((e: any) => !e.isTransferEntry)
   const transfers = entryData.transfers ?? []
@@ -30,8 +36,8 @@ export default function WhatsAppReportCard({ entryData, branchName, selectedDate
   const advances = (entryData.advanceSalaries ?? []).filter((a: any) => a.type === 'CASH')
 
   const totalSale = incomeItems.reduce((s: number, i: any) => s + i.amount, 0)
-    + receivedTransfers.reduce((s: number, t: any) => s + t.amount, 0)
-  const totalIncome = openingBalance + totalSale
+  const totalTransfersReceived = receivedTransfers.reduce((s: number, t: any) => s + t.amount, 0)
+  const totalIncome = openingBalance + totalSale + totalTransfersReceived
   const totalExpenses = expenseEntries.reduce((s: number, e: any) => s + e.amount, 0)
   const totalTransfers = transfers.reduce((s: number, t: any) => s + t.amount, 0)
   const totalPayments = payments.reduce((s: number, p: any) => s + p.amount, 0)
@@ -96,7 +102,7 @@ export default function WhatsAppReportCard({ entryData, branchName, selectedDate
         <Row label="Opening Balance" value={fmt(openingBalance)} />
         <Row label="Total Sale (excl. opening)" value={fmt(totalSale)} accent />
         {receivedTransfers.length > 0 && (
-          <Row label={`Transfers Received (${receivedTransfers.length})`} value={fmt(receivedTransfers.reduce((s: number, t: any) => s + t.amount, 0))} />
+          <Row label={`Transfers Received (${receivedTransfers.length})`} value={fmt(totalTransfersReceived)} />
         )}
         <Row label="Total Inflow" value={fmt(totalIncome)} />
         <Row label="Expenses" value={fmt(totalExpenses)} />

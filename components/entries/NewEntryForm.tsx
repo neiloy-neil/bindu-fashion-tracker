@@ -18,7 +18,7 @@ import { TransferSection } from './TransferSection'
 import { PaymentSection } from './PaymentSection'
 import { AdvanceSalarySection } from './AdvanceSalarySection'
 import { EODChecklistModal } from './EODChecklistModal'
-import DailyReportTemplate from '@/components/reports/DailyReportTemplate'
+import WhatsAppReportCard from '@/components/reports/WhatsAppReportCard'
 import { BrandSpinner } from '@/components/ui/BrandSpinner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -677,10 +677,13 @@ export function NewEntryForm({ initialData, userId }: Props) {
           </div>
           <div
             ref={reportRef}
-            className="light"
-            style={{ position: 'fixed', left: 0, top: 0, width: '960px', zIndex: 9998, background: '#ffffff', pointerEvents: 'none' }}
+            style={{ position: 'fixed', left: 0, top: 0, zIndex: 9998, background: '#ffffff', pointerEvents: 'none' }}
           >
-            <DailyReportTemplate entryData={pendingReportData} />
+            <WhatsAppReportCard
+              entryData={pendingReportData}
+              branchName={branches.find(b => String(b.id) === String(pendingReportData.branch?.id))?.name || pendingReportData.branch?.name || 'Branch'}
+              selectedDate={pendingReportData.date}
+            />
           </div>
         </>
       )}

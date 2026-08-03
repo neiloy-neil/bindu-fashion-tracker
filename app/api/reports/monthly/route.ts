@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 import { getReqPerms, FORBIDDEN } from '@/lib/server-auth'
+import { SALE_CATEGORIES } from '@/lib/utils'
 
 export async function GET(req: NextRequest) {
   const auth = await getReqPerms(req)
@@ -40,8 +41,8 @@ export async function GET(req: NextRequest) {
           // Income items — excludes Opening Balance and auto-booked Branch Transfer Received
           // (received transfers are counted separately via receivedTransfers relation to avoid double-counting)
           items: {
-            where: { category: { type: 'INCOME', name: { notIn: ['Opening Balance', 'Branch Transfer Received'] } } },
-            select: { amount: true },
+            where: { category: { type: 'INCOME' } },
+            select: { amount: true, category: { select: { name: true } } },
           },
           // Cash received from other branches via inter-branch transfer acknowledgment
           receivedTransfers: { select: { amount: true } },
@@ -83,7 +84,7 @@ export async function GET(req: NextRequest) {
       let totalAdvances = 0
 
       branchEntries.forEach(entry => {
-        totalIncome += entry.items.reduce((sum, item) => sum + item.amount, 0)
+        totalIncome += entry.items.filter(i => SALE_CATEGORIES.has((i as any).category?.name)).reduce((sum, item) => sum + item.amount, 0)
         totalReceivedTransfers += entry.receivedTransfers.reduce((sum, t) => sum + t.amount, 0)
         // Only count approved expenses — pending/rejected are flagged separately
         totalExpense += entry.expenseEntries

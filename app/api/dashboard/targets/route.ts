@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { SALE_CATEGORIES } from '@/lib/utils'
 
 // Returns today's sale vs daily target + MTD sale vs monthly target per branch
 export async function GET(req: NextRequest) {
@@ -60,10 +61,6 @@ export async function GET(req: NextRequest) {
     }),
   ])
 
-  const SALE_CATEGORIES = new Set([
-    'Cash Sale', 'Bkash', 'Nagad', 'Rocket Income',
-    'POS Brac', 'POS City', 'POS DBBL', 'POS Pubali',
-  ])
 
   function calcSale(entries: typeof todayEntries, branchId: number) {
     return entries

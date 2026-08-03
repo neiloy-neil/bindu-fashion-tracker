@@ -5,6 +5,13 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+// Income categories that count as "Total Sale" (cash + digital sales only).
+// Due Received, Condition Rec., A/C Bindu, Opening Balance, Branch Transfer Received, etc. are excluded.
+export const SALE_CATEGORIES = new Set([
+  'Cash Sale', 'Bkash', 'Nagad', 'Rocket Income',
+  'POS Brac', 'POS City', 'POS DBBL', 'POS Pubali',
+])
+
 export function formatCurrency(value: number): string {
   return new Intl.NumberFormat('en-BD', {
     style: 'decimal',
@@ -32,26 +39,24 @@ export function computeTotals(entry: any) {
       if (item.category) {
         if (item.category.name === 'Opening Balance') {
           openingBalance += item.amount || 0
-        } else if (item.category.type === 'INCOME') {
-          if (item.category.name === 'Branch Transfer Received') continue
+        } else if (item.category.type === 'INCOME' && SALE_CATEGORIES.has(item.category.name)) {
           totalSale += item.amount || 0
-          // Auto-transferred digital income (Nagad, Bkash, POS) is already offset by a Transfer
-          // record created at submission — do NOT deduct here to avoid double-counting.
         } else if (item.category.type === 'EXPENSE') {
           totalExpense += item.amount || 0
         }
       }
     }
   }
-  
+
   if (entry && entry.transfers && Array.isArray(entry.transfers)) {
     for (const t of entry.transfers) {
       totalExpense += t.amount || 0
     }
   }
   if (entry && entry.receivedTransfers && Array.isArray(entry.receivedTransfers)) {
+    // Received transfers count toward inflow but not toward sale target
     for (const t of entry.receivedTransfers) {
-      totalSale += t.amount || 0
+      openingBalance += t.amount || 0
     }
   }
   if (entry && entry.payments && Array.isArray(entry.payments)) {

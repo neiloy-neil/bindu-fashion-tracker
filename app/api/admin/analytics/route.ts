@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { logger } from '@/lib/logger'
+import { SALE_CATEGORIES } from '@/lib/utils'
 
 export async function GET(request: Request) {
   try {
@@ -73,7 +74,7 @@ export async function GET(request: Request) {
       let dayExpense = 0
 
       for (const item of entry.items) {
-        if (item.category.type === 'INCOME' && item.category.name !== 'Opening Balance') {
+        if (item.category.type === 'INCOME' && SALE_CATEGORIES.has(item.category.name)) {
           dayRevenue += Number(item.amount)
         } else if (item.category.type === 'EXPENSE') {
           dayExpense += Number(item.amount)

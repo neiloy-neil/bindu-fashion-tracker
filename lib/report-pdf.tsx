@@ -3,7 +3,7 @@ import { Document, Page, StyleSheet, Text, View, Image, pdf } from '@react-pdf/r
 import { BINDU_LOGO } from '@/lib/logo-base64'
 import { saveAs } from 'file-saver'
 import type { SummaryStats } from '@/lib/types'
-import { formatCurrency, formatDate } from '@/lib/utils'
+import { formatCurrency, formatDate, SALE_CATEGORIES } from '@/lib/utils'
 
 type DailyReportData = {
   branch?: { name?: string | null } | null
@@ -210,7 +210,7 @@ function DailyReportDocument({
   selectedDate: string
 }) {
   const openingBalance = entryData.items?.find(item => item.category?.name === 'Opening Balance')?.amount ?? 0
-  const incomeItems = (entryData.items ?? []).filter(item => item.category?.type === 'INCOME' && item.category?.name !== 'Opening Balance' && item.category?.name !== 'Branch Transfer Received')
+  const incomeItems = (entryData.items ?? []).filter(item => item.category?.type === 'INCOME' && SALE_CATEGORIES.has(item.category?.name ?? ''))
   const expenseItems = (entryData.expenseEntries ?? []).filter((e) => !e.isTransferEntry)
   const transfers = entryData.transfers ?? []
   const payments = entryData.payments ?? []

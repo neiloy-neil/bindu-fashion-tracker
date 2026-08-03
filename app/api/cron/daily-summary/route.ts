@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
+import { SALE_CATEGORIES } from '@/lib/utils'
 
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get('authorization')
@@ -33,7 +34,7 @@ export async function GET(req: NextRequest) {
     let branchExp = 0
 
     for (const item of entry.items) {
-      if (item.category.type === 'INCOME') branchSale += item.amount
+      if (item.category.type === 'INCOME' && SALE_CATEGORIES.has(item.category.name)) branchSale += item.amount
     }
     for (const e of entry.expenseEntries) branchExp += e.amount
     for (const t of entry.transfers) branchExp += t.amount

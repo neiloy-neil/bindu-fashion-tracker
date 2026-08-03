@@ -6,6 +6,7 @@ import { logAudit } from '@/lib/audit'
 import { logger } from '@/lib/logger'
 import { signEntryAttachments } from '@/lib/storage'
 import { isMonthLocked } from '@/lib/locked-month'
+import { SALE_CATEGORIES } from '@/lib/utils'
 import { getReqPerms, FORBIDDEN } from '@/lib/server-auth'
 
 export async function GET(req: NextRequest) {
@@ -465,10 +466,6 @@ export async function POST(req: NextRequest) {
           where: { branchId_month_year: { branchId: finalBranchId, month, year } },
         })
 
-        const SALE_CATEGORIES = new Set([
-          'Cash Sale', 'Bkash', 'Nagad', 'Rocket Income',
-          'POS Brac', 'POS City', 'POS DBBL', 'POS Pubali',
-        ])
         const dailySale = entry.items
           .filter(i => i.category?.type === 'INCOME' && SALE_CATEGORIES.has(i.category.name))
           .reduce((s, i) => s + i.amount, 0)

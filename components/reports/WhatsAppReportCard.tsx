@@ -1,6 +1,6 @@
 'use client'
 
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency, SALE_CATEGORIES } from '@/lib/utils'
 
 interface Props {
   entryData: any
@@ -16,11 +16,6 @@ function formatDate(dateStr: string) {
   const d = new Date(dateStr + 'T00:00:00')
   return d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 }
-
-const SALE_CATEGORIES = new Set([
-  'Cash Sale', 'Bkash', 'Nagad', 'Rocket Income',
-  'POS Brac', 'POS City', 'POS DBBL', 'POS Pubali',
-])
 
 export default function WhatsAppReportCard({ entryData, branchName, selectedDate }: Props) {
   const openingBalance = entryData.items?.find((i: any) => i.category?.name === 'Opening Balance')?.amount ?? 0

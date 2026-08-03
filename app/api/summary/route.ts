@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { SALE_CATEGORIES } from '@/lib/utils'
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
@@ -96,8 +97,7 @@ export async function GET(req: NextRequest) {
     for (const item of entry.items) {
       if (item.category.name === 'Opening Balance') {
         openingBalance += item.amount
-      } else if (item.category.type === 'INCOME') {
-        if (item.category.name === 'Branch Transfer Received') continue
+      } else if (item.category.type === 'INCOME' && SALE_CATEGORIES.has(item.category.name)) {
         entrySale += item.amount
         if (!isDigital(item.category.name)) physicalIn += item.amount
         incomeBreakdown[item.category.name] = (incomeBreakdown[item.category.name] || 0) + item.amount

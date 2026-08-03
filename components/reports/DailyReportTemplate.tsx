@@ -1,4 +1,4 @@
-import { formatCurrency, formatDate } from '@/lib/utils'
+import { formatCurrency, formatDate, SALE_CATEGORIES } from '@/lib/utils'
 
 type ReportReceivedTransfer = {
   amount: number
@@ -83,8 +83,8 @@ export default function DailyReportTemplate({ entryData }: { entryData: ReportEn
   // Separate opening balance from actual sales income
   const openingBalanceItem = entryData.items?.find(item => item.category?.name === 'Opening Balance')
   const openingBalance = openingBalanceItem?.amount ?? 0
-  // Exclude Opening Balance and Branch Transfer Received from sale totals — shown separately
-  const incomeItems = entryData.items?.filter(item => item.category?.type === 'INCOME' && item.amount > 0 && item.category?.name !== 'Branch Transfer Received' && item.category?.name !== 'Opening Balance') ?? []
+  // Only Cash Sale, MFS, POS count toward Total Sale — Due Received, Condition Rec., etc. excluded
+  const incomeItems = entryData.items?.filter(item => item.category?.type === 'INCOME' && item.amount > 0 && SALE_CATEGORIES.has(item.category?.name ?? '')) ?? []
   const receivedTransfers = entryData.receivedTransfers ?? []
   const expenseEntries = (entryData.expenseEntries ?? []).filter(e => !e.isTransferEntry)
   const transfers = entryData.transfers ?? []

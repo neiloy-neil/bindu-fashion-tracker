@@ -86,7 +86,7 @@ export const ROLE_DEFAULTS: Record<string, Feature[]> = {
   ],
   BRANCH: [
     'entries.create', 'entries.view', 'entries.delete',
-    'transfers.view', 'reports.petty_cash', 'targets.view',
+    'transfers.view', 'reports.daily', 'reports.petty_cash', 'targets.view',
     'hr.employees.view', 'hr.attendance.view', 'hr.attendance.record',
     'hr.leaves.view', 'payroll.slips.view', 'payroll.advances',
   ],
